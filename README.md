@@ -38,23 +38,31 @@ To be added:
 
 ## 2. Hardware
 ### Sound card
-The built-in pc audio card is suitable to pronounce the audio commands but not to record the response. For that an external USB audio interface is needed, with at least one input channel (ear/voice calibration) and one output channel (mouth/background noise). For the most complete test experience, a 2in/2out channels audio interface is recommended.
+The built-in pc audio card is suitable to pronounce the audio commands but not to record the response. For that an external USB audio interface is needed, with at least one input channel (ear/voice calibration) and one output channel (mouth/background noise). For the most complete test experience, a 2in/2out channels audio interface is recommended (for example the Tascam UH7000).
+<img src="https://tascam.com/images/products/main_en_uh-7000.jpg" width="350" >
 
 ### Speaker
 #### Mouth
-For high-quality tests, the usage of a HATS is highly recommended. The mouth will reproduce the voice commands. The level can be adjusted to reach the nominal value of 94dBSPL (for that, a calibrator will be necessary)
+For high-quality tests, the usage of a HATS is highly recommended (i. e. the Bruel and Kjaer 4128-C). The mouth simulator will reproduce the voice commands. The level can be adjusted to reach the nominal value of 94dBSPL (for that, a sound calibrator will be necessary - i. e. Bruel and Kjaer 4231)
+<p float="left">
+  <img src="https://www.bksv.com/-/media/Images/Products/Transducers/Head-and-torso-simulators-and-ear-simulators/HATS/Type-4128C/HATS_Type4128-C_600x600.ashx?w=768&hash=7CDAB4D71A2C0F10EEB7AD2A190B42D4D34DB716" width="300">
+  <img src="https://www.bksv.com/-/media/Images/Products/Transducers/Acoustic-Transducers/Acoustic-calibrators/TYPE-4231_1180x674.ashx?w=768&hash=3B3E732621D75408DDF115FB0821571C5EA6EBA5" width="400">
+</p>
+
 #### Background noise
 In order to simulate the moving condition of the vehicle, a loudspeaker can be used (usually reproducing a filtered brown noise, from 20 to 200Hz; otherwise, a recording of the background noise can be done).
 
 ### Microphones
 #### Ear
-The ear microphone (included in the HATS) has 2 main purposes:
+The ear microphone (the 4128-C HATS is provided with two type 3.3 ear simulators) has 2 main purposes:
 * listen to the answer from the device to ensure the command has been understood (and possibly traduce/transliterate it)
 * measure the environmental noise in order to apply the Lombard effect to the output file
 * calibrate the loudspeaker level, if available
 
 #### Calibration microphone
 A free-field microphone (e.g. Bruel & Kjaer 4191/4939), placed at the MRP (mouth reference point), is used to calibrate the level of the voice.
+
+<img src="https://www.bksv.com/-/media/New_Products/Transducers/Microphones/4191.ashx?w=768&hash=DBC3220A6663A77F6931862CA2D40543B70FFA9B" width="200" >
 
 ## 3. Test Execution
 
