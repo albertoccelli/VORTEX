@@ -8,7 +8,7 @@ splash()
 try:
     t = Test()
     input("\nPress ENTER TO CONTINUE")
-    t.recorder.record(10)
+    t.execution()
 
 except KeyboardInterrupt:
     print("Goodbye")
