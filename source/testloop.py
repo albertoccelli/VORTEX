@@ -109,7 +109,7 @@ def showDirs(path):
 class Test():
     
     def __init__(self):
-        self.wPath = "."                # The current working path
+        self.wPath = "."                # The current working path of the selected test
         self.databaseDir =  "database/"
         self.testDir =      "vr_tests/"
         self.phrasesPath =  "phrases/"  # The path of the audio files
@@ -156,11 +156,11 @@ class Test():
             print("\tSTARTED: %s"%self.begun)
             print("\tCOMPLETED: %s"%self.completed)
             if self.begun:
-                print("RESULTS:")
+                print("\tRESULTS:")
                 for i in range(len(self.results)):
-                    if int(i) == 1:
+                    if int(self.results[i]) == 1:
                         print("\t\tTEST %03d: PASS"%(i+1))
-                    elif int(i) == 0:
+                    elif int(self.results[i]) == 0:
                         print("\t\tTEST %03d: FAIL"%(i+1))
             print("------------------------------------------------------------------")
             try:
@@ -197,9 +197,9 @@ class Test():
                     return
         else:
             self.wPath = path
-        self.configfile = "%s/config.cfg"%self.wPath            # the configuration file's path
-        self.configureList()                                    # get the test configuration (languages, lists) from the listfile   
-        self.loadConf()                                         # retrieve the paths and test status from the configuration file     
+        self.configfile = "%s/config.cfg"%self.wPath            # the configuration file's path 
+        self.loadConf()                                         # retrieve the paths and test status from the configuration file   
+        self.configureList()                                    # get the test configuration (languages, lists) from the listfile    
         self.getstatus()
         return
 
@@ -452,6 +452,19 @@ class Test():
             print("------------------------------------------------------------------")
             self.saveConf()
             return self.status
+
+
+    def printReport(self):
+        '''
+        Print the results in a csv file suitable for the analysis with Excel.
+        '''
+        with open("%s/report.csv"%self.wpath, "w", encoding = "utf-16") as r:
+            r.write("#LANGUAGE: %s"%self.lang)
+            r.write("#TEST N.,\tRESULT")
+            for i in range(len(self.results)):
+                r.write("%s,\t %s"%(i+1, self.results[i]))
+        return
+            
         
 
 if __name__ == "__main__":
