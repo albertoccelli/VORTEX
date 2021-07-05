@@ -14,8 +14,8 @@
 #
 # Last updated:     09/06/2021
 #
-# Changelog:	    1.0  - created
-#                   1.9  - you now can interrupt a test and automatically resume it. Added configuration files
+# Changelog:	    0.0.1  - created
+#                   0.0.9  - you now can interrupt a test and automatically resume it. Added configuration files
 #
 # Description:      test automation for the voice recognition performances. Automatically processes voice files
 #                   by adding noise; pronounces all the commands
@@ -63,11 +63,14 @@ cPath = os.getcwd()
 
 def splash():
     showImage("./utilities/logo.txt")
-    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print("+                                                           +")
-    print("+     VORTEX v0.1 - VOice Recognition Test EXecution        +")
-    print("+                                                           +")
-    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("+                                                                        +")
+    print("+            VORTEX v0.1 - VOice Recognition Test EXecution              +")
+    print("+                                                                        +")
+    print("+                                                                        +")
+    print("+                       albertoccelli@gmail.com                          +")
+    print("+                                                                        +")
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     return
 
 
