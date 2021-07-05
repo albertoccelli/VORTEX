@@ -109,18 +109,18 @@ def showDirs(path):
 class Test():
     
     def __init__(self):
-        self.wPath = "."                # The current working path of the selected test
+        # declare the attributes of the test
+        self.wPath = "."                    # The current working path of the selected test
         self.databaseDir =  "database/"
         self.testDir =      "vr_tests/"
-        self.phrasesPath =  "phrases/"  # The path of the audio files
-        # declare the attributes of the test
-        self.configfile = ""            # The configuration file of the current test
-        self.listfile = ""              # The list file for the command database
-        self.lang = ""                  # The language used for the test
-        self.begun = False              # Has the test already started?
-        self.completed = False          # Has the test been completed?
-        self.status = 0                 # The test number we should start from. If the test is new, then the status is 0.
-        self.results = []               # A list containing the test results
+        self.phrasesPath =  "phrases/"      # The path of the audio files
+        self.configfile =   ""              # The configuration file of the current test
+        self.listfile =     ""              # The list file for the command database
+        self.lang =         ""              # The language used for the test
+        self.begun =        False           # Has the test already started?
+        self.completed =    False           # Has the test been completed?
+        self.status =       0               # The test number we should start from. If the test is new, then the status is 0.
+        self.results =      []              # A list containing the test results
         
         # choose whether to create a new test or open a existing one
         option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
@@ -458,11 +458,11 @@ class Test():
         '''
         Print the results in a csv file suitable for the analysis with Excel.
         '''
-        with open("%s/report.csv"%self.wpath, "w", encoding = "utf-16") as r:
-            r.write("#LANGUAGE: %s"%self.lang)
-            r.write("#TEST N.,\tRESULT")
+        with open("%s/report.csv"%self.wPath, "w", encoding = "utf-16") as r:
+            r.write("LANGUAGE: %s\n"%self.lang)
+            r.write("TEST N.\tRESULT\n")
             for i in range(len(self.results)):
-                r.write("%s,\t %s"%(i+1, self.results[i]))
+                r.write("%s\t %s\n"%(i+1, self.results[i]))
         return
             
         
