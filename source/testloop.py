@@ -47,7 +47,6 @@ from . alb_pack.add_noise import addNoise
 from . alb_pack.dsp import getRms, addGain
 from . play import playWav, playData
 from . recorder import Recorder
-#from . configure import make_commands, writeToFiles
 from . configure import saveList, loadList
 
 import tkinter as tk
@@ -94,16 +93,6 @@ def log(event, logname = "test_status.log"):
     Log every test event with a timestamp.
     '''
     with open(logname, "a", encoding = "utf-16") as r:
-        r.write(now()+"\t")
-        r.write(event+"\n")
-    return
-
-
-def report(event, reportname = "status.rprt"):
-    '''
-    Write the test results into a report suitable for excel.
-    '''
-    with open(reportfile, "a", encoding = "utf-16") as r:
         r.write(now()+"\t")
         r.write(event+"\n")
     return
@@ -209,8 +198,8 @@ class Test():
         else:
             self.wPath = path
         self.configfile = "%s/config.cfg"%self.wPath            # the configuration file's path
-        self.loadConf()                                         # retrieve the paths and test status from the configuration file
-        self.configureList()                                    # get the test configuration (languages, lists) from the listfile        
+        self.configureList()                                    # get the test configuration (languages, lists) from the listfile   
+        self.loadConf()                                         # retrieve the paths and test status from the configuration file     
         self.getstatus()
         return
 
@@ -233,7 +222,7 @@ class Test():
             langindex = int(input("\n-->"))
             self.lang = self.langs[langindex-1]                 # the language used in this test
             print("\nYou have chosen: %s"%self.lang)
-            self.phrasesPath = self.phrasesPath + self.lang     # build the path for the speech files
+            self.phrasesPath = self.database["AUDIOPATH"] + self.lang     # build the path for the speech files
             self.saveConf()                                     # save the configuration into the cfg file
             return
         except FileExistsError:
@@ -247,7 +236,7 @@ class Test():
         
     def configureList(self):
         '''
-        1. Opens the database file and converts it into a dictionary form suitable for this test.
+        1. Opens the database file and converts it into a dictionary form suitable for the test.
 
         test = {"LANG1" = [[], [], [], []],
                 "LANG2" = [[], [], [], []],
@@ -264,8 +253,7 @@ class Test():
                 self.langs.append(l+"_NLU")
                 self.database[l+"_NLU"]=self.database[l][157:]
                 self.database[l] = self.database[l][0:156]
-        self.langs.sort()
-        self.phrasesPath = self.database["AUDIOPATH"]                
+        self.langs.sort()         
         return
 
 
@@ -291,7 +279,7 @@ class Test():
     
     def loadConf(self):
         '''
-        Reads the configuration file
+        Reads the configuration file for the selected test
         '''
         with open(self.configfile, "r", encoding = "utf-16") as r:
             #CHECK INTEGRITY
@@ -336,6 +324,12 @@ class Test():
         if mode == 1:
             input("Press PTT")
         return 
+
+
+    def playCommand(self, cid):
+        filename = self.phrasesPath+"/"+self.lang+"_"+str(cid)+".wav"
+        playWav(filename)
+        return
     
 
     def execution(self, translate = False):
@@ -358,7 +352,7 @@ class Test():
         else:
             # resumes the test
             print("==================================================================")
-            print("Resuming test from %d... Press ENTER when you are ready"%self.status)
+            print("Resuming test from %d... Press ENTER when you are ready"%(self.status+1))
             print("------------------------------------------------------------------")
             input("-->")
             log("WELCOME BACK", self.logname)
@@ -388,9 +382,9 @@ class Test():
                             else:
                                 # reproduce the vocal command
                                 print("Reproducing %s_%s.wav - '%s'"%(lang, cid, command))
+                                self.playCommand(cid)
                                 # PLACE HERE THE FUNCTION TO REPRODUCE THE WAVE FILE
                                 log("OSCAR: <<%s>> (%s_%s.wav)"%(command, lang, cid), self.logname)
-                                sleep(1)
                                 print("Listen to the radio answer")                                
                                 try:
                                     print("Expected behaviour --> %s\n"%exp)
@@ -439,7 +433,7 @@ class Test():
                 print("------------------------------------------------------------------")
                 print("Test aborted due to a error (%s)! Saving..."%e)
                 self.completed = False
-                log("ERROR %s"%e)
+                log("ERROR %s"%e, self.logname)
                 self.status = i
                 log("TEST_STATUS: %03d"%self.status, self.logname)
                 self.saveConf()     # save current progress of the test
