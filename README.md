@@ -39,11 +39,13 @@ To be added:
 ## 2. Hardware
 ### Sound card
 The built-in pc audio card is suitable to pronounce the audio commands but not to record the response. For that an external USB audio interface is needed, with at least one input channel (ear/voice calibration) and one output channel (mouth/background noise). For the most complete test experience, a 2in/2out channels audio interface is recommended (for example the Tascam UH7000).
+
 <img src="https://tascam.com/images/products/main_en_uh-7000.jpg" width="350" >
 
 ### Speaker
 #### Mouth
 For high-quality tests, the usage of a HATS is highly recommended (i. e. the Bruel and Kjaer 4128-C). The mouth simulator will reproduce the voice commands. The level can be adjusted to reach the nominal value of 94dBSPL (for that, a sound calibrator will be necessary - i. e. Bruel and Kjaer 4231)
+
 <p float="left">
   <img src="https://www.bksv.com/-/media/Images/Products/Transducers/Head-and-torso-simulators-and-ear-simulators/HATS/Type-4128C/HATS_Type4128-C_600x600.ashx?w=768&hash=7CDAB4D71A2C0F10EEB7AD2A190B42D4D34DB716" width="300">
   <img src="https://www.bksv.com/-/media/Images/Products/Transducers/Acoustic-Transducers/Acoustic-calibrators/TYPE-4231_1180x674.ashx?w=768&hash=3B3E732621D75408DDF115FB0821571C5EA6EBA5" width="400">
