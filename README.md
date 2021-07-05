@@ -2,7 +2,7 @@
 A Python-based framework for the voice-recognition test automation.
 
 ## Introduction
-VoRTEx (Voice Recognition Test Execution) was created with the intention to help with the test of the voice recognition performances of the car infotainment systems.
+VoRTEx (Voice Recognition Test Execution) was created with the aim of helping with the test of the voice recognition performances of the car infotainment systems.
 The project is originally born around the database of vocal commands provided by Harman, so it's best suitable for tests on R1 radios. However, further improvements are being implemented in order for the tool to be as versatile as possible.
 
 The test includes several voice commands recorded by native speakers, based on the Harman list. For other commands, a TTS system based on Google Translate engine is included.
