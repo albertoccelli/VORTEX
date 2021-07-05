@@ -40,6 +40,9 @@ import time
 from time import sleep
 from datetime import datetime
 import os
+import tkinter as tk
+from tkinter import filedialog
+from tkinter.ttk import Progressbar
 
 # custom libraries
 from . alb_pack.resample import resample
@@ -48,11 +51,8 @@ from . alb_pack.dsp import getRms, addGain
 from . play import playWav, playData
 from . recorder import Recorder
 from . configure import saveList, loadList
+from . tts import say
 
-import tkinter as tk
-from tkinter import filedialog
-from tkinter.ttk import Progressbar
-    
 root = tk.Tk()
 root.wm_attributes("-topmost", 1)
 root.withdraw()
@@ -373,7 +373,7 @@ class Test():
                     log("=========================== TEST #%03d ==========================="%(i+1), self.logname)
                     while True: 
                         for t in range(len(test[i])):
-                            cid = test[i][t].split("\t")[0]
+                            cid = test[i][t].split("\t")[0]                         # reading database, splits commands into command id and phrase
                             command = test[i][t].split("\t")[1].replace("\n","")
                             exp = expected[i][t].replace("\n","")
                             if cid == "000":
@@ -382,8 +382,10 @@ class Test():
                             else:
                                 # reproduce the vocal command
                                 print("Reproducing %s_%s.wav - '%s'"%(lang, cid, command))
-                                self.playCommand(cid)
-                                # PLACE HERE THE FUNCTION TO REPRODUCE THE WAVE FILE
+                                try:
+                                    self.playCommand(cid)
+                                except:
+                                    say(command, language = self.lang, save = False, talk = True)
                                 log("OSCAR: <<%s>> (%s_%s.wav)"%(command, lang, cid), self.logname)
                                 print("Listen to the radio answer")                                
                                 try:
@@ -458,7 +460,9 @@ class Test():
         '''
         Print the results in a csv file suitable for the analysis with Excel.
         '''
-        with open("%s/report.csv"%self.wPath, "w", encoding = "utf-16") as r:
+        reportFile = "%s/report.csv"%self.wPath
+        print("\nSaving test results into %s...\n"%reportFile)
+        with open(reportFile, "w", encoding = "utf-16") as r:
             r.write("LANGUAGE: %s\n"%self.lang)
             r.write("TEST N.\tRESULT\n")
             for i in range(len(self.results)):
