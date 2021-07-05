@@ -1,8 +1,8 @@
-# VORTEX
+# VoRTEx
 A Python-based framework for the voice-recognition test automation.
 
 ## Introduction
-VORTEX (VOice Recognition Test EXecution) was created with the intention to help with the test of the voice recognition performances of the car infotainment systems.
+VoRTEx (Voice Recognition Test Execution) was created with the intention to help with the test of the voice recognition performances of the car infotainment systems.
 The project is originally born around the database of vocal commands provided by Harman, so it's best suitable for tests on R1 radios. However, further improvements are being implemented in order for the tool to be as versatile as possible.
 
 The test includes several voice commands recorded by native speakers, based on the Harman list. For other commands, a TTS system based on Google Translate engine is included.
@@ -38,7 +38,7 @@ To be added:
 
 ## 2. Hardware
 ### Sound card
-The built-in pc audio card is suitable to pronounce the audio commands but not to record the response. For that an external USB audio interface is needed, with at least one input channel (ear/voice calibration) and one output channel (mouth/background noise).
+The built-in pc audio card is suitable to pronounce the audio commands but not to record the response. For that an external USB audio interface is needed, with at least one input channel (ear/voice calibration) and one output channel (mouth/background noise). For the most complete test experience, a 2in/2out channels audio interface is recommended.
 
 ### Speaker
 #### Mouth
