@@ -32,6 +32,7 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 # default libraries
 import sys
 from scipy.io.wavfile import read, write
@@ -64,7 +65,7 @@ def splash():
     showImage("./utilities/logo.txt")
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     print("+                                                                        +")
-    print("+           VoRTEx v0.0.1 - Voice Recognition Test Execution             +")
+    print("+           VoRTEx v0.1.2a - Voice Recognition Test Execution             +")
     print("+                                                                        +")
     print("+                       albertoccelli@gmail.com                          +")
     print("+                                                                        +")
@@ -171,7 +172,6 @@ class Test():
                 break
             except KeyboardInterrupt:
                 self.resume()
-
 
         
     def resume(self, path = None):
@@ -315,6 +315,8 @@ class Test():
 
     def activateMic(self, mode = 1):
         '''
+        Function to acrivate the vehicle's microphone for the voice recognition.
+        
         Modes:
 
         1 - Manual
@@ -327,6 +329,9 @@ class Test():
 
 
     def playCommand(self, cid):
+        '''
+        Plays the command based on the current test language and on the command ID.
+        '''
         filename = self.phrasesPath+"/"+self.lang+"_"+str(cid)+".wav"
         playWav(filename)
         return
@@ -335,7 +340,7 @@ class Test():
     def execution(self, translate = False):
         '''
         Execute the test for the chosen language.
-
+        
         If the test has already started, resume it.
         '''
         lang = self.lang
@@ -385,7 +390,7 @@ class Test():
                                 try:
                                     self.playCommand(cid)
                                 except:
-                                    say(command, language = self.lang, save = False, talk = True)
+                                    print("COMMAND NOT FOUND")
                                 log("OSCAR: <<%s>> (%s_%s.wav)"%(command, lang, cid), self.logname)
                                 print("Listen to the radio answer")                                
                                 try:

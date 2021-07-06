@@ -8,6 +8,9 @@ import time
 import numpy as np
 from scipy.io.wavfile import read, write
 
+from . play import playWav, playData
+
+
 class Recorder():
     
     def __init__(self):
@@ -17,6 +20,10 @@ class Recorder():
         self.channels = 2
         self.MAX_TIMEOUT = 30
         self.normalize = (1/(2**(self.bits-1)))
+        self.data = []
+        # not calibrated by default 
+        self.calibrated = False
+        self.correction = False
         
         # check the proper sample format
         while True:
@@ -34,6 +41,7 @@ class Recorder():
                 break
             else:
                 self.bits = int(input("Please select a valid sample format (8, 16, 24 or 32)"))
+                
         # default device
         p = pyaudio.PyAudio()
         self.device = p.get_default_input_device_info().get("index")
@@ -44,9 +52,6 @@ class Recorder():
         self.fs = 44100
         print("\nCurrent sample rate: %d Hz"%self.fs)
         self.available_inputs = devinfo.get("inputs")
-        # not calibrated by default 
-        self.calibrated = False
-        self.correction = False
         
 
     def setDevice(self, index):
@@ -94,11 +99,11 @@ class Recorder():
                      }
         # close stream
         p.terminate()
-        
         return audioinfo
 
 
     def calculate_threshold(self):
+        
         timerec = 10
         #instantiate stream                                               
         p = pyaudio.PyAudio() # create an interface to PortAudio API
@@ -116,7 +121,7 @@ class Recorder():
         maxtime = time.time()+self.MAX_TIMEOUT
 
         # Record background noise
-        input("Be quiet (press ENTER to continue)")
+        input("Be quiet (press ENTER to continue...)")
         while current <= maxtime:
             try:
                 data = stream.read(chunk)
@@ -135,10 +140,10 @@ class Recorder():
                 print("%.2f dBFS"%data)
                 frames.append(data)
                 current = time.time()
-                
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
+        
         background = 0
         for i in range(len(frames)):
             background += frames[i]
@@ -452,10 +457,19 @@ class Recorder():
             return 0
 
 
-    def save(self, filename):
+    def save(self, filename = "output.wav"):
         write(filename, self.fs, self.data)
         return
-        
+
+
+    def play(self):
+        '''
+        Reproduces the last recorded data.
+        '''
+        if 
+        playData(self.data, self.fs)
+        return
+    
    
 def getDeviceInfo():
     '''
