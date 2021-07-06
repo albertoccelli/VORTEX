@@ -227,7 +227,7 @@ class Recorder():
         print("")
         try:
             input("Place the microphone into the calibrator and press ENTER to calibrate (CTRL+C to cancel)")
-        except KeyboardInterrupt
+        except KeyboardInterrupt:
             print("Calibration canceled!")
             return
         #instantiate stream
