@@ -1,10 +1,9 @@
-"""PyAudio Example: Play a wave file."""
-
 import pyaudio
 import wave
 import sys
 from scipy.io.wavfile import read, write
 from matplotlib import pyplot as plt
+
 
 def playWav(filename):
     '''
@@ -12,29 +11,23 @@ def playWav(filename):
     '''
     CHUNK = 1024
     wf = wave.open(filename, 'rb')
-
-    # instantiate PyAudio (1)
+    # instantiate PyAudio
     p = pyaudio.PyAudio()
-
-    # open stream (2)
+    # open stream
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
                     rate=wf.getframerate(),
                     output=True)
-
     # read data
     data = wf.readframes(CHUNK)
-    
-    # play stream (3)
+    # play stream
     while len(data) > 0:
         stream.write(data)
         data = wf.readframes(CHUNK)
-
-    # stop stream (4)
+    # stop stream
     stream.stop_stream()
     stream.close()
-
-    # close PyAudio (5)
+    # close PyAudio
     p.terminate()
     return
 
@@ -43,14 +36,11 @@ def playData(data, fs):
     '''
     Plays a data array (in the numpy format).
     '''
-    
     CHUNK = 1024
-    # instantiate PyAudio (1)
+    # instantiate PyAudio
     p = pyaudio.PyAudio()
-
-    # open stream (2)
+    # open stream 
     nChannels = data.ndim
-    
     if data.dtype == "int16":
         dFormat = 8
     elif data.dtype == "int8":
@@ -61,11 +51,10 @@ def playData(data, fs):
         dFormat = 2
     elif data.dtype == "float32":
         dFormat = 1
-
-    #convert data in a format suitable for pyaudio
+    # convert data in a format suitable for pyaudio
     nData = []
     for i in range(len(data)):
-        try:
+        try: # if data is stereo
             nData.append((data[i][0])&0xff)
             nData.append((data[i][0]>>8)&0xff)
             nData.append((data[i][1])&0xff)
@@ -73,23 +62,20 @@ def playData(data, fs):
         except IndexError:
             nData.append((data[i])&0xff)
             nData.append((data[i]>>8)&0xff)            
-        
+    # open stream    
     stream = p.open(format = dFormat,
                     channels=nChannels,
                     rate=fs,
                     output=True)
-    
     nData = bytes(nData)
     CHUNK = CHUNK*2
     nFrames = int(len(nData)/CHUNK)+1
-    
     for i in range(int(nFrames)):
         stream.write(nData[i*CHUNK:((i+1)*CHUNK)])
-
-    # stop stream (4)
+    # stop stream
     stream.stop_stream()
     stream.close()
-    # close PyAudio (5)
+    # close PyAudio
     p.terminate()
     return 
 
