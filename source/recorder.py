@@ -17,7 +17,7 @@ class Recorder():
         self.threshold = -96
         self.chunk = 1024
         self.bits = 16
-        self.channels = 2
+        self.channels = 1
         self.MAX_TIMEOUT = 30
         self.normalize = (1/(2**(self.bits-1)))
         self.data = []
@@ -245,7 +245,7 @@ class Recorder():
         # The actual recording
         
         current = time.time()
-        maxtime = time.time()+self.MAX_TIMEOUT
+        maxtime = time.time()+timerec
         while current <= maxtime:
             try:
                 data = stream.read(self.chunk)
@@ -268,7 +268,7 @@ class Recorder():
                 print("\nRecording stopped")
                 break
 
-        # Stop and close the stream
+        # Stop and close the stream 
         stream.stop_stream()
         stream.close()
         # Terminate the portaudio interface
@@ -298,7 +298,7 @@ class Recorder():
         frames = [] # initialize array to store frames
 
         # open stream (2)
-        nChannels = data.ndim
+        nChannels = 1
         
         if data.dtype == "int16":
             dFormat = 8

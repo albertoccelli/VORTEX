@@ -70,6 +70,7 @@ langDict = {"ARW": "Arabic",
             "FRF": "French (France)",
             "FRF": "French (Canada)",
             "GED": "German",
+            "GED_NLU": "German (Natural language)",
             "ITA": "Italian",
             "JPJ": "Japanese",
             "KRK": "Korean",
@@ -144,6 +145,8 @@ class Test():
         self.completed =    False           # Has the test been completed?
         self.status =       0               # The test number we should start from. If the test is new, then the status is 0.
         self.results =      []              # A list containing the test results
+        self.mCalibrated =  False           # Is the mouth calibrated?
+        self.mouthCalibration = 0           # correction parameter binding the rms dBFS intensity of the audio file to the intensity in dBSPL
         
         # choose whether to create a new test or open a existing one
         option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
@@ -355,7 +358,15 @@ class Test():
         Plays the command based on the current test language and on the command ID.
         '''
         filename = self.phrasesPath+"/"+self.lang+"_"+str(cid)+".wav"
-        playWav(filename)
+        print(filename)
+        fs, data = read(filename)
+        if self.mCalibrated:
+            commandRms = getRms(data) + self.mouthCalibration # The estimated dBSPL level of the mouth
+            delta = 94 - commandRms
+            print("Adjusting gain (%0.2ddB)"%delta)
+            data = addGain(data, delta)
+            
+        playData(data, fs)
         return
 
 
@@ -363,8 +374,21 @@ class Test():
         '''
         Calibrates the microphone so that it expresses values in dBSPL
         '''
-        r.calibrate()
+        self.recorder.calibrate()
         return
+
+
+    def calibrateMouth(self):
+        if self.recorder.calibrated:    # microphone has to be calibrated first
+            cFile = "%s/%s_001.wav"%(self.phrasesPath, self.lang)
+            fs, played = read(cFile)
+            rmsdBFS = getRms(played)
+            recorded = self.recorder.playAndRecord(played, fs)
+            rmsdBSPL = getRms(recorded)+self.recorder.correction
+            self.mouthCalibration = rmsdBSPL - rmsdBFS
+            self.mCalibrated = True
+            print("\nMouth dSPL/dBFS: %0.2d\n"%self.mouthCalibration)
+        return self.mouthCalibration
     
 
     def execution(self, translate = False):
@@ -380,7 +404,7 @@ class Test():
             print("Beginning test... Press ENTER when you are ready")
             print("------------------------------------------------------------------")
             input("-->")
-            log("MAY THE FORCE BE WITH YOU", self.logname)      # the first line of the log file
+            log("MAY THE FORCE BE WITH YOU", self.logname)                                  # the first line of the log file
             self.results = []                               
             self.begun = True
         else:
@@ -391,51 +415,48 @@ class Test():
             input("-->")
             log("WELCOME BACK", self.logname)
         if True:
-            test = self.database[self.lang]                          # takes just the commands for the choosen language
+            test = self.database[self.lang]                                                 # takes just the commands for the choosen language
             try:
-                preconditions = self.database["preconditions"]  # if available, imports the array for the preconditions
-                expected = self.database["expected"]            # and for the expected behaviour of the radio
+                preconditions = self.database["preconditions"]                              # if available, imports the array for the preconditions
+                expected = self.database["expected"]                                        # and for the expected behaviour of the radio
             except: pass
-            log("SELECTED LANGUAGE: %s"%self.lang, self.logname)
+            log("SELECTED LANGUAGE: %s - %s"%(self.lang, langDict[self.lang]), self.logname)
             try:
                 for i in range(self.status, len(test)):
                     print("------------------------------------------------------------------")
-                    print("\n%s: TEST %d OUT OF %d\n"%(self.lang, i+1, len(test)))   # test number counter
+                    print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang]), i+1, len(test)))          # test number counter
+                    print("------------------------------------------------------------------\n")
                     try:
                         print("Preconditions:\n%s\n"%(preconditions[i].replace("\n", ""))) 
                     except:pass
                     log("=========================== TEST #%03d ==========================="%(i+1), self.logname)
                     while True: 
                         for t in range(len(test[i])):
-                            cid = test[i][t].split("\t")[0]                         # reading database, splits commands into command id and phrase
+                            cid = test[i][t].split("\t")[0]                                 # reading database, splits commands into command id and phrase
                             command = test[i][t].split("\t")[1].replace("\n","")
                             exp = expected[i][t].replace("\n","")
                             if cid == "000":
-                                self.activateMic(1)  # activate the infotainment microphone for the voice recognition (1: manual, 2: wakeword, 3: automatic)
+                                self.activateMic(1)                                         # activate the infotainment microphone for the voice recognition (1: manual, 2: wakeword, 3: automatic)
                                 log("MIC_ACTIVATED", self.logname)
                             else:
-                                # reproduce the vocal command
                                 print("Reproducing %s_%s.wav - '%s'"%(self.lang, cid, command))
                                 try:
-                                    self.playCommand(cid)
-                                except:
-                                    print("COMMAND NOT FOUND")
-                                log("OSCAR: <<%s>> (%s_%s.wav)"%(command, self.lang, cid), self.logname)
-                                print("Listen to the radio answer")                                
+                                    self.playCommand(cid)       # the mouth reproduces the command (after adjusting the gain, if wanted)
+                                except Exception as e:
+                                    print("ERROR: %s"%e)
+                                log("OSCAR: <<%s>> (%s_%s.wav)"%(command, self.lang, cid), self.logname)                        
                                 try:
-                                    print("Expected behaviour --> %s\n"%exp)
+                                    print("\nExpected behaviour --> %s\n"%exp)
                                 except:
                                     pass
                                 # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
-                                sleep(1)
                                 response = "[Answer]"
                                 if translate:
                                     translation = "Translation"
                                     log("RADIO: <<%s>> - <<%s>>"%(response, translation), self.logname)
                                 else:
                                     log("RADIO: <<%s>>"%(response), self.logname)
-                                input("Press ENTER to continue")
-                        result = str(input("Result: 1(passed), 0(failed), r(repeat)\n"))
+                        result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
                         self.status +=1     # status updated
                         if result != "r":
                             if result == "0":
@@ -443,9 +464,9 @@ class Test():
                             elif result == "1":
                                 log("END_TEST #%03d: PASSED"%(i+1), self.logname)
                             else:
-                                log("END_TEST #%03d: FAILED"%(i+1), self.logname)
-                                result = 0                            
+                                result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))                      
                             break
+                            self.saveConf()
                         else:       # repeats test
                             log("REPEATING", self.logname)  
                     self.results.append(result) # at the end of the selected test, writes the results into a array

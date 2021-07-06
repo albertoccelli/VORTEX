@@ -2,17 +2,19 @@
 
 from source.testloop import Test
 from source.testloop import splash
-from source.play import playWav
-from source.recorder import Recorder
-from threading import Thread
+import os
+import warnings
+warnings.filterwarnings('ignore')
 
 splash()
 
 try:
     t = Test()
+    if (input("\nDo you want to calibrate microphone and mouth? (y/n)\n-->")).lower() == "y":
+        t.calibrateMic()    # calibration of the measurement microphone
+        t.calibrateMouth()  # calibration of the mouth
+    t.execution()       # execute test
     input("\nPress ENTER TO CONTINUE")
-    t.recordTreshold(15)
-    t.execution()
 
 except KeyboardInterrupt:
     print("Goodbye")
