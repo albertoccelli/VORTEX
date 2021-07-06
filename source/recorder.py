@@ -466,8 +466,10 @@ class Recorder():
         '''
         Reproduces the last recorded data.
         '''
-        if 
-        playData(self.data, self.fs)
+        if len(self.data)>0:
+            playData(self.data, self.fs)
+        else:
+            print("\nNo data to play! Record something first")
         return
     
    
