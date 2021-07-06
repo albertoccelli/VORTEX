@@ -50,7 +50,6 @@ from . play import playWav, playData
 code = {"ARW": ["ar", "com"],
         "CHC": ["zh", "zh"],
         "DUN": ["nl", "nl"],
-        "ENG": ["ar", "com"],
         "ENG": ["en", "com.uk"],
         "ENA": ["en", "com.au"],
         "ENI": ["en", "com.in"],
@@ -64,8 +63,8 @@ code = {"ARW": ["ar", "com"],
         "PLP": ["pl", "pl"],
         "PTP": ["pt", "pt"],
         "PTB": ["pt", "com.br"],
-        "RUR": ["de", "de"],
-        "SPE": ["de", "de"],
+        "RUR": ["ru", "ru"],
+        "SPE": ["es", "es"],
         "SPM": ["es", "com.mx"],
         "TRT": ["tr", "com"]
         }

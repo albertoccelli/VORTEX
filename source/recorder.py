@@ -135,7 +135,6 @@ class Recorder():
                     n = sample * normalize
                     sum_squares += n * n
                 rms = math.pow(sum_squares / count, 0.5)
-
                 data = round(20*math.log10(rms), 6)
                 print("%.2f dBFS"%data)
                 frames.append(data)
@@ -143,16 +142,15 @@ class Recorder():
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
-        
+            
         background = 0
         for i in range(len(frames)):
             background += frames[i]
         background = background/len(frames)
         print("Background noise: %.2f dBFS"%background)
-
+        
         # Record talk volume
         input("Now talk (press ENTER to continue)")
-        
         current = time.time()
         maxtime = time.time()+ 3
 
@@ -201,7 +199,6 @@ class Recorder():
         Calibrate the microphone to have a direct conversion from dBFS to dBSPL.
         The use of a 94dBSPL (1kHz) calibrator is strongly advised. Otherwise, please
         specify another reference value.
-
         '''
         
         # recording time
@@ -228,8 +225,11 @@ class Recorder():
         print("-------------------------------------------------------------------")
         print("-------------------------------------------------------------------")
         print("")
-        input("Place the microphone into the calibrator and press ENTER to calibrate")
-
+        try:
+            input("Place the microphone into the calibrator and press ENTER to calibrate (CTRL+C to cancel)")
+        except KeyboardInterrupt
+            print("Calibration canceled!")
+            return
         #instantiate stream
         p = pyaudio.PyAudio() # create an interface to PortAudio API
 
@@ -278,13 +278,13 @@ class Recorder():
         for i in range(len(frames)):
             average += frames[i]
         average = average/len(frames)
-        self.correction = reference - average
+        self.correction = reference - average   # sets correction parameter
         print("Average intensity: %f"%average)
         print("Correction parameter: %f\n\nYou can now remove the microphone from the calibrator"%self.correction)
         input("---------------------------------------------------")
-        self.calibrated = True
+        self.calibrated = True                  # microphone calibrated
         
-        return self.correction, frames
+        return self.correction, frames          
 
 
     def playAndRecord(self, data, fs):

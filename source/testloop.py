@@ -60,6 +60,28 @@ root.withdraw()
 
 cPath = os.getcwd()
 
+langDict = {"ARW": "Arabic",
+            "CHC": "Chinese",
+            "DUN": "Dutch",
+            "ENG": "English (UK)",
+            "ENA": "English (Australia),
+            "ENI": "English (India)",
+            "ENU": "English (USA)",
+            "FRF": "French (France)",
+            "FRF": "French (Canada)",
+            "GED": "German",
+            "ITA": "Italian",
+            "JPJ": "Japanese",
+            "KRK": "Korean",
+            "PLP": "Polish",
+            "PTP": "Portuguese (Portugal)",
+            "PTB": "Portuguese (Brazil)",
+            "RUR": "Russian",
+            "SPE": "Spanish (Spain)",
+            "SPM": "Spanish (Mexico)",
+            "TRT": "Turkish"
+            }
+
 
 def splash():
     showImage("./utilities/logo.txt")
@@ -218,7 +240,7 @@ class Test():
             self.configureList()                                # get the command database (languages, lists) from the list file
             print("\n\nChoose the language to be used in the test among the following:\n")
             for i in range(len(self.langs)):
-                print("\t%02d) %s"%(i+1, self.langs[i]))
+                print("\t%02d) %s"%(i+1, langDict[self.langs[i]]))
             langindex = int(input("\n-->"))
             self.lang = self.langs[langindex-1]                 # the language used in this test
             print("\nYou have chosen: %s"%self.lang)
@@ -335,6 +357,14 @@ class Test():
         filename = self.phrasesPath+"/"+self.lang+"_"+str(cid)+".wav"
         playWav(filename)
         return
+
+
+    def calibrateMic(self):
+        '''
+        Calibrates the microphone so that it expresses values in dBSPL
+        '''
+        r.calibrate()
+        return
     
 
     def execution(self, translate = False):
@@ -343,7 +373,6 @@ class Test():
         
         If the test has already started, resume it.
         '''
-        lang = self.lang
         #Test begins
         if not self.begun:
             # start test from 0
@@ -362,16 +391,16 @@ class Test():
             input("-->")
             log("WELCOME BACK", self.logname)
         if True:
-            test = self.database[lang]                          # takes just the commands for the choosen language
+            test = self.database[self.lang]                          # takes just the commands for the choosen language
             try:
                 preconditions = self.database["preconditions"]  # if available, imports the array for the preconditions
                 expected = self.database["expected"]            # and for the expected behaviour of the radio
             except: pass
-            log("SELECTED LANGUAGE: %s"%lang, self.logname)
+            log("SELECTED LANGUAGE: %s"%self.lang, self.logname)
             try:
                 for i in range(self.status, len(test)):
                     print("------------------------------------------------------------------")
-                    print("\n%s: TEST %d OUT OF %d\n"%(lang, i+1, len(test)))   # test number counter
+                    print("\n%s: TEST %d OUT OF %d\n"%(self.lang, i+1, len(test)))   # test number counter
                     try:
                         print("Preconditions:\n%s\n"%(preconditions[i].replace("\n", ""))) 
                     except:pass
@@ -386,12 +415,12 @@ class Test():
                                 log("MIC_ACTIVATED", self.logname)
                             else:
                                 # reproduce the vocal command
-                                print("Reproducing %s_%s.wav - '%s'"%(lang, cid, command))
+                                print("Reproducing %s_%s.wav - '%s'"%(self.lang, cid, command))
                                 try:
                                     self.playCommand(cid)
                                 except:
                                     print("COMMAND NOT FOUND")
-                                log("OSCAR: <<%s>> (%s_%s.wav)"%(command, lang, cid), self.logname)
+                                log("OSCAR: <<%s>> (%s_%s.wav)"%(command, self.lang, cid), self.logname)
                                 print("Listen to the radio answer")                                
                                 try:
                                     print("Expected behaviour --> %s\n"%exp)
