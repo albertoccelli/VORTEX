@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.0-alpha] - 2021-07-06
+### Added
+- Calibration of the measurement microphone
+- Automatic gain adjustment for the mouth level
+
 ## [0.1.2-alpha] - 2021-07-05
 ### Added
 - printReport method: saves current test's results into a csv file.
