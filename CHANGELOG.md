@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.2.1-alpha] - 2021-07-06
+## [0.2.1-alpha] - 2021-07-07
 ### Added
 - Russian wavefiles for Harman commands database
 
