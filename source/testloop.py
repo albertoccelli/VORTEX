@@ -72,6 +72,7 @@ langDict = {"ARW": "Arabic",
             "GED": "German",
             "GED_NLU": "German (Natural language)",
             "ITA": "Italian",
+            "ITA_NLU": "Italian (Natural language)",
             "JPJ": "Japanese",
             "KRK": "Korean",
             "PLP": "Polish",
@@ -88,7 +89,7 @@ def splash():
     showImage("./utilities/logo.txt")
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     print("+                                                                        +")
-    print("+           VoRTEx v0.1.2a - Voice Recognition Test Execution             +")
+    print("+           VoRTEx v0.1.2a - Voice Recognition Test Execution            +")
     print("+                                                                        +")
     print("+                       albertoccelli@gmail.com                          +")
     print("+                                                                        +")
@@ -277,7 +278,7 @@ class Test():
             if len(self.database[l]) > 157:   #detects if natural language is available
                 self.langs.append(l+"_NLU")
                 self.database[l+"_NLU"]=self.database[l][157:]
-                self.database[l] = self.database[l][0:156]
+                self.database[l] = self.database[l][0:157]
         self.langs.sort()         
         return
 
@@ -424,7 +425,7 @@ class Test():
             try:
                 for i in range(self.status, len(test)):
                     print("------------------------------------------------------------------")
-                    print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang]), i+1, len(test)))          # test number counter
+                    print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))          # test number counter
                     print("------------------------------------------------------------------\n")
                     try:
                         print("Preconditions:\n%s\n"%(preconditions[i].replace("\n", ""))) 

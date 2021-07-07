@@ -1,4 +1,4 @@
-def saveList(test, filename = ".../database/r1h.vrtl", exp = True):
+def saveList(test, filename = "../database/r1h.vrtl", exp = True):
     '''
     Saves the dictionary containing the commands information into a special file (.vrtl) to be imported
     in a second time.
@@ -23,7 +23,7 @@ def saveList(test, filename = ".../database/r1h.vrtl", exp = True):
     return languages
 
 
-def loadList(filename = ".../database/r1h.vrtl", exp = True):
+def loadList(filename = "../database/r1h.vrtl", exp = True):
     '''
     Imports the commands information from the .vrtl file and creates a dictionary suitable for the tests.
     '''
