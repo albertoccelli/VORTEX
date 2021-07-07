@@ -9,7 +9,8 @@ The test includes several voice commands recorded by native speakers, based on t
 Currently on database:
 1. French (France) - female
 3. Spanish (Spain) - female
-
+15. Russian - female
+ 
 To be added:
 1. English (India)  
 4. Polish
@@ -27,7 +28,6 @@ To be added:
 12. Korean
 13. Chinese
 14. Spanish (Mexico)
-15. Russian
 
 ### Coming soon features
 New features are being implemented in the software as you read this. Among those, the most important are:
