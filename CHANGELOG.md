@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.1-alpha] - 2021-07-06
+### Added
+- Russian wavefiles for Harman commands database
+
 ## [0.2.0-alpha] - 2021-07-06
 ### Added
 - Calibration of the measurement microphone
