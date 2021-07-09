@@ -89,7 +89,7 @@ def splash():
     showImage("./utilities/logo.txt")
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     print("+                                                                        +")
-    print("+           VoRTEx v0.1.2a - Voice Recognition Test Execution            +")
+    print("+           VoRTEx v0.2.2a - Voice Recognition Test Execution            +")
     print("+                                                                        +")
     print("+                       albertoccelli@gmail.com                          +")
     print("+                                                                        +")
@@ -129,6 +129,9 @@ def showDirs(path):
         if os.path.isdir(os.path.join(path, name)):
             directories.append(name)
     return directories
+
+
+
 
 
 class Test():
@@ -172,7 +175,20 @@ class Test():
         print("Opening sound recorder\n")
         self.recorder = Recorder()
         
-
+    def detectGenders(self, lang):
+        '''
+        For the selected language, detects if both male and female voice are available,
+        based on the folders on the "phrases" directory.
+        '''
+        path = self.phrasesPath
+        languages = []
+        for i in os.listdir(path):
+            if lang in i:
+                languages.append(i)
+        return len(languages)
+                
+    
+        
     def getstatus(self):
         # print the status of the test and ask for confirmation
         while True:
@@ -247,8 +263,24 @@ class Test():
                 print("\t%02d) %s"%(i+1, langDict[self.langs[i]]))
             langindex = int(input("\n-->"))
             self.lang = self.langs[langindex-1]                 # the language used in this test
-            print("\nYou have chosen: %s"%self.lang)
-            self.phrasesPath = self.database["AUDIOPATH"] + self.lang     # build the path for the speech files
+            print("\nYou have chosen: %s\n"%self.lang)
+            # detects wether male and female voices are available
+            langpath = self.lang
+            g = 0
+            for i in os.listdir(self.database["AUDIOPATH"]):
+                if self.lang in i:
+                    g+=1
+            if g == 2:
+                response = input("Male (m) and female (f) voices are availabe. Which one do you want to test?\n-->").lower()
+                while True:
+                    if response == "m":
+                        langpath = self.lang+"_M"
+                        break
+                    elif response == "f":
+                        langpath = self.lang+"_F"
+                    else:
+                        response = input("Invalid input! Please choose between m and f.\n-->")
+            self.phrasesPath = self.database["AUDIOPATH"] + langpath     # build the path for the speech files
             self.saveConf()                                     # save the configuration into the cfg file
             return
         except FileExistsError:
@@ -350,7 +382,8 @@ class Test():
         3 - Send PTT can message
         '''
         if mode == 1:
-            input("Press PTT")
+            pass
+            #input("Press PTT")
         return 
 
 
@@ -457,7 +490,11 @@ class Test():
                                     log("RADIO: <<%s>> - <<%s>>"%(response, translation), self.logname)
                                 else:
                                     log("RADIO: <<%s>>"%(response), self.logname)
-                        result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+                                if t+1 < len(test[i]):
+                                    pass
+                                    #input("==> Press ENTER to proceed with next step\n")
+                        result = "1"
+                        #result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
                         self.status +=1     # status updated
                         if result != "r":
                             if result == "0":
