@@ -10,7 +10,8 @@ Currently on database:
 1. French (France) - female
 3. Spanish (Spain) - female
 15. Russian - female
- 
+10. Italian - male and female
+
 To be added:
 1. English (India)  
 4. Polish
@@ -23,7 +24,6 @@ To be added:
 7. Dutch
 8. Portuguese (Portugal)
 9. Portuguese (Brazil)
-10. Italian
 11. Japanese
 12. Korean
 13. Chinese
