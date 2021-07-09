@@ -15,6 +15,8 @@ try:
         t.calibrateMouth()  # calibration of the mouth
     t.execution()       # execute test
     input("\nPress ENTER TO CONTINUE")
+    t.printReport()
+    ("Report printed!")
 
 except KeyboardInterrupt:
     print("Goodbye")
