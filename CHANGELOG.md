@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.2-alpha] - 2021-07-07
+### Added
+- Italian wavefiles for Harman commands database (both male and female voice).
+
 ## [0.2.1-alpha] - 2021-07-07
 ### Added
 - Russian wavefiles for Harman commands database
