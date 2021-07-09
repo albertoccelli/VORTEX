@@ -13,9 +13,9 @@ try:
     if (input("\nDo you want to calibrate microphone and mouth? (y/n)\n-->")).lower() == "y":
         t.calibrateMic()    # calibration of the measurement microphone
         t.calibrateMouth()  # calibration of the mouth
-    t.execution()       # execute test
+    t.execution()           # execute test
     input("\nPress ENTER TO CONTINUE")
-    t.printReport()
+    t.printReport()         # create csv file with results
     ("Report printed!")
 
 except KeyboardInterrupt:
