@@ -141,11 +141,11 @@ def readPreconditions(filename = "to_separe.txt"):
     for p in prec:
         p = p.replace("\n","")
     return prec
-
+  
     
 
 if __name__ == "__main__":
-
+    
     from configure import loadList, saveList
     
     #load test file
@@ -154,7 +154,7 @@ if __name__ == "__main__":
  
     #read new commands from list
     test = oldtest
-    
+    '''
     #select new language to add
     lang = "ITA"
     test[lang] = [] # resets command list to avoid conflicts
@@ -165,3 +165,4 @@ if __name__ == "__main__":
     #writeToFiles(test[lang], lang)
     saveList(test)
     saveList(test, exp = False)
+    '''
