@@ -135,27 +135,24 @@ def showDirs(path):
     return directories
 
 
-
-
-
 class Test():
     
     def __init__(self):
         # declare the attributes of the test
-        self.wPath = "."                    # The current working path of the selected test
-        self.testname = ""
-        self.databaseDir =  "database/"
-        self.testDir =      "vr_tests/"
-        self.phrasesPath =  "phrases/"      # The path of the audio files
-        self.configfile =   ""              # The configuration file of the current test
-        self.listfile =     ""              # The list file for the command database
-        self.lang =         ""              # The language used for the test
-        self.begun =        False           # Has the test already started?
-        self.completed =    False           # Has the test been completed?
-        self.status =       0               # The test number we should start from. If the test is new, then the status is 0.
-        self.results =      []              # A list containing the test results
-        self.mCalibrated =  False           # Is the mouth calibrated?
-        self.mouthCalibration = 0           # correction parameter binding the rms dBFS intensity of the audio file to the intensity in dBSPL
+        self.wPath              = "."           # The current working path of the selected test
+        self.testname           = ""
+        self.databaseDir        = "database/"
+        self.testDir            = "vr_tests/"
+        self.phrasesPath        = "phrases/"    # The path of the audio files
+        self.configfile         = ""            # The configuration file of the current test
+        self.listfile           = ""            # The list file for the command database
+        self.lang               = ""            # The language used for the test
+        self.begun              = False         # Has the test already started?
+        self.completed          = False         # Has the test been completed?
+        self.status             = 0             # The test number we should start from. If the test is new, then the status is 0.
+        self.results            = []            # A list containing the test results
+        self.mCalibrated        = False         # Is the mouth calibrated?
+        self.mouthCalibration   = 0             # correction parameter binding the rms dBFS intensity of the audio file to the intensity in dBSPL
         
         # choose whether to create a new test or open a existing one
         option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
@@ -200,9 +197,9 @@ class Test():
             print("\n------------------------------------------------------------------")
             print("---------------------STATUS OF THE TEST---------------------------")
             print("------------------------------------------------------------------")
-            print("\tLANGUAGE: %s"%self.lang)
-            print("\tSTARTED: %s"%self.begun)
-            print("\tCOMPLETED: %s"%self.completed)
+            print("\tLANGUAGE: %s"  %self.lang)
+            print("\tSTARTED: %s"   %self.begun)
+            print("\tCOMPLETED: %s" %self.completed)
             if self.begun:
                 print("\tRESULTS:")
                 for i in range(len(self.results)):

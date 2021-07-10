@@ -17,10 +17,10 @@ splash()
 
 try:
     t = Test()
-    MsgBox = tk.messagebox.askquestion ('Calibration','Do you want to calibrate the microphone and the mouth?',icon = 'warning')
-    if MsgBox == 'yes':
-        t.calibrateMic()    # calibration of the measurement microphone
-        t.calibrateMouth()  # calibration of the mouth
+    MsgBox = tk.messagebox.askyesno('Calibration','Do you want to calibrate the microphone and the mouth?',icon = 'question')
+    #if MsgBox == 'yes':
+    #    t.calibrateMic()    # calibration of the measurement microphone
+    #    t.calibrateMouth()  # calibration of the mouth
     t.execution()           # execute test
     if t.completed == True:
         messagebox.showinfo(t.testname,"Test completed!")
