@@ -10,6 +10,15 @@ from scipy.io.wavfile import read, write
 
 if __name__ != "__main__":
     from . play import playWav, playData
+    from . alb_pack.dsp import getRms
+
+
+def clearConsole():
+    command = 'clear'
+    if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
+        command = 'cls'
+    os.system(command)
+    
 
 class Recorder():
     
@@ -21,9 +30,6 @@ class Recorder():
         self.MAX_TIMEOUT = 30
         self.normalize = (1/(2**(self.bits-1)))
         self.data = []
-        # not calibrated by default 
-        self.calibrated = False
-        self.correction = False
         
         # check the proper sample format
         while True:
@@ -44,21 +50,36 @@ class Recorder():
                 
         # default device
         p = pyaudio.PyAudio()
-        self.device = p.get_default_input_device_info().get("index")
-        self.channels = p.get_device_info_by_index(self.device)["maxInputChannels"]
+        self.deviceIn = p.get_default_input_device_info().get("index")
+        self.deviceOut = p.get_default_output_device_info().get("index")
+        
+        self.channels = p.get_device_info_by_index(self.deviceIn)["maxInputChannels"]
         p.terminate()
+        
+        # not calibrated by default 
+        self.calibrated = []
+        self.correction = []
+        for i in range(self.channels):
+            self.correction.append([])
+            self.calibrated.append(False)
+        
         # get audio info
         devinfo = self.getDeviceInfo()
         # default sample rate
         self.fs = 44100
         print("\nCurrent sample rate: %d Hz"%self.fs)
         self.available_inputs = devinfo.get("inputs")
+        self.available_outputs = devinfo.get("outputs")
         
 
-    def setDevice(self, index):
-        if index in self.available_inputs:
-            self.device = index
-            self.fs = 44100
+    def setDevice(self, io, index):
+        if io == "input":
+            if index in self.available_inputs:
+                self.deviceIn = index
+                self.fs = 44100
+        elif io == "output":
+            if index in self.available_inputs:
+                self.deviceOut = index
         return
     
 
@@ -92,8 +113,8 @@ class Recorder():
                     print("OUTPUT: %d - %s"%(i, p.get_device_info_by_host_api_device_index(0,i).get('name')))
                     devicesout.append(p.get_device_info_by_host_api_device_index(0,i))
         
-        print("\n--> Selected INPUT device: %d - %s"%(self.device, devicesin[self.device].get("name")))          
-        print("<-- Selected OUTPUT device: %d - %s"%(self.device, devicesout[self.device].get("name")))
+        print("\n--> Selected INPUT device: %d - %s"%(self.deviceIn, devicesin[self.deviceIn].get("name")))          
+        print("<-- Selected OUTPUT device: %d - %s"%(self.deviceIn, devicesout[self.deviceIn].get("name")))
         # create dictionary with default device and available devices
         audioinfo = {'inputs': devicesin,
                      'outputs': devicesout,
@@ -111,7 +132,7 @@ class Recorder():
                         channels=self.channels,
                         rate=self.fs,
                         frames_per_buffer=self.chunk,
-                        input_device_index = self.device,
+                        input_device_index = self.deviceIn,
                         input=True)
 
         frames = [] # initialize array to store frames
@@ -216,6 +237,7 @@ class Recorder():
             cPathShort = (cDir+"\\"+tree[-1])
 
         # dialog
+        clearConsole()
         print("Calibrating (94dBSPL):")
         print("")
         print("-------------------------------------------------------------------")
@@ -241,55 +263,66 @@ class Recorder():
                         channels=self.channels,
                         rate=self.fs,
                         frames_per_buffer=self.chunk,
-                        input_device_index = self.device,
+                        input_device_index = self.deviceIn,
                         input=True)
-
         frames = [] # initialize array to store frames
 
         # The actual recording
-        
         current = time.time()
         maxtime = time.time()+timerec
+        sum_squares_global = 0.0
+        print("\nCalibrating...")
         while current <= maxtime:
             try:
                 data = stream.read(self.chunk)
                 count = len(data)/2
                 format = "%dh" %(count)
                 shorts = struct.unpack(format, data)
-                print(shorts)
+                
+                shorts_array = []
+                for i in range(self.channels):
+                    shorts_array.append([])
                 
                 # get intensity
-                sum_squares = 0.0
-                for sample in shorts:
-                    n = sample * self.normalize
-                    sum_squares += n * n
-                rms = math.pow(sum_squares / count, 0.5)
-
-                data = round(20*math.log10(rms), 6)
-                print("%.2f dBFS"%data)
+                for sample in range(len(shorts)):
+                    shorts_array[sample%self.channels].append(shorts[sample])
+                    
+                rms = []
+                for i in range(len(shorts_array)):
+                    sum_squares = 0.0
+                    for sample in shorts_array[i]:
+                        n = sample * self.normalize
+                        sum_squares += n * n
+                        if i == channel-1:
+                            sum_squares_global = sum_squares
+                    rms.append(round(20*math.log10(math.pow((sum_squares/self.chunk), 0.5))+20*math.log10(2**0.5), 2))                
                 frames.append(data)
                 current = time.time()
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
-
+        rms_global = round(20*math.log10(math.pow((sum_squares_global/self.chunk), 0.5))+20*math.log10(2**0.5), 2)
+        print("Power = %sdBFS"%rms_global)
         # Stop and close the stream 
         stream.stop_stream()
         stream.close()
         # Terminate the portaudio interface
         p.terminate()
-        
-        average = 0
-        for i in range(len(frames)):
-            average += frames[i]
-        average = average/len(frames)
-        self.correction = reference - average   # sets correction parameter
-        print("Average intensity: %f"%average)
-        print("Correction parameter: %f\n\nYou can now remove the microphone from the calibrator"%self.correction)
-        input("---------------------------------------------------")
-        self.calibrated = True                  # microphone calibrated
-        
-        return self.correction, frames          
+
+        wf = wave.open("temp.wav", 'wb')
+        wf.setnchannels(self.channels)
+        wf.setsampwidth(p.get_sample_size(self.sample_format))
+        wf.setframerate(self.fs)
+        wf.writeframes(b''.join(frames))
+        wf.close()
+        print('... done!')
+        _, data = read("temp.wav")
+        os.remove("temp.wav")
+        data = data[:,(channel-1)]
+        self.calibrated[channel-1] = True                      # microphone calibrated
+        self.correction[channel-1] = reference - getRms(data)  # correction factor                      
+
+        return data        
 
 
     def playAndRecord(self, data, fs, deviceIndex = None, threshold = None):
@@ -350,9 +383,10 @@ class Recorder():
         return self.data
 
 
-    def recordTreshold(self, seconds, channel = 0, deviceIndex = None, threshold = None):
+    def record(self, seconds, channel = 0, deviceIndex = None, threshold = None):
+        clearConsole()
         if deviceIndex == None:
-            deviceIndex = self.device
+            deviceIndex = self.deviceIn
         if threshold == None:
             threshold = self.threshold
         print("Threshold value: %f"%self.threshold)
@@ -408,14 +442,12 @@ class Recorder():
                 current = time.time()
 
                 if started:
-                    if self.calibrated:
-                        for i in rms:
-                            print("%0.2f dBSPL\t"%(i+self.correction), end = ' ')
-                        print("\n")
-                    else:
-                        for i in rms:
-                            print("%0.2f dBFS\t"%(i), end = ' ')
-                        print("\n")
+                    for i in range(len(rms)):
+                        if self.calibrated[i]:
+                            print("%0.2f dBSPL\t"%(rms[i]+self.correction[i]), end = ' ')
+                        else:
+                            print("%0.2f dBFS\t"%(rms[i]), end = ' ')
+                    print("\n")
                     frames.append(data)
                 if current >= end:
                     print("Silence TIMEOUT")
@@ -512,9 +544,12 @@ def getDeviceInfo():
 if __name__ == "__main__":
     
     from play import playWav, playData
+    from alb_pack.dsp import getRms
+    
     r = Recorder()
 
     r.fs, data = read("filtered_noise.wav")
     
-    rec = r.playAndRecord(data, r.fs)
-
+    #rec = r.playAndRecord(data, r.fs)
+    d = r.calibrate(1)
+    
