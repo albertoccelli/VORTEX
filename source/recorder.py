@@ -292,14 +292,10 @@ class Recorder():
         return self.correction, frames          
 
 
-def playAndRecord(self, filename, deviceIndex = None, threshold = None):
+    def playAndRecord(self, data, fs, deviceIndex = None, threshold = None):
         CHUNK = 1024
         channels = 1
-        if deviceIndex == None:
-            deviceIndex = self.device
-        if threshold == None:
-            threshold = self.threshold
-        print("Threshold value: %f"%self.threshold)
+        
         #instantiate stream
         p = pyaudio.PyAudio() # create an interface to PortAudio API
         stream = p.open(format=self.sample_format,
@@ -311,8 +307,7 @@ def playAndRecord(self, filename, deviceIndex = None, threshold = None):
                         input = True,
                         output = True)
         print("Recording with device %s"%deviceIndex)
-
-        fs, data = read(filename)
+        
         nData = []
         for i in range(len(data)):
             try: # if data is stereo
@@ -323,6 +318,7 @@ def playAndRecord(self, filename, deviceIndex = None, threshold = None):
             except IndexError:
                 nData.append((data[i])&0xff)
                 nData.append((data[i]>>8)&0xff)
+                
         nData = bytes(nData)
         CHUNK = CHUNK*2
         nFrames = int(len(nData)/CHUNK)+1
@@ -517,7 +513,8 @@ if __name__ == "__main__":
     
     from play import playWav, playData
     r = Recorder()
-    '''
+
     r.fs, data = read("filtered_noise.wav")
-    rec = r.playAndRecord("filtered_noise.wav")
-    '''
+    
+    rec = r.playAndRecord(data, r.fs)
+
