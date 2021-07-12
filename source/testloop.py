@@ -1,38 +1,3 @@
-#-------------------------------------------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------------------------------------------
-#
-# Name:             testloop.py
-#
-# Author: 	    Alberto Occelli
-#		    albertoccelli@gmail.com
-#		    a.occelli@reply.it
-#	            occellialberto@telematicainformatica.it
-#
-# Version: 	    1.0
-#
-# Creation: 	    09/06/2021
-#
-# Last updated:     09/06/2021
-#
-# Changelog:	    0.0.1  - created
-#                   0.0.9  - you now can interrupt a test and automatically resume it. Added configuration files
-#
-# Description:      test automation for the voice recognition performances. Automatically processes voice files
-#                   by adding noise; pronounces all the commands
-#
-# To be added:      - GUI interface to enable the desired commands, languages and noises
-#                   - add the acoustics of the microphones
-#                   - calibration of the voices' levels
-#                   - automatically activates vehicle's microphone
-#                   - listening to vehicle's response and detecting answer
-#                   - try to understand whether the command has been recognized or not
-#                   - compile an output file with the test results
-#
-#
-#-------------------------------------------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 # default libraries
 import sys
 from scipy.io.wavfile import read, write
@@ -44,12 +9,14 @@ import os
 
 # user interface
 import tkinter as tk
+from tkinter import Tk, Label, Button, Radiobutton, IntVar
 from tkinter import simpledialog
 from tkinter import messagebox
 from tkinter import filedialog
 from tkinter.ttk import Progressbar
 
 # custom libraries
+# from . alb_pack.guitools import multipleChoice
 from . alb_pack.resample import resample
 from . alb_pack.add_noise import addNoise
 from . alb_pack.dsp import getRms, addGain
@@ -96,6 +63,7 @@ def splash():
     print("+           VoRTEx v0.2.2a - Voice Recognition Test Execution            +")
     print("+                                                                        +")
     print("+                       albertoccelli@gmail.com                          +")
+    print("+               https://github.com/albertoccelli/VoRTEx                  +")
     print("+                                                                        +")
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     return
@@ -139,20 +107,22 @@ class Test():
     
     def __init__(self):
         # declare the attributes of the test
-        self.wPath              = "."           # The current working path of the selected test
+        self.wPath              = "."                                       # The current working path of the selected test
         self.testname           = ""
+        #default paths
         self.databaseDir        = "database/"
-        self.testDir            = "vr_tests/"
-        self.phrasesPath        = "phrases/"    # The path of the audio files
-        self.configfile         = ""            # The configuration file of the current test
-        self.listfile           = ""            # The list file for the command database
-        self.lang               = ""            # The language used for the test
-        self.begun              = False         # Has the test already started?
-        self.completed          = False         # Has the test been completed?
-        self.status             = 0             # The test number we should start from. If the test is new, then the status is 0.
-        self.results            = []            # A list containing the test results
-        self.mCalibrated        = False         # Is the mouth calibrated?
-        self.mouthCalibration   = 0             # correction parameter binding the rms dBFS intensity of the audio file to the intensity in dBSPL
+        self.testDir            = "vr_tests/"       
+        self.phrasesPath        = "phrases/"                                # The path of the audio files
+        self.configfile         = ""                                        # The configuration file of the current test
+        self.listfile           = ""                                        # The list file for the command database
+        self.lang               = "ITA"                                     # The language used for the test
+        # status of the test
+        self.begun              = False                                     # Has the test already started?
+        self.completed          = False                                     # Has the test been completed?
+        self.status             = 0                                         # The test number we should start from. If the test is new, then the status is 0.
+        self.results            = {}                                        # A list containing the test results
+        self.mCalibrated        = False                                     # Is the mouth calibrated?
+        self.mouthCalibration   = 0                                         # correction parameter binding the rms dBFS intensity of the audio file to the dBSPL value
         
         # choose whether to create a new test or open a existing one
         option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
@@ -200,13 +170,6 @@ class Test():
             print("\tLANGUAGE: %s"  %self.lang)
             print("\tSTARTED: %s"   %self.begun)
             print("\tCOMPLETED: %s" %self.completed)
-            if self.begun:
-                print("\tRESULTS:")
-                for i in range(len(self.results)):
-                    if int(self.results[i]) == 1:
-                        print("\t\tTEST %03d: PASS"%(i+1))
-                    elif int(self.results[i]) == 0:
-                        print("\t\tTEST %03d: FAIL"%(i+1))
             print("------------------------------------------------------------------")
             try:
                 if self.begun:
@@ -242,34 +205,35 @@ class Test():
                     return
         else:
             self.wPath = path
-        self.configfile = "%s/config.cfg"%self.wPath            # the configuration file's path 
-        self.loadConf()                                         # retrieve the paths and test status from the configuration file   
-        self.configureList()                                    # get the test configuration (languages, lists) from the listfile    
+        self.configfile = "%s/config.cfg"%self.wPath                        # the configuration file's path 
+        self.loadConf()                                                     # retrieve the paths and test status from the configuration file   
+        self.configureList()                                                # get the test configuration (languages, lists) from the listfile    
         self.getstatus()
         return
 
     
     def new(self, testname=None):
         if testname == None:
-            self.testname = simpledialog.askstring("New test", "Choose a fancy name for this new vr test").replace(" ","_")
-            #testname = input("\nCreating a new test...! Please choose a fancy name for it!\n-->")
+            #self.testname = simpledialog.askstring("New test", "Choose a fancy name for this new vr test").replace(" ","_")
+            self.testname = input("\nCreating a new test...! Please choose a fancy name for it!\n-->")
         else:
             self.testname = testname
-        self.wPath = "%s%s"%(self.testDir, self.testname)     # this will be your new working directory
+        self.wPath = "%s%s"%(self.testDir, self.testname)                   # this will be your new working directory
         try:
-            os.mkdir(self.wPath)                                # create a new directory for the test
+            os.mkdir(self.wPath)                                            # create a new directory for the test
             self.configfile = "%s/config.cfg"%self.wPath
             print("Creating test (%s)"%self.wPath)
             self.listfile = filedialog.askopenfilename(title = "Choose the list file for the test",
                                                        filetypes = [("Voice Recognition Test List files","*.vrtl"),("All files", "*")],
                                                        initialdir = self.databaseDir) # select the proper list file with the command lists
-            self.configureList()                                # get the command database (languages, lists) from the list file
+            self.configureList()                                            # get the command database (languages, lists) from the list file
             print("\n\nChoose the language to be used in the test among the following:\n")
             for i in range(len(self.langs)):
                 print("\t%02d) %s"%(i+1, langDict[self.langs[i]]))
             langindex = int(input("\n-->"))
-            self.lang = self.langs[langindex-1]                 # the language used in this test
+            self.lang = self.langs[langindex-1]                             # the language used in this test
             print("\nYou have chosen: %s\n"%self.lang)
+            
             # detects wether male and female voices are available
             langpath = self.lang
             g = 0
@@ -286,16 +250,16 @@ class Test():
                         langpath = self.lang+"_F"
                     else:
                         response = input("Invalid input! Please choose between m and f.\n-->")
-            self.phrasesPath = self.database["AUDIOPATH"] + langpath     # build the path for the speech files
-            self.saveConf()                                     # save the configuration into the cfg file
+            self.phrasesPath = self.database["AUDIOPATH"] + langpath        # build the path for the speech files
+            self.saveConf()                                                 # save the configuration into the cfg file
             return
         except FileExistsError:
-            nTestname = simpledialog.askstring("New test",
-                                               "The test '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%self.testname).replace(" ","_")
-            #nTestname = input("The directory '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%testname)
+            #nTestname = simpledialog.askstring("New test",
+            #                                   "The test '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%self.testname).replace(" ","_")
+            nTestname = input("The directory '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%testname)
             self.new(nTestname)
-            #if str(nTestname)=="":
-            #    self.resume("tests/%s"%(testname.replace(" ","_")))
+            if str(nTestname)=="":
+                self.resume("tests/%s"%(testname.replace(" ","_")))
         self.getstatus()
         return 
     
@@ -309,13 +273,13 @@ class Test():
                 ecc...
                 }
         '''
-        self.database = loadList(self.listfile)                 # create the test sequence dictionary from the vrtl file
-        self.langs = []                                         # list of the currently supported languages
+        self.database = loadList(self.listfile)                             # create the test sequence dictionary from the vrtl file
+        self.langs = []                                                     # list of the currently supported languages
         for k in self.database.keys():
             if k != "preconditions" and k != "expected" and k!= "AUDIOPATH":
                 self.langs.append(k)
         for l in self.langs:
-            if len(self.database[l]) > 157:   #detects if natural language is available
+            if len(self.database[l]) > 157:                                 # detects if natural language is available
                 self.langs.append(l+"_NLU")
                 self.database[l+"_NLU"]=self.database[l][157:]
                 self.database[l] = self.database[l][0:157]
@@ -346,6 +310,7 @@ class Test():
     def loadConf(self):
         '''
         Reads the configuration file for the selected test
+        
         '''
         with open(self.configfile, "r", encoding = "utf-16") as r:
             #CHECK INTEGRITY
@@ -403,7 +368,7 @@ class Test():
         print(filename)
         fs, data = read(filename)
         if self.mCalibrated:
-            commandRms = getRms(data) + self.mouthCalibration # The estimated dBSPL level of the mouth
+            commandRms = getRms(data) + self.mouthCalibration               # The estimated dBSPL level of the mouth
             delta = 94 - commandRms
             print("Adjusting gain (%0.2ddB)"%delta)
             data = addGain(data, delta)
@@ -421,7 +386,7 @@ class Test():
 
 
     def calibrateMouth(self):
-        if self.recorder.calibrated:    # microphone has to be calibrated first
+        if self.recorder.calibrated:                                        # microphone has to be calibrated first
             cFile = "%s/%s_001.wav"%(self.phrasesPath, self.lang)
             fs, played = read(cFile)
             rmsdBFS = getRms(played)
@@ -433,9 +398,70 @@ class Test():
         return self.mouthCalibration
     
 
+    def test(self, testid, translate = False):
+        '''
+        Run a single test.
+        '''
+        test = self.database[self.lang]
+        try:
+            preconditions = self.database["preconditions"]                              # if available, imports the array for the preconditions
+            expected = self.database["expected"]                                        # and for the expected behaviour of the radio
+            print("Preconditions:\n%s\n"%(preconditions[testid-1].replace("\n", ""))) 
+        except: pass
+        log("=========================== TEST #%03d ==========================="%(testid), self.logname)
+        while True: 
+            for t in range(len(test[testid-1])):
+                cid = test[testid-1][t].split("\t")[0]                                 # reading database, splits commands into command id and phrase
+                command = test[testid-1][t].split("\t")[1].replace("\n","")
+                exp = expected[testid-1][t].replace("\n","")
+                if cid == "000":
+                    self.activateMic(1)                                         # activate the infotainment microphone for the voice recognition
+                                                                                            # (1: manual, 2: wakeword, 3: automatic)
+                    log("MIC_ACTIVATED", self.logname)
+                else:
+                    print("Reproducing %s_%s.wav - '%s'"%(self.lang, cid, command))
+                    try:
+                        self.playCommand(cid)                                   # the mouth reproduces the command (after adjusting the gain, if wanted)
+                    except Exception as e:
+                        print("ERROR: %s"%e)
+                    log("OSCAR: <<%s>> (%s_%s.wav)"%(command, self.lang, cid), self.logname)                        
+                    try:
+                        print("\nExpected behaviour --> %s\n"%exp)
+                    except:
+                        pass
+                    # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
+                    response = "[Answer]"
+                    if translate:
+                        translation = "Translation"
+                        log("RADIO: <<%s>> - <<%s>>"%(response, translation), self.logname)
+                    else:
+                        log("RADIO: <<%s>>"%(response), self.logname)
+                    if t+1 < len(test[testid-1]):
+                        pass
+                        #input("==> Press ENTER to proceed with next step\n")
+            result = "1"
+            #result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+            self.status +=1     # status updated
+            if result != "r":
+                if result == "0":
+                    log("END_TEST #%03d: FAILED"%(testid), self.logname)
+                elif result == "1":
+                    log("END_TEST #%03d: PASSED"%(testid), self.logname)
+                else:
+                    result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))                      
+                break
+                self.saveConf()
+            else:               # repeats test
+                log("REPEATING", self.logname)  
+        self.results[testid].append(result) # at the end of the selected test, writes the results into a array
+        
+        return result
+        
+        
+    
     def execution(self, translate = False):
         '''
-        Execute the test for the chosen language.
+        Execute the whole test routine for the chosen language.
         
         If the test has already started, resume it.
         '''
@@ -447,7 +473,7 @@ class Test():
             print("------------------------------------------------------------------")
             input("-->")
             log("MAY THE FORCE BE WITH YOU", self.logname)                                  # the first line of the log file
-            self.results = []                               
+            self.results = {}                             
             self.begun = True
         else:
             # resumes the test
@@ -466,7 +492,7 @@ class Test():
             try:
                 for i in range(self.status, len(test)):
                     print("------------------------------------------------------------------")
-                    print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))          # test number counter
+                    print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))  # test number counter
                     print("------------------------------------------------------------------\n")
                     try:
                         print("Preconditions:\n%s\n"%(preconditions[i].replace("\n", ""))) 
@@ -478,19 +504,19 @@ class Test():
                             command = test[i][t].split("\t")[1].replace("\n","")
                             exp = expected[i][t].replace("\n","")
                             if cid == "000":
-                                self.activateMic(1)                                         # activate the infotainment microphone for the voice recognition (1: manual, 2: wakeword, 3: automatic)
+                                self.activateMic(1)                                         # activate the infotainment microphone for the voice recognition
+                                                                                            # (1: manual, 2: wakeword, 3: automatic)
                                 log("MIC_ACTIVATED", self.logname)
                             else:
                                 print("Reproducing %s_%s.wav - '%s'"%(self.lang, cid, command))
                                 try:
-                                    self.playCommand(cid)       # the mouth reproduces the command (after adjusting the gain, if wanted)
+                                    self.playCommand(cid)                                   # the mouth reproduces the command (after adjusting the gain, if wanted)
                                 except Exception as e:
                                     print("ERROR: %s"%e)
                                 log("OSCAR: <<%s>> (%s_%s.wav)"%(command, self.lang, cid), self.logname)                        
                                 try:
                                     print("\nExpected behaviour --> %s\n"%exp)
-                                except:
-                                    pass
+                                except: pass
                                 # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
                                 response = "[Answer]"
                                 if translate:
@@ -500,10 +526,10 @@ class Test():
                                     log("RADIO: <<%s>>"%(response), self.logname)
                                 if t+1 < len(test[i]):
                                     pass
-                                    #input("==> Press ENTER to proceed with next step\n")
+                                    input("==> Press ENTER to proceed with next step\n")
                         result = "1"
                         #result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
-                        self.status +=1     # status updated
+                        self.status +=1                                                     # status updated
                         if result != "r":
                             if result == "0":
                                 log("END_TEST #%03d: FAILED"%(i+1), self.logname)
@@ -513,15 +539,19 @@ class Test():
                                 result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))                      
                             break
                             self.saveConf()
-                        else:       # repeats test
-                            log("REPEATING", self.logname)  
-                    self.results.append(result) # at the end of the selected test, writes the results into a array
+                        else:                                                               # repeats test
+                            log("REPEATING", self.logname)
+                    try:
+                        self.results[str(i+1)].append(result) # at the end of the selected test, writes the results into a array
+                    except:
+                        self.results[str(i+1)] = []
+                        self.results[str(i+1)].append(result)
                 print("------------------------------------------------------------------")
                 print("TEST COMPLETED")
                 log("TEST_STATUS: COMPLETED", self.logname)
                 self.completed = True
                 self.status = 0
-                self.saveConf()     # save current progress of the test
+                self.saveConf()                                                             # save current progress of the test
 
             except KeyboardInterrupt:
                 print("------------------------------------------------------------------")
@@ -543,10 +573,13 @@ class Test():
 
             #calculate the score and display it
             score = 0
-            for i in self.results:
+            scores = []
+            for i in range(len(self.results)):
+                scores.append(max(self.results[i]))
+            for i in scores:
                 score+=int(i)
             try:
-                score = 100*score/len(self.results)
+                score = 100*score/len(scores)
             except ZeroDivisionError:
                 score = 0
             log("TEST_RESULT: %d%%"%score, self.logname)
