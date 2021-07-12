@@ -8,13 +8,13 @@ import time
 import numpy as np
 from scipy.io.wavfile import read, write
 
-from . play import playWav, playData
-
+if __name__ != "__main__":
+    from . play import playWav, playData
 
 class Recorder():
     
     def __init__(self):
-        self.threshold = -96
+        self.threshold = -960
         self.chunk = 1024
         self.bits = 16
         self.channels = 1
@@ -45,6 +45,7 @@ class Recorder():
         # default device
         p = pyaudio.PyAudio()
         self.device = p.get_default_input_device_info().get("index")
+        self.channels = p.get_device_info_by_index(self.device)["maxInputChannels"]
         p.terminate()
         # get audio info
         devinfo = self.getDeviceInfo()
@@ -103,7 +104,6 @@ class Recorder():
 
 
     def calculate_threshold(self):
-        
         timerec = 10
         #instantiate stream                                               
         p = pyaudio.PyAudio() # create an interface to PortAudio API
@@ -194,9 +194,12 @@ class Recorder():
         return self.threshold
 
 
-    def calibrate(self, reference = 94, timerec = 10, widget = None):
+    def calibrate(self, channel, reference = 94, timerec = 10, widget = None):
         '''
         Calibrate the microphone to have a direct conversion from dBFS to dBSPL.
+
+        This is done separately for each channel. Specify it in the function arguments.
+        
         The use of a 94dBSPL (1kHz) calibrator is strongly advised. Otherwise, please
         specify another reference value.
         '''
@@ -221,6 +224,7 @@ class Recorder():
         print("- Sampling frequency..............%d Hz"%self.fs)
         print("- Samples per buffer..............%d samples"%self.chunk)
         print("- Recording time (hh:mm:ss).......%02d:%02d:%02d"%(hours,minutes,seconds))
+        print("- Channel:........................%d"%channel)
         print("- Working directory...............%s"%cDir)
         print("-------------------------------------------------------------------")
         print("-------------------------------------------------------------------")
@@ -252,6 +256,7 @@ class Recorder():
                 count = len(data)/2
                 format = "%dh" %(count)
                 shorts = struct.unpack(format, data)
+                print(shorts)
                 
                 # get intensity
                 sum_squares = 0.0
@@ -287,16 +292,14 @@ class Recorder():
         return self.correction, frames          
 
 
-    def playAndRecord(self, data, fs):
+    def playAndRecordOLD(self, data, fs):
         '''
         Plays a data array (in the numpy format).
+        TO BE FIXED
         '''
-        
-        CHUNK = 1024
         # instantiate PyAudio (1)
         p = pyaudio.PyAudio()
         frames = [] # initialize array to store frames
-
         # open stream (2)
         nChannels = 1
         
@@ -315,31 +318,32 @@ class Recorder():
         nData = []
         for i in range(len(data)):
             try:
-                nData.append((data[i][0])&0xff)
-                nData.append((data[i][0]>>8)&0xff)
-                nData.append((data[i][1])&0xff)
-                nData.append((data[i][1]>>8)&0xff)
+                for chan in range(2):
+                    nData.append((data[i][chan])&0xff)
+                    nData.append((data[i][chan]>>8)&0xff)
             except IndexError:
                 nData.append((data[i])&0xff)
                 nData.append((data[i]>>8)&0xff)            
-            
+
         stream = p.open(format = dFormat,
                         channels=nChannels,
                         rate=fs,
-                        frames_per_buffer=CHUNK,
-                        input = True,
-                        output = True)
-        
+                        frames_per_buffer=self.chunk,
+                        output = True,
+                        input = True)
+
         nData = bytes(nData)
-        CHUNK = CHUNK*2
+        CHUNK = self.chunk*2
         nFrames = int(len(nData)/CHUNK)+1
-        
+
         for i in range(int(nFrames)):
             stream.write(nData[i*CHUNK:((i+1)*CHUNK)])
+            '''
             recdata = stream.read(self.chunk)
             count = len(recdata)/2
             format = "%dh" %(count)
             shorts = struct.unpack(format, recdata)
+            
             # get intensity
             sum_squares = 0.0
             for sample in shorts:
@@ -352,11 +356,13 @@ class Recorder():
             else:
                 print("%f dBFS"%(rms))
             frames.append(recdata)
+            '''
 
-                
         # Stop and close the stream
         stream.stop_stream()
         stream.close()
+        stream2.stop_stream()
+        stream2.close()
         # Terminate the portaudio interface
         p.terminate()
 
@@ -372,21 +378,84 @@ class Recorder():
         os.remove("temp.wav")
         return self.data
 
-    
-    def recordTreshold(self, seconds, threshold = None):
+
+    def playAndRecord(self, filename, deviceIndex = None, threshold = None):
+        CHUNK = 1024
+        if deviceIndex == None:
+            deviceIndex = self.device
         if threshold == None:
             threshold = self.threshold
         print("Threshold value: %f"%self.threshold)
+        #instantiate stream
+        p = pyaudio.PyAudio() # create an interface to PortAudio API
+        stream = p.open(format=self.sample_format,
+                        channels=2,
+                        rate=self.fs,
+                        frames_per_buffer = self.chunk,
+                        input_device_index = deviceIndex,
+                        output_device_index = 4,
+                        input = True,
+                        output = True)
+        print("Recording with device %s"%deviceIndex)
+
+        fs, data = read(filename)
+        nData = []
+        for i in range(len(data)):
+            try: # if data is stereo
+                nData.append((data[i][0])&0xff)
+                nData.append((data[i][0]>>8)&0xff)
+                nData.append((data[i][1])&0xff)
+                nData.append((data[i][1]>>8)&0xff)
+            except IndexError:
+                nData.append((data[i])&0xff)
+                nData.append((data[i]>>8)&0xff)
+        nData = bytes(nData)
+        CHUNK = CHUNK*2
+        nFrames = int(len(nData)/CHUNK)+1
         
+        frames = [] # initialize array to store frames
+        print("Playing")
+        for i in range(int(nFrames)):
+            stream.write(nData[i*CHUNK:((i+1)*CHUNK)])
+            dataRec = stream.read(self.chunk)
+            frames.append(dataRec)
+        print("Done")
+
+        # Stop and close the stream
+        stream.stop_stream()
+        stream.close()
+        # Terminate the portaudio interface
+        p.terminate()
+        
+        # write recorded data into an array
+        wf = wave.open("temp.wav", 'wb')
+        wf.setnchannels(2)
+        wf.setsampwidth(p.get_sample_size(self.sample_format))
+        wf.setframerate(self.fs)
+        wf.writeframes(b''.join(frames))
+        wf.close()
+        print('... done!')
+        _, self.data = read("temp.wav")
+        os.remove("temp.wav")
+        #self.data = self.data[:,0]
+        return self.data
+
+    
+    def recordTreshold(self, seconds, channel = 0, deviceIndex = None, threshold = None):
+        if deviceIndex == None:
+            deviceIndex = self.device
+        if threshold == None:
+            threshold = self.threshold
+        print("Threshold value: %f"%self.threshold)
         #instantiate stream
         p = pyaudio.PyAudio() # create an interface to PortAudio API
         stream = p.open(format=self.sample_format,
                         channels=self.channels,
                         rate=self.fs,
                         frames_per_buffer = self.chunk,
-                        input_device_index = self.device,
+                        input_device_index = deviceIndex,
                         input=True)
-
+        print("Recording with device %s"%deviceIndex)
         frames = [] # initialize array to store frames
 
         # The actual recording
@@ -399,31 +468,45 @@ class Recorder():
         while current <= maxtime:
             try:
                 data = stream.read(self.chunk)
+                self.testdata = data
                 count = len(data)/2
                 format = "%dh" %(count)
                 shorts = struct.unpack(format, data)
+
+                shorts_array = []
+                for i in range(self.channels):
+                    shorts_array.append([])
                 
                 # get intensity
-                sum_squares = 0.0
-                for sample in shorts:
-                    n = sample * self.normalize
-                    sum_squares += n * n
-                rms = round(20*math.log10(math.pow(sum_squares / count, 0.5)))
+                for sample in range(len(shorts)):
+                    shorts_array[sample%self.channels].append(shorts[sample])
+
+                rms = []
+                for i in range(len(shorts_array)):
+                    sum_squares = 0.0
+                    for sample in shorts_array[i]:
+                        n = sample * self.normalize
+                        sum_squares += n * n
+                    rms.append(round(20*math.log10(math.pow((sum_squares/self.chunk), 0.5))+20*math.log10(2**0.5), 2))
                 
                 # detects sounds over the threshold
-                if rms > self.threshold:
+                if rms[channel] > self.threshold:
                     end = time.time()+timeout
                     if not started:
                         started = True
-                        maxtime = time.time()+seconds
-                        print("/nTriggered/n")
+                        maxtime = time.time() + seconds
+                        print("\nTriggered\n")
                 current = time.time()
 
                 if started:
                     if self.calibrated:
-                        print("%f dBSPL"%(rms+self.correction))
+                        for i in rms:
+                            print("%0.2f dBSPL\t"%(i+self.correction), end = ' ')
+                        print("\n")
                     else:
-                        print("%f dBFS"%(rms))
+                        for i in rms:
+                            print("%0.2f dBFS\t"%(i), end = ' ')
+                        print("\n")
                     frames.append(data)
                 if current >= end:
                     print("Silence TIMEOUT")
@@ -450,6 +533,7 @@ class Recorder():
             print('... done!')
             _, self.data = read("temp.wav")
             os.remove("temp.wav")
+            #self.data = self.data[:,0]
             return self.data
         
         else:
@@ -518,6 +602,9 @@ def getDeviceInfo():
 
 if __name__ == "__main__":
     
+    from play import playWav, playData
     r = Recorder()
-    r.fs, data = read("FRF_001.wav")
-    rec = r.playAndRecord(data, r.fs)
+    '''
+    r.fs, data = read("filtered_noise.wav")
+    rec = r.playAndRecord("filtered_noise.wav")
+    '''
