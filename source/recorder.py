@@ -292,95 +292,9 @@ class Recorder():
         return self.correction, frames          
 
 
-    def playAndRecordOLD(self, data, fs):
-        '''
-        Plays a data array (in the numpy format).
-        TO BE FIXED
-        '''
-        # instantiate PyAudio (1)
-        p = pyaudio.PyAudio()
-        frames = [] # initialize array to store frames
-        # open stream (2)
-        nChannels = 1
-        
-        if data.dtype == "int16":
-            dFormat = 8
-        elif data.dtype == "int8":
-            dFormat = 16
-        elif data.dtype == "int24":
-            dFormat = 4
-        elif data.dtype == "int32":
-            dFormat = 2
-        elif data.dtype == "float32":
-            dFormat = 1
-
-        #convert data in a format suitable for pyaudio
-        nData = []
-        for i in range(len(data)):
-            try:
-                for chan in range(2):
-                    nData.append((data[i][chan])&0xff)
-                    nData.append((data[i][chan]>>8)&0xff)
-            except IndexError:
-                nData.append((data[i])&0xff)
-                nData.append((data[i]>>8)&0xff)            
-
-        stream = p.open(format = dFormat,
-                        channels=nChannels,
-                        rate=fs,
-                        frames_per_buffer=self.chunk,
-                        output = True,
-                        input = True)
-
-        nData = bytes(nData)
-        CHUNK = self.chunk*2
-        nFrames = int(len(nData)/CHUNK)+1
-
-        for i in range(int(nFrames)):
-            stream.write(nData[i*CHUNK:((i+1)*CHUNK)])
-            '''
-            recdata = stream.read(self.chunk)
-            count = len(recdata)/2
-            format = "%dh" %(count)
-            shorts = struct.unpack(format, recdata)
-            
-            # get intensity
-            sum_squares = 0.0
-            for sample in shorts:
-                n = sample * self.normalize
-                sum_squares += n * n
-            rms = round(20*math.log10(math.pow(sum_squares / count, 0.5)))
-
-            if self.calibrated:
-                print("%f dBSPL"%(rms+self.correction))
-            else:
-                print("%f dBFS"%(rms))
-            frames.append(recdata)
-            '''
-
-        # Stop and close the stream
-        stream.stop_stream()
-        stream.close()
-        stream2.stop_stream()
-        stream2.close()
-        # Terminate the portaudio interface
-        p.terminate()
-
-        # write recorded data into an array
-        wf = wave.open("temp.wav", 'wb')
-        wf.setnchannels(self.channels)
-        wf.setsampwidth(p.get_sample_size(self.sample_format))
-        wf.setframerate(self.fs)
-        wf.writeframes(b''.join(frames))
-        wf.close()
-        print('... done!')
-        _, self.data = read("temp.wav")
-        os.remove("temp.wav")
-        return self.data
-
-
-    def playAndRecord(self, filename, deviceIndex = None, threshold = None):
+def playAndRecord(self, filename, deviceIndex = None, threshold = None):
         CHUNK = 1024
+        channels = 1
         if deviceIndex == None:
             deviceIndex = self.device
         if threshold == None:
@@ -389,7 +303,7 @@ class Recorder():
         #instantiate stream
         p = pyaudio.PyAudio() # create an interface to PortAudio API
         stream = p.open(format=self.sample_format,
-                        channels=2,
+                        channels=channels,
                         rate=self.fs,
                         frames_per_buffer = self.chunk,
                         input_device_index = deviceIndex,
@@ -429,7 +343,7 @@ class Recorder():
         
         # write recorded data into an array
         wf = wave.open("temp.wav", 'wb')
-        wf.setnchannels(2)
+        wf.setnchannels(channels)
         wf.setsampwidth(p.get_sample_size(self.sample_format))
         wf.setframerate(self.fs)
         wf.writeframes(b''.join(frames))
@@ -437,10 +351,9 @@ class Recorder():
         print('... done!')
         _, self.data = read("temp.wav")
         os.remove("temp.wav")
-        #self.data = self.data[:,0]
         return self.data
 
-    
+
     def recordTreshold(self, seconds, channel = 0, deviceIndex = None, threshold = None):
         if deviceIndex == None:
             deviceIndex = self.device
