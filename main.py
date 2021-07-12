@@ -6,17 +6,28 @@ import os
 import warnings
 warnings.filterwarnings('ignore')
 
+# user interface
+import tkinter as tk
+from tkinter import messagebox
+
+root = tk.Tk()
+root.withdraw()
+
 splash()
 
 try:
     t = Test()
-    if (input("\nDo you want to calibrate microphone and mouth? (y/n)\n-->")).lower() == "y":
-        t.calibrateMic()    # calibration of the measurement microphone
-        t.calibrateMouth()  # calibration of the mouth
+    MsgBox = tk.messagebox.askyesno('Calibration','Do you want to calibrate the microphone and the mouth?',icon = 'question')
+    #if MsgBox == 'yes':
+    #    t.calibrateMic()    # calibration of the measurement microphone
+    #    t.calibrateMouth()  # calibration of the mouth
     t.execution()           # execute test
-    input("\nPress ENTER TO CONTINUE")
-    t.printReport()         # create csv file with results
-    ("Report printed!")
+    if t.completed == True:
+        messagebox.showinfo(t.testname,"Test completed!")
+        t.printReport()         # create csv file with results
+        ("Report printed!")
+    else:
+        messagebox.showinfo(t.testname,"Test interrupted")
 
 except KeyboardInterrupt:
     print("Goodbye")
