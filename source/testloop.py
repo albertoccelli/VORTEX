@@ -54,7 +54,11 @@ langDict = {"ARW": "Arabic",
             "SPM": "Spanish (Mexico)",
             "TRT": "Turkish"
             }
-
+def clearConsole():
+    command = 'clear'
+    if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
+        command = 'cls'
+    os.system(command)
 
 def splash():
     showImage("./utilities/logo.txt")
@@ -491,6 +495,7 @@ class Test():
             log("SELECTED LANGUAGE: %s - %s"%(self.lang, langDict[self.lang]), self.logname)
             try:
                 for i in range(self.status, len(test)):
+                    clearConsole()
                     print("------------------------------------------------------------------")
                     print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))  # test number counter
                     print("------------------------------------------------------------------\n")
