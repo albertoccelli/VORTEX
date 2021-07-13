@@ -469,7 +469,7 @@ class Recorder():
                         else:
                             pass
                             #print("%0.2f dBFS\t"%(rms[i]), end = ' ')
-                    print("\n")
+                    #print("\n")
                     frames.append(data)
                 if current >= end:
                     print("Silence TIMEOUT")

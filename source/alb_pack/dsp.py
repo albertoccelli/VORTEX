@@ -225,9 +225,9 @@ def addGain(data, G):
     
     '''
     mpeak = max(abs(data))
-    allowed_max = max_value = np.iinfo(data.dtype).max
-    maxGain = allowed_max - mpeak
-        
+    maxGain = -(20*np.log10(mpeak/np.iinfo(data.dtype).max))
+    print("Peak: %0.2fdBFS"%-maxGain)
+    
     if maxGain>G:
         gainLin = 10**(G/20)
         for d in range(len(data)):

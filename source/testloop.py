@@ -292,7 +292,7 @@ class Test():
             nTestname = input("The directory '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%self.testname)
             if str(nTestname)=="":
                 print("Resuming...")
-                self.resume("tests/%s"%(testname.replace(" ","_")))
+                self.resume(self.wPath)
             else:self.new(nTestname)
         return 
     
@@ -405,18 +405,19 @@ class Test():
         print(filename)
         fs, data = read(filename)
         if self.mCalibrated:
-            commandRms = getRms(data) + self.mouthCalibration               # The estimated dBSPL level of the mouth
-            delta = 94 - commandRms + lombard(self.noise)
-            print("Adjusting gain (%0.2fdB)"%delta)
             while True:
+                commandRms = getRms(data) + self.mouthCalibration               # The estimated dBSPL level of the mouth
+                delta = 94 - commandRms + lombard(self.noise)
+                print("Adjusting gain (%0.2fdB)"%delta)
+                print("RMS: %0.2fdBFS\t-->\t%0.2fdBSPL"%(getRms(data), commandRms))
                 try:
                     data = addGain(data, delta)
                     break
                 except SaturationError:
-                    print("Cannot increase the volume of the wave file. Please manually increase the amplifier volume and press ENTER to redo the mouth calibration.")
-                    input()
-                    self.calibrateMouth()
-        print(fs)
+                    a = input("Cannot increase the volume of the wave file. Do you want to increase the amplifier volume and redo the mouth calibration? (y/n to keep the max gain value possible).\n-->")
+                    if str(a) == "y":
+                        self.calibrateMouth()
+                    else:break
         playData(data, fs, deviceOutIndex = 4)
         return
 
@@ -439,7 +440,7 @@ class Test():
 
     def calibrateMouth(self):
         if self.recorder.calibrated:                                        # microphone has to be calibrated first
-            cFile = "source/alb_pack/test_sounds/filtered_noise.wav"
+            cFile = "utilities\calibration.wav"
             fs, played = read(cFile)
             rmsdBFS = getRms(played)
             #recorded = self.recorder.playAndRecord(played, fs)
@@ -447,7 +448,7 @@ class Test():
             rmsdBSPL = recordedRms + self.recorder.correction[self.micChannel]
             self.mouthCalibration = rmsdBSPL - rmsdBFS
             self.mCalibrated = True
-            print("\nMouth dSPL/dBFS: %0.2d\n"%self.mouthCalibration)
+            print("File audio RMS: %0.2fdBFS\t-->\t%0.2fdBSPL\nMouth dSPL/dBFS: %0.2f\n"%(rmsdBFS, rmsdBSPL, self.mouthCalibration))
         return self.mouthCalibration
     
 
@@ -649,7 +650,7 @@ class Test():
         noise = self.recorder.record(seconds)[:,1]
         noise_w = A_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = getRms(noise_w) + self.recorder.correction[1]
-        input("Noise intensity: %0.2fdBSPL\nThe gain due to lombard effect is %0.2fdB"%(self.noise, lombard(self.noise)))
+        input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->"%(self.noise, lombard(self.noise)))
         return self.noise
 
 
