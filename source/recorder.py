@@ -293,7 +293,7 @@ class Recorder():
                     for sample in shorts_array[i]:
                         n = sample * self.normalize
                         sum_squares += n * n
-                        if i == channel-1:
+                        if i == channel:
                             sum_squares_global = sum_squares
                     rms.append(round(20*math.log10(math.pow((sum_squares/self.chunk), 0.5))+20*math.log10(2**0.5), 2))                
                 frames.append(data)
@@ -301,6 +301,7 @@ class Recorder():
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
+        print(shorts_array)
         rms_global = round(20*math.log10(math.pow((sum_squares_global/self.chunk), 0.5))+20*math.log10(2**0.5), 2)
         print("Power = %sdBFS"%rms_global)
         # Stop and close the stream 
@@ -318,28 +319,50 @@ class Recorder():
         print('... done!')
         _, data = read("temp.wav")
         os.remove("temp.wav")
-        data = data[:,(channel-1)]
-        self.calibrated[channel-1] = True                      # microphone calibrated
-        self.correction[channel-1] = reference - getRms(data)  # correction factor                      
+        data = data[:,(channel)]
+        self.calibrated[channel] = True                      # microphone calibrated
+        self.correction[channel] = reference - getRms(data)  # correction factor                      
 
         return data        
 
 
-    def playAndRecord(self, data, fs, deviceIndex = None, threshold = None):
+    def playAndRecord(self, data, fs, deviceIndex = None, deviceOutIndex = None, threshold = None):
+        '''
+        BROKEN
+        '''
         CHUNK = 1024
         channels = 1
-        
+        #deviceIndex = 1
+        #deviceOutIndex = 4
         #instantiate stream
+        if data.dtype == "int16":
+            dFormat = 8
+        elif data.dtype == "int8":
+            dFormat = 16
+        elif data.dtype == "int24":
+            dFormat = 4
+        elif data.dtype == "int32":
+            dFormat = 2
+        elif data.dtype == "float32":
+            dFormat = 1
         p = pyaudio.PyAudio() # create an interface to PortAudio API
-        stream = p.open(format=self.sample_format,
+        stream = p.open(format=dFormat,
                         channels=channels,
                         rate=self.fs,
                         frames_per_buffer = self.chunk,
                         input_device_index = deviceIndex,
-                        output_device_index = 4,
+                        output_device_index = deviceOutIndex,
                         input = True,
                         output = True)
+        stream2 = p.open(format=self.sample_format,
+                        channels=self.channels,
+                        rate=self.fs,
+                        frames_per_buffer = self.chunk,
+                        input_device_index = deviceIndex,
+                        input=True)
+        
         print("Recording with device %s"%deviceIndex)
+        print("Playback with device %s"%deviceOutIndex)
         
         nData = []
         for i in range(len(data)):
@@ -548,8 +571,8 @@ if __name__ == "__main__":
     
     r = Recorder()
 
-    r.fs, data = read("filtered_noise.wav")
-    
+    r.fs, data = read("test.wav")
+    playData(data, r.fs, 5)
     #rec = r.playAndRecord(data, r.fs)
-    d = r.calibrate(1)
+    #d = r.calibrate(1)
     
