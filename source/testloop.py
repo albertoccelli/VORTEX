@@ -6,6 +6,7 @@ import time
 from time import sleep
 from datetime import datetime
 import os
+from . ABC_weighting import A_weight
 
 # user interface
 import tkinter as tk
@@ -16,10 +17,9 @@ from tkinter import filedialog
 from tkinter.ttk import Progressbar
 
 # custom libraries
-# from . alb_pack.guitools import multipleChoice
 from . alb_pack.resample import resample
 from . alb_pack.add_noise import addNoise
-from . alb_pack.dsp import getRms, addGain
+from . alb_pack.dsp import getRms, addGain, SaturationError
 from . play import playWav, playData
 from . recorder import Recorder
 from . configure import saveList, loadList
@@ -107,6 +107,21 @@ def showDirs(path):
     return directories
 
 
+def lombard(noise):
+    '''
+    The noise is expressed in dBSPL
+    '''
+    if noise > 50 and noise < 77:
+        lombard_gain = 0.3 * (noise-50)
+    elif noise < 50:
+        lombard_gain = 0
+    elif noise > 77:
+        lombard_gain = 8
+    return lombard_gain
+
+
+
+
 class Test():
     
     def __init__(self):
@@ -127,6 +142,8 @@ class Test():
         self.results            = {}                                        # A list containing the test results
         self.mCalibrated        = False                                     # Is the mouth calibrated?
         self.mouthCalibration   = 0                                         # correction parameter binding the rms dBFS intensity of the audio file to the dBSPL value
+        self.failed             = []
+        self.noise              = 0
         
         # choose whether to create a new test or open a existing one
         option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
@@ -150,6 +167,15 @@ class Test():
         print("\n------------------------------------------------------------------")
         print("Opening sound recorder\n")
         self.recorder = Recorder()
+        # set 2 channels 
+        self.recorder.channels = 2
+        # channel assignment
+        # output
+        self.mouthChannel = 0
+        self.noiseChannel = 1
+        #input
+        self.micChannel = 0
+        self.earChannel = 1
         
     def detectGenders(self, lang):
         '''
@@ -360,7 +386,7 @@ class Test():
         '''
         if mode == 1:
             pass
-            #input("Press PTT")
+            input("Press PTT")
         return 
 
 
@@ -375,9 +401,16 @@ class Test():
             commandRms = getRms(data) + self.mouthCalibration               # The estimated dBSPL level of the mouth
             delta = 94 - commandRms
             print("Adjusting gain (%0.2ddB)"%delta)
-            data = addGain(data, delta)
-            
-        playData(data, fs)
+            while True:
+                try:
+                    data = addGain(data, delta)
+                    break
+                except SaturationError:
+                    print("Cannot increase the volume of the wave file. Please manually increase the amplifier volume and press ENTER to redo the mouth calibration.")
+                    input()
+                    self.calibrateMouth()
+        print(fs)
+        playData(data, fs, deviceOutIndex = 4)
         return
 
 
@@ -385,17 +418,26 @@ class Test():
         '''
         Calibrates the microphone so that it expresses values in dBSPL
         '''
-        self.recorder.calibrate()
+        self.recorder.calibrate(self.micChannel)
+        return
+
+    
+    def calibrateEar(self):
+        '''
+        Calibrates Oscar's ear so that it expresses values in dBSPL
+        '''
+        self.recorder.calibrate(channel = self.earChannel, reference = 92.1)
         return
 
 
     def calibrateMouth(self):
         if self.recorder.calibrated:                                        # microphone has to be calibrated first
-            cFile = "%s/%s_001.wav"%(self.phrasesPath, self.lang)
+            cFile = "source/alb_pack/test_sounds/filtered_noise.wav"
             fs, played = read(cFile)
             rmsdBFS = getRms(played)
-            recorded = self.recorder.playAndRecord(played, fs)
-            rmsdBSPL = getRms(recorded)+self.recorder.correction
+            #recorded = self.recorder.playAndRecord(played, fs)
+            recordedRms = float(input("Open the session file 'calibration.ses' with Audition. Record the mouth output and measure the average RMS power.\nInsert here the dBFS value and press ENTER\n-->"))
+            rmsdBSPL = recordedRms + self.recorder.correction[self.micChannel]
             self.mouthCalibration = rmsdBSPL - rmsdBFS
             self.mCalibrated = True
             print("\nMouth dSPL/dBFS: %0.2d\n"%self.mouthCalibration)
@@ -442,9 +484,8 @@ class Test():
                         log("RADIO: <<%s>>"%(response), self.logname)
                     if t+1 < len(test[testid-1]):
                         pass
-                        #input("==> Press ENTER to proceed with next step\n")
-            result = "1"
-            #result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+                        input("==> Press ENTER to proceed with next step\n")
+            result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
             self.status +=1     # status updated
             if result != "r":
                 if result == "0":
@@ -496,6 +537,9 @@ class Test():
             try:
                 for i in range(self.status, len(test)):
                     clearConsole()
+                    if self.recorder.calibrated[self.earChannel]:
+                        print("Listening to ambiance noise...\n")
+                        self.listenNoise()
                     print("------------------------------------------------------------------")
                     print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))  # test number counter
                     print("------------------------------------------------------------------\n")
@@ -532,12 +576,12 @@ class Test():
                                 if t+1 < len(test[i]):
                                     pass
                                     input("==> Press ENTER to proceed with next step\n")
-                        result = "1"
-                        #result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+                        result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
                         self.status +=1                                                     # status updated
                         if result != "r":
                             if result == "0":
                                 log("END_TEST #%03d: FAILED"%(i+1), self.logname)
+                                self.failed.append(i+1)
                             elif result == "1":
                                 log("END_TEST #%03d: PASSED"%(i+1), self.logname)
                             else:
@@ -580,7 +624,7 @@ class Test():
             score = 0
             scores = []
             for i in range(len(self.results)):
-                scores.append(max(self.results[i]))
+                scores.append(max(self.results[str(i+1)]))
             for i in scores:
                 score+=int(i)
             try:
@@ -593,6 +637,16 @@ class Test():
             print("------------------------------------------------------------------")
             self.saveConf()
             return self.status
+
+    def listenNoise(self, seconds = 3):
+        noise = self.recorder.record(seconds)[:,1]
+        print(noise)
+        print(getRms(noise) + self.recorder.correction[1])
+        noise_w = A_weight(noise, self.recorder.fs).astype(np.int16)
+        self.noise = getRms(noise_w) + self.recorder.correction[1]
+        print(getRms(noise_w) + self.recorder.correction[1])
+        input("Noise intensity: %0.2fdBSPL\nThe gain due to lombard effect is %0.2fdB"%(self.noise, lombard(self.noise)))
+        return self.noise
 
 
     def printReport(self):
