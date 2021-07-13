@@ -4,6 +4,10 @@ from scipy import signal
 from scipy.fft import rfft, rfftfreq
 
 
+class SaturationError(Exception):
+    pass
+
+
 def bandpass(data, lc, hc, fs, order = 5):
     '''
     OLD
@@ -220,10 +224,16 @@ def addGain(data, G):
     Adds gain (expressed in dB) to a signal.
     
     '''
-    if True:
+    mpeak = max(abs(data))
+    allowed_max = max_value = np.iinfo(data.dtype).max
+    maxGain = allowed_max - mpeak
+        
+    if maxGain>G:
         gainLin = 10**(G/20)
         for d in range(len(data)):
             data[d] = int(data[d]*gainLin)
+    else:
+        raise SaturationError("Cannot add that much gain. Try to increase the amplifier volume instead!")
     return data
 
 
