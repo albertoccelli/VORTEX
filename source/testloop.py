@@ -39,7 +39,7 @@ langDict = {"ARW": "Arabic",
             "ENI": "English (India)",
             "ENU": "English (USA)",
             "FRF": "French (France)",
-            "FRF": "French (Canada)",
+            "FRC": "French (Canada)",
             "GED": "German",
             "GED_NLU": "German (Natural language)",
             "ITA": "Italian",
@@ -145,8 +145,22 @@ class Test():
         self.failed             = []
         self.noise              = 0
         
+        # open the sound recorder for the radio feedback translation
+        print("------------------------------------------------------------------")
+        print("Opening sound recorder\n")
+        self.recorder = Recorder()
+        # set 2 channels 
+        self.recorder.channels = 2
+        # channel assignment
+        # output
+        self.mouthChannel = 0
+        self.noiseChannel = 1
+        #input
+        self.micChannel = 0
+        self.earChannel = 1
+        
         # choose whether to create a new test or open a existing one
-        option = int(input("Do you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
+        option = int(input("\n\nDo you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
         if option == 1:
             self.new()        
         elif option == 2:
@@ -163,19 +177,7 @@ class Test():
                            "STATUS": self.status,
                            "RESULTS": self.results}
         
-        # open the sound recorder for the radio feedback translation
-        print("\n------------------------------------------------------------------")
-        print("Opening sound recorder\n")
-        self.recorder = Recorder()
-        # set 2 channels 
-        self.recorder.channels = 2
-        # channel assignment
-        # output
-        self.mouthChannel = 0
-        self.noiseChannel = 1
-        #input
-        self.micChannel = 0
-        self.earChannel = 1
+
         
     def detectGenders(self, lang):
         '''
@@ -278,6 +280,7 @@ class Test():
                         break
                     elif response == "f":
                         langpath = self.lang+"_F"
+                        break
                     else:
                         response = input("Invalid input! Please choose between m and f.\n-->")
             self.phrasesPath = self.database["AUDIOPATH"] + langpath        # build the path for the speech files
@@ -286,11 +289,11 @@ class Test():
         except FileExistsError:
             #nTestname = simpledialog.askstring("New test",
             #                                   "The test '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%self.testname).replace(" ","_")
-            nTestname = input("The directory '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%testname)
-            self.new(nTestname)
+            nTestname = input("The directory '%s' already exists :( \nPlease choose another name or press enter to resume the selected one\n-->"%self.testname)
             if str(nTestname)=="":
+                print("Resuming...")
                 self.resume("tests/%s"%(testname.replace(" ","_")))
-        self.getstatus()
+            else:self.new(nTestname)
         return 
     
         
@@ -326,6 +329,10 @@ class Test():
             r.write("@YODA\n")
             r.write("@CONFIGURATION\n")
             r.write("LISTFILE=%s\n"%self.listfile)
+            r.write("MOUTH_CALIBRATED=%s\n"%self.mCalibrated)
+            r.write("MOUTH_CORRECTION=%s\n"%self.mouthCalibration)
+            r.write("MIC_CALIBRATED=%s\n"%self.recorder.calibrated)
+            r.write("MIC_DBFSTODBSPL=%s\n"%self.recorder.correction)
             r.write("PHRASESPATH=%s\n"%self.phrasesPath)
             r.write("LANG=%s\n"%self.lang)
             r.write("\n")
@@ -399,8 +406,8 @@ class Test():
         fs, data = read(filename)
         if self.mCalibrated:
             commandRms = getRms(data) + self.mouthCalibration               # The estimated dBSPL level of the mouth
-            delta = 94 - commandRms
-            print("Adjusting gain (%0.2ddB)"%delta)
+            delta = 94 - commandRms + lombard(self.noise)
+            print("Adjusting gain (%0.2fdB)"%delta)
             while True:
                 try:
                     data = addGain(data, delta)
@@ -640,11 +647,8 @@ class Test():
 
     def listenNoise(self, seconds = 3):
         noise = self.recorder.record(seconds)[:,1]
-        print(noise)
-        print(getRms(noise) + self.recorder.correction[1])
         noise_w = A_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = getRms(noise_w) + self.recorder.correction[1]
-        print(getRms(noise_w) + self.recorder.correction[1])
         input("Noise intensity: %0.2fdBSPL\nThe gain due to lombard effect is %0.2fdB"%(self.noise, lombard(self.noise)))
         return self.noise
 

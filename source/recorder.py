@@ -67,7 +67,6 @@ class Recorder():
         devinfo = self.getDeviceInfo()
         # default sample rate
         self.fs = 44100
-        print("\nCurrent sample rate: %d Hz"%self.fs)
         self.available_inputs = devinfo.get("inputs")
         self.available_outputs = devinfo.get("outputs")
         
@@ -76,7 +75,6 @@ class Recorder():
         if io == "input":
             if index in self.available_inputs:
                 self.deviceIn = index
-                self.fs = 44100
         elif io == "output":
             if index in self.available_inputs:
                 self.deviceOut = index
@@ -114,7 +112,7 @@ class Recorder():
                     devicesout.append(p.get_device_info_by_host_api_device_index(0,i))
         
         print("\n--> Selected INPUT device: %d - %s"%(self.deviceIn, devicesin[self.deviceIn].get("name")))          
-        print("<-- Selected OUTPUT device: %d - %s"%(self.deviceIn, devicesout[self.deviceIn].get("name")))
+        print("<-- Selected OUTPUT device: %d - %s"%(self.deviceOut, devicesout[self.deviceIn].get("name")))
         # create dictionary with default device and available devices
         audioinfo = {'inputs': devicesin,
                      'outputs': devicesout,
@@ -301,9 +299,8 @@ class Recorder():
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
-        print(shorts_array)
         rms_global = round(20*math.log10(math.pow((sum_squares_global/self.chunk), 0.5))+20*math.log10(2**0.5), 2)
-        print("Power = %sdBFS"%rms_global)
+
         # Stop and close the stream 
         stream.stop_stream()
         stream.close()
@@ -321,8 +318,8 @@ class Recorder():
         os.remove("temp.wav")
         data = data[:,(channel)]
         self.calibrated[channel] = True                      # microphone calibrated
-        self.correction[channel] = reference - getRms(data)  # correction factor                      
-
+        self.correction[channel] = reference - getRms(data)  # correction factor
+        print("Power = %sdBFS\ndBSPL/dBFS = %0.2f"%(rms_global, self.correction[channel]))                 
         return data        
 
 
@@ -426,7 +423,7 @@ class Recorder():
 
         # The actual recording
         started = False
-        print("Waiting for speech over the threshold...")
+        #print("Waiting for speech over the threshold...")
         current = time.time()
         timeout = 5
         end = time.time()+timeout
@@ -461,15 +458,17 @@ class Recorder():
                     if not started:
                         started = True
                         maxtime = time.time() + seconds
-                        print("\nTriggered\n")
+                        print("\nRecording...\n")
                 current = time.time()
 
                 if started:
                     for i in range(len(rms)):
                         if self.calibrated[i]:
-                            print("%0.2f dBSPL\t"%(rms[i]+self.correction[i]), end = ' ')
+                            pass
+                            #print("%0.2f dBSPL\t"%(rms[i]+self.correction[i]), end = ' ')
                         else:
-                            print("%0.2f dBFS\t"%(rms[i]), end = ' ')
+                            pass
+                            #print("%0.2f dBFS\t"%(rms[i]), end = ' ')
                     print("\n")
                     frames.append(data)
                 if current >= end:
