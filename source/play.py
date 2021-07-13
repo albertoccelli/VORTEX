@@ -32,7 +32,7 @@ def playWav(filename):
     return
 
 
-def playData(data, fs):
+def playData(data, fs, deviceOutIndex):
     '''
     Plays a data array (in the numpy format).
     '''
@@ -66,6 +66,7 @@ def playData(data, fs):
     stream = p.open(format = dFormat,
                     channels=nChannels,
                     rate=fs,
+                    output_device_index = deviceOutIndex,
                     output=True)
     nData = bytes(nData)
     CHUNK = CHUNK*2
@@ -82,7 +83,7 @@ def playData(data, fs):
 if __name__=="__main__":
 
 
-    audiofile = "test_sounds/pink.wav"
+    audiofile = "filtered_noise.wav"
     #read from wav
     print("Playing audio from wav file")
     playWav(audiofile)
