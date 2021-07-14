@@ -1,16 +1,16 @@
-import pyaudio  # record
-import wave  # write to wav
+import math
 import os
 import struct
-import math
-import time
-import numpy as np
-from scipy.io.wavfile import read, write
 import threading
+import time
+import wave  # write to wav
 from time import sleep
 
+import numpy as np
+import pyaudio  # record
+from scipy.io.wavfile import read, write
+
 if __name__ != "__main__":
-    from .play import playWav, playData
     from .alb_pack.dsp import getRms
 
 
@@ -223,25 +223,179 @@ class Recorder:
         audio_data = audio_data[:, channel]
         self.calibrated[channel] = True  # microphone calibrated
         self.correction[channel] = reference - getRms(audio_data)  # correction factor
-        print("Power = %sdBFS\ndBSPL/dBFS = %0.2f" % (rms_global, self.correction[channel]))
+        print(f"Power = {rms_global}dBFS\ndBSPL/dBFS = {self.correction[channel]:0.2f}")
         return audio_data
 
     def play_and_record(self, filename):
         """
         Record while playing 
         """
+        sem = threading.Semaphore()
+
+        def play_wav_semaphore(file):
+            """
+            Plays a wav file.
+            """
+
+            chunk = 1024
+            wf = wave.open(file, 'rb')
+            # instantiate PyAudio
+            p = pyaudio.PyAudio()
+            # open stream
+            stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                            channels=wf.getnchannels(),
+                            rate=wf.getframerate(),
+                            output=True)
+            # read data
+            data = wf.readframes(chunk)
+            # play stream
+            acquiring = False
+            while len(data) > 0:
+                stream.write(data)
+                if not acquiring:
+                    print("About to acquire")
+                    sem.release()
+                    print("acquired")
+                    acquiring = True
+                data = wf.readframes(chunk)
+            # stop stream
+            stream.stop_stream()
+            stream.close()
+            # close PyAudio
+            p.terminate()
+
+            return
+
+        def record_semaphore(secs, channel=0, threshold=None):
+            print("Record before")
+            sem.acquire()
+            print("Record after")
+            if threshold is None:
+                threshold = self.threshold
+            print("Threshold value: %f" % threshold)
+            # instantiate stream
+            p = pyaudio.PyAudio()  # create an interface to PortAudio API
+            stream = p.open(format=self.sample_format,
+                            channels=self.channels,
+                            rate=self.fs,
+                            frames_per_buffer=self.chunk,
+                            input_device_index=self.deviceIn,
+                            input=True)
+            print("Recording with device %s" % self.deviceIn)
+            frames = []  # initialize array to store frames
+
+            # The actual recording
+            started = False
+            # print("Waiting for speech over the threshold...")
+            current = time.time()
+            timeout = 5
+            end = time.time() + timeout
+            maxtime = time.time() + secs
+
+            while current <= maxtime:
+                try:
+                    audio_data = stream.read(self.chunk)
+                    count = len(audio_data) / 2
+                    data_format = "%dh" % count
+                    shorts = struct.unpack(data_format, audio_data)
+
+                    shorts_array = []
+                    for i in range(self.channels):
+                        shorts_array.append([])
+
+                    # get intensity
+                    for sample in range(len(shorts)):
+                        shorts_array[sample % self.channels].append(shorts[sample])
+
+                    rms = []
+                    for i in range(len(shorts_array)):
+                        sum_squares = 0.0
+                        for sample in shorts_array[i]:
+                            n = sample * self.normalize
+                            sum_squares += n * n
+                        rms.append(
+                            round(
+                                20 * math.log10(math.pow((sum_squares / self.chunk), 0.5)) + 20 * math.log10(2 ** 0.5),
+                                2))
+
+                    # detects sounds over the threshold
+                    if rms[channel] > self.threshold:
+                        end = time.time() + timeout
+                        if not started:
+                            started = True
+                            maxtime = time.time() + secs
+                            print("\nRecording...\n")
+                    current = time.time()
+
+                    if started:
+                        for i in range(len(rms)):
+                            if self.calibrated[i]:
+                                pass
+                                # print("%0.2f dBSPL\t"%(rms[i]+self.correction[i]), end = ' ')
+                            else:
+                                pass
+                                # print("%0.2f dBFS\t"%(rms[i]), end = ' ')
+                        # print("\n")
+                        frames.append(audio_data)
+                    if current >= end:
+                        print("Silence TIMEOUT")
+                        break
+
+                except KeyboardInterrupt:
+                    print("\nRecording stopped")
+                    break
+            # Stop and close the stream
+            stream.stop_stream()
+            stream.close()
+            # Terminate the portaudio interface
+            p.terminate()
+
+            # write recorded data into an array
+            if len(frames) > 0:
+                wf = wave.open("temp.wav", 'wb')
+                wf.setnchannels(self.channels)
+                wf.setsampwidth(p.get_sample_size(self.sample_format))
+                wf.setframerate(self.fs)
+                wf.writeframes(b''.join(frames))
+                wf.close()
+                print('... done!')
+                _, self.data = read("temp.wav")
+                os.remove("temp.wav")
+                # self.data = self.data[:,0]
+                return self.data
+
+            else:
+                print("No audio recorded!")
+                return 0
+
         fs, filedata = read(filename)
-        seconds = len(filedata)/fs
-        play = threading.Thread(target=playWav, args = (filename,))
+        seconds = len(filedata) / fs
+        sem.acquire()
+        play = threading.Thread(target=play_wav_semaphore, args=(filename,))
+        rec = threading.Thread(target=record_semaphore, args=(seconds,))
         play.start()
-        sleep(0.2)
-        self.record(seconds)
+        rec.start()
+        play.join()
+        rec.join()
+        print("End of main")
         return self.data
 
-    def record(self, seconds, channel=0, device_index=None, threshold=None):
+    def save(self, filename="output.wav"):
+        write(filename, self.fs, np.array(self.data))
+        return
+
+    def play(self):
+        """
+        Reproduces the last recorded data.
+        """
+        if len(self.data) > 0:
+            play_data(self.data, self.fs, self.deviceOut)
+        else:
+            print("\nNo data to play! Record something first")
+        return
+
+    def record(self, seconds, channel=0, threshold=None):
         clear_console()
-        if device_index is None:
-            device_index = self.deviceIn
         if threshold is None:
             threshold = self.threshold
         print("Threshold value: %f" % threshold)
@@ -339,20 +493,6 @@ class Recorder:
             print("No audio recorded!")
             return 0
 
-    def save(self, filename="output.wav"):
-        write(filename, self.fs, np.array(self.data))
-        return
-
-    def play(self):
-        """
-        Reproduces the last recorded data.
-        """
-        if len(self.data) > 0:
-            playData(self.data, self.fs, )
-        else:
-            print("\nNo data to play! Record something first")
-        return
-
 
 def get_device_info():
     """
@@ -362,8 +502,6 @@ def get_device_info():
     Example:
     >>> information = get_device_info()
     >>> default_device_index = info.get("default_input").get("index")
-
-
     """
 
     # open the stream
@@ -399,13 +537,14 @@ def get_device_info():
     return audioinfo
 
 
+sleep(0.5)
+
 if __name__ == "__main__":
-    from play import playWav, playData
+    from play import play_data
     from alb_pack.dsp import getRms
 
     r = Recorder()
 
-    r.fs, data = read("test.wav")
-    playData(data, r.fs, 5)
-    # rec = r.playAndRecord(data, r.fs)
-    # d = r.calibrate(1)
+    r.play_and_record("../utilities/calibration/FRF.wav")
+    r.save()
+    input("Done. Press ENTER to exit.")

@@ -8,5 +8,6 @@ pyparsing==2.4.7
 python-can==3.3.4
 python-dateutil==2.8.1
 scipy==1.7.0
+simpy
 six==1.16.0
 transliterate==1.10.2

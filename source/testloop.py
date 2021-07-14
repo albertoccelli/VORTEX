@@ -10,11 +10,11 @@ from tkinter import filedialog
 import numpy as np
 from scipy.io.wavfile import read
 
-from .ABC_weighting import A_weight
+from .ABC_weighting import a_weight
 # custom libraries
 from .alb_pack.dsp import getRms, addGain, SaturationError
-from .configure import loadList
-from .play import playData
+from .configure import load_list
+from .play import play_data
 from .recorder import Recorder
 
 root = tk.Tk()
@@ -137,7 +137,7 @@ class Test:
         self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
         self.results = {}  # A list containing the test results
         self.mCalibrated = False  # Is the mouth calibrated?
-        self.mouthCalibration = 0  # correction parameter binding the rms dBFS intensity of the audio file to the
+        self.mouth_calibration = 0  # correction parameter binding the rms dBFS intensity of the audio file to the
         # dBSPL value
         self.failed = []
         self.noise = 0
@@ -303,7 +303,7 @@ class Test:
                 ecc...
                 }
         """
-        self.database = loadList(self.listfile)  # create the test sequence dictionary from the vrtl file
+        self.database = load_list(self.listfile)  # create the test sequence dictionary from the vrtl file
         self.langs = []  # list of the currently supported languages
         for k in self.database.keys():
             if k != "preconditions" and k != "expected" and k != "AUDIOPATH":
@@ -326,7 +326,7 @@ class Test:
             r.write("@CONFIGURATION\n")
             r.write("LISTFILE=%s\n" % self.listfile)
             r.write("MOUTH_CALIBRATED=%s\n" % self.mCalibrated)
-            r.write("MOUTH_CORRECTION=%s\n" % self.mouthCalibration)
+            r.write("MOUTH_CORRECTION=%s\n" % self.mouth_calibration)
             r.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
             r.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
             r.write("PHRASESPATH=%s\n" % self.phrasesPath)
@@ -401,7 +401,7 @@ class Test:
         fs, data = read(filename)
         if self.mCalibrated:
             while True:
-                command_rms = getRms(data) + self.mouthCalibration  # The estimated dBSPL level of the mouth
+                command_rms = getRms(data) + self.mouth_calibration  # The estimated dBSPL level of the mouth
                 delta = 94 - command_rms + lombard(self.noise)
                 print("Adjusting gain (%0.2fdB)" % delta)
                 print("RMS: %0.2fdBFS\t-->\t%0.2fdBSPL" % (getRms(data), command_rms))
@@ -416,7 +416,7 @@ class Test:
                         self.calibrate_mouth()
                     else:
                         break
-        playData(data, fs, deviceOutIndex=4)
+        play_data(data, fs, device_out_index=4)
         return
 
     def calibrate_mic(self):
@@ -433,16 +433,17 @@ class Test:
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
         return
 
-    def calibrate_mouth(self, reference = 94)
+    def calibrate_mouth(self, reference=94):
         if self.recorder.calibrated:  # microphone has to be calibrated first
-            c_file = self.calibDir+"FRF.wav"
+            input("\nPlace the measurement microphone at the MRP and press ENTER to continue\n-->")
+            c_file = self.calibDir + "FRF.wav"
             _, played = read(c_file)
-            recorded = recorder.play_and_record(c_file)
+            recorded = self.recorder.play_and_record(c_file)
             calib_dbspl = getRms(recorded) + self.recorder.correction[self.micChannel]
-            self.mouthCalibration = 94 - calib_dbspl
-            print("Intensity: %0.2fdBSPL\n --> Increase gain by %0.2fdB" %(calib_dbspl, self.mouth_calibration))
+            self.mouth_calibration = reference - calib_dbspl
+            print("Intensity: %0.2fdBSPL\n --> Increase gain by %0.2fdB" % (calib_dbspl, self.mouth_calibration))
             self.mCalibrated = True
-        return self.mouthCalibration
+        return self.mouth_calibration
 
     def test(self, test, testid, translate=False):
         """
@@ -659,7 +660,7 @@ class Test:
 
     def listen_noise(self, seconds=3):
         noise = self.recorder.record(seconds)[:, 1]
-        noise_w = A_weight(noise, self.recorder.fs).astype(np.int16)
+        noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = getRms(noise_w) + self.recorder.correction[1]
         input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->" % (
             self.noise, lombard(self.noise)))

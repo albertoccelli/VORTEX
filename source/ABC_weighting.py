@@ -23,7 +23,7 @@ import numpy as np
 from numpy import pi, log10
 from scipy.signal import zpk2tf, zpk2sos, freqs, sosfilt
 
-__all__ = ['ABC_weighting', 'A_weighting', 'A_weight']
+__all__ = ['abc_weighting', 'A_weighting', 'a_weight']
 
 
 def _relative_degree(z, p):
@@ -36,7 +36,6 @@ def _relative_degree(z, p):
                          "Must have at least as many poles as zeros.")
     else:
         return degree
-
 
 
 def _zpkbilinear(z, p, k, fs):
@@ -74,7 +73,7 @@ def _zpkbilinear(z, p, k, fs):
 
     degree = _relative_degree(z, p)
 
-    fs2 = 2.0*fs
+    fs2 = 2.0 * fs
 
     # Bilinear transform the poles and zeros
     z_z = (fs2 + z) / (fs2 - z)
@@ -89,7 +88,7 @@ def _zpkbilinear(z, p, k, fs):
     return z_z, p_z, k_z
 
 
-def ABC_weighting(curve='A'):
+def abc_weighting(curve='A'):
     """
     Design of an analog weighting filter with A, B, or C curve.
 
@@ -102,7 +101,7 @@ def ABC_weighting(curve='A'):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> for curve in ['A', 'B', 'C']:
-    ...     z, p, k = ABC_weighting(curve)
+    ...     z, p, k = abc_weighting(curve)
     ...     w = 2*pi*logspace(log10(10), log10(100000), 1000)
     ...     w, h = signal.freqs_zpk(z, p, k, w)
     ...     plt.semilogx(w/(2*pi), 20*np.log10(h), label=curve)
@@ -129,10 +128,10 @@ def ABC_weighting(curve='A'):
     # derivation.  See _derive_coefficients()
 
     z = [0, 0]
-    p = [-2*pi*20.598997057568145,
-         -2*pi*20.598997057568145,
-         -2*pi*12194.21714799801,
-         -2*pi*12194.21714799801]
+    p = [-2 * pi * 20.598997057568145,
+         -2 * pi * 20.598997057568145,
+         -2 * pi * 12194.21714799801,
+         -2 * pi * 12194.21714799801]
     k = 1
 
     if curve == 'A':
@@ -143,8 +142,8 @@ def ABC_weighting(curve='A'):
         # IEC 61672 specifies cutoff of "10^2.45 Hz" and formulas for
         # derivation.  See _derive_coefficients()
 
-        p.append(-2*pi*107.65264864304628)
-        p.append(-2*pi*737.8622307362899)
+        p.append(-2 * pi * 107.65264864304628)
+        p.append(-2 * pi * 737.8622307362899)
         z.append(0)
         z.append(0)
 
@@ -153,13 +152,13 @@ def ABC_weighting(curve='A'):
         #    Same as C weighting +
         #    1 pole on real axis at "10^2.2 (or 158.5) Hz"
 
-        p.append(-2*pi*10**2.2)  # exact
+        p.append(-2 * pi * 10 ** 2.2)  # exact
         z.append(0)
 
     # TODO: Calculate actual constants for this
     # Normalize to 0 dB at 1 kHz for all curves
     b, a = zpk2tf(z, p, k)
-    k /= abs(freqs(b, a, [2*pi*1000])[1][0])
+    k /= abs(freqs(b, a, [2 * pi * 1000])[1][0])
 
     return np.array(z), np.array(p), k
 
@@ -199,7 +198,7 @@ def A_weighting(fs, output='ba'):
     Since this uses the bilinear transform, frequency response around fs/2 will
     be inaccurate at lower sampling rates.
     """
-    z, p, k = ABC_weighting('A')
+    z, p, k = abc_weighting('A')
 
     # Use the bilinear transformation to get the digital filter.
     z_d, p_d, k_d = _zpkbilinear(z, p, k, fs)
@@ -214,7 +213,7 @@ def A_weighting(fs, output='ba'):
         raise ValueError("'%s' is not a valid output form." % output)
 
 
-def A_weight(signal, fs):
+def a_weight(signal, fs):
     """
     Return the given signal after passing through a digital A-weighting filter
 
@@ -237,28 +236,28 @@ def _derive_coefficients():
     Calculate A- and C-weighting coefficients with equations from IEC 61672-1
 
     This is for reference only. The coefficients were generated with this and
-    then placed in ABC_weighting().
+    then placed in abc_weighting().
     """
     import sympy as sp
 
     # Section 5.4.6
     f_r = 1000
-    f_L = sp.Pow(10, sp.Rational('1.5'))  # 10^1.5 Hz
-    f_H = sp.Pow(10, sp.Rational('3.9'))  # 10^3.9 Hz
-    D = sp.sympify('1/sqrt(2)')  # D^2 = 1/2
+    f_l = sp.Pow(10, sp.Rational('1.5'))  # 10^1.5 Hz
+    f_h = sp.Pow(10, sp.Rational('3.9'))  # 10^3.9 Hz
+    d = sp.sympify('1/sqrt(2)')  # d^2 = 1/2
 
     f_A = sp.Pow(10, sp.Rational('2.45'))  # 10^2.45 Hz
 
     # Section 5.4.9
-    c = f_L**2 * f_H**2
-    b = (1/(1-D))*(f_r**2+(f_L**2*f_H**2)/f_r**2-D*(f_L**2+f_H**2))
+    c = f_l ** 2 * f_h ** 2
+    b = (1 / (1 - d)) * (f_r ** 2 + (f_l ** 2 * f_h ** 2) / f_r ** 2 - d * (f_l ** 2 + f_h ** 2))
 
-    f_1 = sp.sqrt((-b - sp.sqrt(b**2 - 4*c))/2)
-    f_4 = sp.sqrt((-b + sp.sqrt(b**2 - 4*c))/2)
+    f_1 = sp.sqrt((-b - sp.sqrt(b ** 2 - 4 * c)) / 2)
+    f_4 = sp.sqrt((-b + sp.sqrt(b ** 2 - 4 * c)) / 2)
 
     # Section 5.4.10
-    f_2 = (3 - sp.sqrt(5))/2 * f_A
-    f_3 = (3 + sp.sqrt(5))/2 * f_A
+    f_2 = (3 - sp.sqrt(5)) / 2 * f_A
+    f_3 = (3 + sp.sqrt(5)) / 2 * f_A
 
     # Section 5.4.11
     assert abs(float(f_1) - 20.60) < 0.005
@@ -271,13 +270,13 @@ def _derive_coefficients():
 
     # Section 5.4.8  Normalizations
     f = 1000
-    C1000 = (f_4**2 * f**2)/((f**2 + f_1**2) * (f**2 + f_4**2))
-    A1000 = (f_4**2 * f**4)/((f**2 + f_1**2) * sp.sqrt(f**2 + f_2**2) *
-                             sp.sqrt(f**2 + f_3**2) * (f**2 + f_4**2))
+    C1000 = (f_4 ** 2 * f ** 2) / ((f ** 2 + f_1 ** 2) * (f ** 2 + f_4 ** 2))
+    A1000 = (f_4 ** 2 * f ** 4) / ((f ** 2 + f_1 ** 2) * sp.sqrt(f ** 2 + f_2 ** 2) *
+                                   sp.sqrt(f ** 2 + f_3 ** 2) * (f ** 2 + f_4 ** 2))
 
     # Section 5.4.11
-    assert abs(20*log10(float(C1000)) + 0.062) < 0.0005
-    assert abs(20*log10(float(A1000)) + 2.000) < 0.0005
+    assert abs(20 * log10(float(C1000)) + 0.062) < 0.0005
+    assert abs(20 * log10(float(A1000)) + 2.000) < 0.0005
 
     for norm in ('C1000', 'A1000'):
         print('{} = {}'.format(norm, float(eval(norm))))
@@ -285,4 +284,5 @@ def _derive_coefficients():
 
 if __name__ == '__main__':
     import pytest
+
     pytest.main(['../tests/test_ABC_weighting.py', "--capture=sys"])

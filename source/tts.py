@@ -43,7 +43,7 @@ import shutil
 from datetime import datetime
 from pydub import AudioSegment
 from tempfile import TemporaryFile
-from . play import playWav, playData
+from . play import play_wav, play_data
 
 
 # conventional language code {CODE: [LANGUAGE, ACCENT]}
@@ -113,7 +113,7 @@ def say(text, language = "it", accent = "it", engine = "google", save = True, fi
         sound =  AudioSegment.from_mp3("temp.mp3")  # convert from mp3 to wav
         sound.export(file, format = "wav")
         if talk:
-            playWav(file)
+            play_wav(file)
         if not save:
             os.remove(file)
         os.remove("temp.mp3")

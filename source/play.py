@@ -1,15 +1,13 @@
-import pyaudio
 import wave
-import sys
-from scipy.io.wavfile import read, write
-from matplotlib import pyplot as plt
+
+import pyaudio
 
 
-def playWav(filename):
-    '''
+def play_wav(filename):
+    """
     Plays a wav file.
-    '''
-    CHUNK = 1024
+    """
+    chunk = 1024
     wf = wave.open(filename, 'rb')
     # instantiate PyAudio
     p = pyaudio.PyAudio()
@@ -19,11 +17,11 @@ def playWav(filename):
                     rate=wf.getframerate(),
                     output=True)
     # read data
-    data = wf.readframes(CHUNK)
+    data = wf.readframes(chunk)
     # play stream
     while len(data) > 0:
         stream.write(data)
-        data = wf.readframes(CHUNK)
+        data = wf.readframes(chunk)
     # stop stream
     stream.stop_stream()
     stream.close()
@@ -32,64 +30,66 @@ def playWav(filename):
     return
 
 
-def playData(data, fs, deviceOutIndex):
-    '''
+def play_data(data, fs, device_out_index):
+    """
     Plays a data array (in the numpy format).
-    '''
-    CHUNK = 1024
+    """
+    chunk = 1024
     # instantiate PyAudio
     p = pyaudio.PyAudio()
     # open stream 
-    nChannels = data.ndim
+    n_channels = data.ndim
     if data.dtype == "int16":
-        dFormat = 8
+        d_format = 8
     elif data.dtype == "int8":
-        dFormat = 16
+        d_format = 16
     elif data.dtype == "int24":
-        dFormat = 4
+        d_format = 4
     elif data.dtype == "int32":
-        dFormat = 2
+        d_format = 2
     elif data.dtype == "float32":
-        dFormat = 1
-    # convert data in a format suitable for pyaudio
-    nData = []
+        d_format = 1
+    else:
+        print("Invatid data type!")
+        return
+    # convert data in a format su-itable for pyaudio
+    n_data = []
     for i in range(len(data)):
-        try: # if data is stereo
-            nData.append((data[i][0])&0xff)
-            nData.append((data[i][0]>>8)&0xff)
-            nData.append((data[i][1])&0xff)
-            nData.append((data[i][1]>>8)&0xff)
+        try:  # if data is stereo
+            n_data.append((data[i][0]) & 0xff)
+            n_data.append((data[i][0] >> 8) & 0xff)
+            n_data.append((data[i][1]) & 0xff)
+            n_data.append((data[i][1] >> 8) & 0xff)
         except IndexError:
-            nData.append((data[i])&0xff)
-            nData.append((data[i]>>8)&0xff)            
-    # open stream    
-    stream = p.open(format = dFormat,
-                    channels=nChannels,
+            n_data.append((data[i]) & 0xff)
+            n_data.append((data[i] >> 8) & 0xff)
+            # open stream
+    stream = p.open(format=d_format,
+                    channels=n_channels,
                     rate=fs,
-                    output_device_index = deviceOutIndex,
+                    output_device_index=device_out_index,
                     output=True)
-    nData = bytes(nData)
-    CHUNK = CHUNK*2
-    nFrames = int(len(nData)/CHUNK)+1
-    for i in range(int(nFrames)):
-        stream.write(nData[i*CHUNK:((i+1)*CHUNK)])
+    n_data = bytes(n_data)
+    chunk = chunk * 2
+    n_frames = int(len(n_data) / chunk) + 1
+    for i in range(int(n_frames)):
+        stream.write(n_data[i * chunk:((i + 1) * chunk)])
     # stop stream
     stream.stop_stream()
     stream.close()
     # close PyAudio
     p.terminate()
-    return 
-
-if __name__=="__main__":
+    return
 
 
+if __name__ == "__main__":
     audiofile = "filtered_noise.wav"
-    #read from wav
+    # read from wav
     print("Playing audio from wav file")
-    playWav(audiofile)
+    play_wav(audiofile)
     '''
     #read from array
     print("Playing audio from data")
     fs, data1 = read(audiofile)
-    playData(data1, fs)
+    play_data(data1, fs)
     '''

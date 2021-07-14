@@ -104,5 +104,5 @@ if __name__=="__main__":
     #read from array
     print("Playing audio from data")
     fs, data1 = read(audiofile)
-    playData(data1, fs)
+    play_data(data1, fs)
     '''
