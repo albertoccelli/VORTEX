@@ -542,12 +542,13 @@ class Test():
                 expected = self.database["expected"]                                        # and for the expected behaviour of the radio
             except: pass
             log("SELECTED LANGUAGE: %s - %s"%(self.lang, langDict[self.lang]), self.logname)
+            if self.recorder.calibrated[self.earChannel]:
+                print("Listening to ambiance noise...\n")
+                self.listenNoise()
+                input("Press ENTER to continue\n-->")
             try:
                 for i in range(self.status, len(test)):
                     clearConsole()
-                    if self.recorder.calibrated[self.earChannel]:
-                        print("Listening to ambiance noise...\n")
-                        self.listenNoise()
                     print("------------------------------------------------------------------")
                     print("%s: TEST %d OUT OF %d\n"%(langDict[self.lang], i+1, len(test)))  # test number counter
                     print("------------------------------------------------------------------\n")
