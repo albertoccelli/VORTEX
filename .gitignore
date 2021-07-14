@@ -16,3 +16,6 @@ vr_tests/.*
 vr_tests/test*
 !vr_tests/.gitkeep
 *.pk
+
+# PyCharm utilities
+.idea/
