@@ -59,7 +59,7 @@ def splash():
     _show_image("./utilities/logo.txt")
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     print("+                                                                        +")
-    print("+           VoRTEx v0.2.2a - Voice Recognition Test Execution            +")
+    print("+           VoRTEx v0.2.3a - Voice Recognition Test Execution            +")
     print("+                                                                        +")
     print("+                       albertoccelli@gmail.com                          +")
     print("+               https://github.com/albertoccelli/VoRTEx                  +")
@@ -448,12 +448,12 @@ class Test:
                 rms_dbfs, rms_dbspl, self.mouthCalibration))
         return self.mouthCalibration
 
-    def test(self, testid, translate=False):
+    def test(self, test, testid, translate=False):
         """
         Run a single test.
         """
         expected = []
-        test = self.database[self.lang]
+        # test = self.database[self.lang]
         try:
             precs = self.database["preconditions"]  # if available, imports the array for the preconditions
             expected = self.database["expected"]  # and for the expected behaviour of the radio
@@ -505,7 +505,12 @@ class Test:
                 break
             else:  # repeats test
                 _log("REPEATING", self.logname)
-        self.results[testid].append(result)  # at the end of the selected test, writes the results into a array
+        try:
+            # at the end of the selected test, writes the results into a array
+            self.results[str(testid)].append(result)
+        except KeyError:
+            self.results[str(testid)] = []
+            self.results[str(testid)].append(result)
 
         return result
 
@@ -529,131 +534,132 @@ class Test:
             self.results = {}
             self.begun = True
         else:
-            # resumes the test
+            # resume the test
             print("==================================================================")
             print("Resuming test from %d... Press ENTER when you are ready" % (self.status + 1))
             print("------------------------------------------------------------------")
             input("-->")
             _log("WELCOME BACK", self.logname)
-        if True:
-            test = self.database[self.lang]  # takes just the commands for the chosen language
-            try:
-                preconditions = self.database["preconditions"]  # if available, imports the array for the preconditions
-                expected = self.database["expected"]  # and for the expected behaviour of the radio
-            except KeyError:
-                pass
-            _log("SELECTED LANGUAGE: %s - %s" % (self.lang, _langDict[self.lang]), self.logname)
-            if self.recorder.calibrated[self.earChannel]:
-                print("Listening to ambiance noise...\n")
-                self.listen_noise()
-                input("Press ENTER to continue\n-->")
-            i = 0
-            try:
-                for i in range(self.status, len(test)):
-                    clear_console()
-                    print("------------------------------------------------------------------")
-                    print("%s: TEST %d OUT OF %d\n" % (_langDict[self.lang], i + 1, len(test)))  # test number counter
-                    print("------------------------------------------------------------------\n")
-                    try:
-                        print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))
-                    except NameError:
-                        pass
-                    _log("=========================== TEST #%03d ===========================" % (i + 1), self.logname)
-                    while True:
-                        for test_index in range(len(test[i])):
-                            cid = test[i][test_index].split("\t")[
-                                0]  # reading database, splits commands into command id and phrase
-                            command = test[i][test_index].split("\t")[1].replace("\n", "")
-                            exp = expected[i][test_index].replace("\n", "")
-                            if cid == "000":
-                                self.activate_mic(1)  # activate the infotainment microphone for the voice recognition
-                                # (1: manual, 2: wake word, 3: automatic)
-                                _log("MIC_ACTIVATED", self.logname)
+
+        # takes just the commands for the chosen language
+        test = self.database[self.lang]
+        try:  # if available, imports the array for the preconditions and expected behaviour
+            preconditions = self.database["preconditions"]
+            expected = self.database["expected"]
+        except KeyError:
+            pass
+        _log("SELECTED LANGUAGE: %s - %s" % (self.lang, _langDict[self.lang]), self.logname)
+        if self.recorder.calibrated[self.earChannel]:
+            print("Listening to ambiance noise...\n")
+            self.listen_noise()
+            input("Press ENTER to continue\n-->")
+        i = 0
+        try:
+            for i in range(self.status, len(test)):
+                clear_console()
+                print("------------------------------------------------------------------")
+                print("%s: TEST %d OUT OF %d\n" % (_langDict[self.lang], i + 1, len(test)))  # test number counter
+                print("------------------------------------------------------------------\n")
+                try:
+                    print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))
+                except NameError:
+                    pass
+                _log("=========================== TEST #%03d ===========================" % (i + 1), self.logname)
+                while True:
+                    for test_index in range(len(test[i])):
+                        cid = test[i][test_index].split("\t")[
+                            0]  # reading database, splits commands into command id and phrase
+                        command = test[i][test_index].split("\t")[1].replace("\n", "")
+                        exp = expected[i][test_index].replace("\n", "")
+                        if cid == "000":
+                            self.activate_mic(1)  # activate the infotainment microphone for the voice recognition
+                            # (1: manual, 2: wake word, 3: automatic)
+                            _log("MIC_ACTIVATED", self.logname)
+                        else:
+                            print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
+                            try:
+                                self.play_command(
+                                    cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
+                            except Exception as e:
+                                print("ERROR: %s" % e)
+                            _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
+                            try:
+                                print("\nExpected behaviour --> %s\n" % exp)
+                            except NameError:
+                                pass
+                            # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
+                            response = "[Answer]"
+                            if translate:
+                                translation = "Translation"
+                                _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
                             else:
-                                print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
-                                try:
-                                    self.play_command(
-                                        cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
-                                except Exception as e:
-                                    print("ERROR: %s" % e)
-                                _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
-                                try:
-                                    print("\nExpected behaviour --> %s\n" % exp)
-                                except NameError:
-                                    pass
-                                # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
-                                response = "[Answer]"
-                                if translate:
-                                    translation = "Translation"
-                                    _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
-                                else:
-                                    _log("RADIO: <<%s>>" % response, self.logname)
-                                if test_index + 1 < len(test[i]):
-                                    pass
-                                    input("==> Press ENTER to proceed with next step\n")
-                        result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
-                        print(result)
-                        self.status += 1  # status updated
-                        if result != "r":
-                            if result == "0":
-                                _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
-                                self.failed.append(i + 1)
-                            elif result == "1":
-                                _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
-                            else:
-                                result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))
-                            break
-                        else:  # repeats test
-                            _log("REPEATING", self.logname)
-                    try:
-                        # at the end of the selected test, writes the results into a array
-                        self.results[str(i + 1)].append(result)
-                    except KeyError:
-                        self.results[str(i + 1)] = []
-                        self.results[str(i + 1)].append(result)
-                    print("DONE")
-                print("------------------------------------------------------------------")
-                print("TEST COMPLETED")
-                _log("TEST_STATUS: COMPLETED", self.logname)
-                self.completed = True
-                self.status = 0
-                self.save_conf()  # save current progress of the test
+                                _log("RADIO: <<%s>>" % response, self.logname)
+                            if test_index + 1 < len(test[i]):
+                                pass
+                                input("==> Press ENTER to proceed with next step\n")
+                    result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+                    print(result)
+                    self.status += 1  # status updated
+                    if result != "r":
+                        if result == "0":
+                            _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
+                            self.failed.append(i + 1)
+                        elif result == "1":
+                            _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
+                        else:
+                            result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))
+                        break
+                    else:  # repeats test
+                        _log("REPEATING", self.logname)
+                try:
+                    # at the end of the selected test, writes the results into a array
+                    self.results[str(i + 1)].append(result)
+                except KeyError:
+                    self.results[str(i + 1)] = []
+                    self.results[str(i + 1)].append(result)
+                print("DONE")
+            print("------------------------------------------------------------------")
+            print("TEST COMPLETED")
+            _log("TEST_STATUS: COMPLETED", self.logname)
+            self.completed = True
+            self.status = 0
+            self.save_conf()  # save current progress of the test
 
-            except KeyboardInterrupt:
-                print("------------------------------------------------------------------")
-                print("Test aborted! Saving...")
-                self.completed = False
-                _log("TEST_INTERRUPTED", self.logname)
-                self.status = i
-                _log("TEST_STATUS: %03d" % self.status, self.logname)
-                self.save_conf()  # save current progress of the test
+        except KeyboardInterrupt:
+            print("------------------------------------------------------------------")
+            print("Test aborted! Saving...")
+            self.completed = False
+            _log("TEST_INTERRUPTED", self.logname)
+            self.status = i
+            _log("TEST_STATUS: %03d" % self.status, self.logname)
+            self.save_conf()  # save current progress of the test
 
-            except Exception as e:
-                print("------------------------------------------------------------------")
-                print("Test aborted due to a error (%s)! Saving..." % e)
-                self.completed = False
-                _log("ERROR %s" % e, self.logname)
-                self.status = i
-                _log("TEST_STATUS: %03d" % self.status, self.logname)
-                self.save_conf()  # save current progress of the test
+        except Exception as e:
+            print("------------------------------------------------------------------")
+            print("Test aborted due to a error (%s)! Saving..." % e)
+            self.completed = False
+            _log("ERROR %s" % e, self.logname)
+            self.status = i
+            _log("TEST_STATUS: %03d" % self.status, self.logname)
+            self.save_conf()  # save current progress of the test
 
-            # calculate the score and display it
+        # calculate the score and display it
+        score = 0
+        scores = []
+        for i in range(len(self.results)):
+            scores.append(max(self.results[str(i + 1)]))
+        for i in scores:
+            score += int(i)
+        try:
+            score = 100 * score / len(scores)
+        except ZeroDivisionError:
             score = 0
-            scores = []
-            for i in range(len(self.results)):
-                scores.append(max(self.results[str(i + 1)]))
-            for i in scores:
-                score += int(i)
-            try:
-                score = 100 * score / len(scores)
-            except ZeroDivisionError:
-                score = 0
-            _log("TEST_RESULT: %d%%" % score, self.logname)
-            print("------------------------------------------------------------------")
-            print("Results: %d%%" % score)
-            print("------------------------------------------------------------------")
-            self.save_conf()
-            return self.status
+        _log("TEST_RESULT: %d%%" % score, self.logname)
+        print("------------------------------------------------------------------")
+        print("Results: %d%%" % score)
+        print("------------------------------------------------------------------")
+        self.save_conf()
+        return self.status
 
     def listen_noise(self, seconds=3):
         noise = self.recorder.record(seconds)[:, 1]
