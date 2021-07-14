@@ -62,7 +62,7 @@ class Recorder():
         available devices currently connected.
 
         Example:
-        >>> info = getDeviceInfo()
+        >>> info = get_device_info()
         >>> default_device_index = info.get("default_input").get("index")
         
 
@@ -383,7 +383,7 @@ def getDeviceInfo():
     available devices currently connected.
 
     Example:
-    >>> info = getDeviceInfo()
+    >>> info = get_device_info()
     >>> default_device_index = info.get("default_input").get("index")
     
 
