@@ -124,6 +124,7 @@ class Test:
         self.wPath = "."  # The current working path of the selected test
         self.testName = ""
         # default paths
+        self.calibDir = "utilities/calibration/"
         self.databaseDir = "database/"
         self.testDir = "vr_tests/"
         self.phrasesPath = "phrases/"  # The path of the audio files
@@ -432,20 +433,15 @@ class Test:
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
         return
 
-    def calibrate_mouth(self):
+    def calibrate_mouth(self, reference = 94)
         if self.recorder.calibrated:  # microphone has to be calibrated first
-            c_file = "utilities/calibration.wav"
-            fs, played = read(c_file)
-            rms_dbfs = getRms(played)
-            # recorded = self.recorder.playAndRecord(played, fs)
-            recorded_rms = float(input(
-                "Open the session file 'calibration.ses' with Audition. Record the mouth output and measure the "
-                "average RMS power.\nInsert here the dBFS value and press ENTER\n-->"))
-            rms_dbspl = recorded_rms + self.recorder.correction[self.micChannel]
-            self.mouthCalibration = rms_dbspl - rms_dbfs
+            c_file = self.calibDir+"FRF.wav"
+            _, played = read(c_file)
+            recorded = recorder.play_and_record(c_file)
+            calib_dbspl = getRms(recorded) + self.recorder.correction[self.micChannel]
+            self.mouthCalibration = 94 - calib_dbspl
+            print("Intensity: %0.2fdBSPL\n --> Increase gain by %0.2fdB" %(calib_dbspl, self.mouth_calibration))
             self.mCalibrated = True
-            print("File audio RMS: %0.2fdBFS\t-->\t%0.2fdBSPL\nMouth dSPL/dBFS: %0.2f\n" % (
-                rms_dbfs, rms_dbspl, self.mouthCalibration))
         return self.mouthCalibration
 
     def test(self, test, testid, translate=False):
