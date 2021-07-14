@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.3-alpha] - 2021-07-14
+### Added
+- Automatic ambient noise measurement for Lombard effect
+
 ## [0.2.2-alpha] - 2021-07-07
 ### Added
 - Italian wavefiles for Harman commands database (both male and female voice).
@@ -12,7 +16,7 @@ All notable changes to this project will be documented in this file.
 ## [0.2.0-alpha] - 2021-07-06
 ### Added
 - Calibration of the measurement microphone
-- Automatic gain adjustment for the mouth level
+- Manual gain adjustment for the mouth level
 
 ## [0.1.2-alpha] - 2021-07-05
 ### Added
