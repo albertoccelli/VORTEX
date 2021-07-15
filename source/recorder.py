@@ -50,7 +50,9 @@ class Recorder:
         p = pyaudio.PyAudio()
         self.deviceIn = p.get_default_input_device_info().get("index")
         self.deviceOut = p.get_default_output_device_info().get("index")
-        self.channels = p.get_device_info_by_index(self.deviceIn)["maxInputChannels"]
+        self.channelsIn = p.get_device_info_by_index(self.deviceIn)["maxInputChannels"]
+        self.channelsOut = p.get_device_info_by_index(self.deviceIn)["maxInputChannels"]
+        self.channels = min(self.channelsOut, self.channelsIn)
         p.terminate()
         # not calibrated by default 
         self.calibrated = []
@@ -96,11 +98,17 @@ class Recorder:
         # determine if each device is a input or output
         for i in range(0, numdevices):
             if p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels') > 0:
-                print("INPUT: %d - %s" % (i, p.get_device_info_by_host_api_device_index(0, i).get('name')))
+                print("INPUT: %d - %s - %d "
+                      "channel(s)" % (i,
+                                      p.get_device_info_by_host_api_device_index(0, i).get('name'),
+                                      p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')))
                 devicesin.append(p.get_device_info_by_host_api_device_index(0, i))
 
             if p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels') > 0:
-                print("OUTPUT: %d - %s" % (i, p.get_device_info_by_host_api_device_index(0, i).get('name')))
+                print("OUTPUT: %d - %s - %d "
+                      "channel(s)" % (i,
+                                      p.get_device_info_by_host_api_device_index(0, i).get('name'),
+                                      p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels')))
                 devicesout.append(p.get_device_info_by_host_api_device_index(0, i))
 
         print("\n--> Selected INPUT device: %d - %s" % (self.deviceIn, devicesin[self.deviceIn].get("name")))

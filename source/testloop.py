@@ -147,6 +147,7 @@ class Test:
         print("------------------------------------------------------------------")
         print("Opening sound recorder\n")
         self.recorder = Recorder()
+        print("\nChannels: %d" % self.recorder.channels)
         # set 2 channels 
         self.recorder.channels = 2
         # channel assignment
@@ -157,7 +158,7 @@ class Test:
         self.micChannel = 0
         self.earChannel = 1
         # choose whether to create a new test or open a existing one
-        option = int(input("\n\nDo you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
+        option = int(input("\nDo you want to: \n1)start a new test\n2) open an existing one\n-->"))
         if option == 1:
             self.new()
         elif option == 2:
@@ -413,7 +414,7 @@ class Test:
                         self.calibrate_mouth()
                     else:
                         break
-        play_data(data, fs, self.recorder.deviceOut)
+        play_data(data, fs)
         return
 
     def calibrate_mic(self):
