@@ -12,7 +12,7 @@ from scipy.io.wavfile import read
 
 from .ABC_weighting import a_weight
 # custom libraries
-from .alb_pack.dsp import getRms, addGain, SaturationError
+from .alb_pack.dsp import get_rms, add_gain, SaturationError
 from .configure import load_list
 from .play import play_data
 from .recorder import Recorder
@@ -137,12 +137,11 @@ class Test:
         self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
         self.results = {}  # A list containing the test results
         self.mCalibrated = False  # Is the mouth calibrated?
-        self.mouth_calibration = 0  # correction parameter binding the rms dBFS intensity of the audio file to the
-        # dBSPL value
-        self.failed = []
-        self.noise = 0
-
-        # open the sound recorder for the radio feedback translation
+        self.mouth_calibration = 0  # The gain value for the mouth to reach 94dBSPL
+        self.gain = 0  # The gain value for the mouth to reach 94dBSPL
+        self.failed = []  # List of failed tests
+        self.noise = 0  # RMS value of the background noise
+        # open the sound recorder for calibration and translation
         print("------------------------------------------------------------------")
         print("Opening sound recorder\n")
         self.recorder = Recorder()
@@ -155,7 +154,6 @@ class Test:
         # input
         self.micChannel = 0
         self.earChannel = 1
-
         # choose whether to create a new test or open a existing one
         option = int(input("\n\nDo you want: \nto start a new test (1) \nor open an existing one? (2)\n-->"))
         if option == 1:
@@ -208,10 +206,11 @@ class Test:
             else:
                 print("\nWhich test do you want to resume? \n")
                 for i in range(len(tests)):
-                    print("\t%02d) %s ----> created: %s" % (i + 1, tests[i], time.strftime('%Y/%m/%d at %H:%M:%S',
-                                                                                           time.gmtime(os.path.getmtime(
-                                                                                               self.testDir + tests[
-                                                                                                   i])))))
+                    print("\t%02d) %s ----> created: %s" % (i + 1,
+                                                            tests[i],
+                                                            time.strftime('%Y/%m/%d at %H:%M:%S',
+                                                                          time.gmtime(os.path.getmtime(
+                                                                              self.testDir + tests[i])))))
                 print("\n\t%02d) browse..." % (len(tests) + 1))
                 choice = int(input("-->"))
                 if choice == len(tests) + 1:
@@ -296,7 +295,7 @@ class Test:
 
     def _configure_list(self):
         """
-        1. Opens the database file and converts it into a dictionary form suitable for the test.
+        Opens the database file and converts it into a dictionary form suitable for the test.
 
         test = {"LANG1" = [[], [], [], []],
                 "LANG2" = [[], [], [], []],
@@ -379,11 +378,9 @@ class Test:
     def activate_mic(mode=1):
         """
         Function to activate the vehicle's microphone for the voice recognition.
-
         Modes:
-
         1 - Manual
-        2 - Reproduce wakeword (to be chosen among the audio files)
+        2 - Reproduce wake word (to be chosen among the audio files)
         3 - Send PTT can message
         """
         if mode == 1:
@@ -401,12 +398,10 @@ class Test:
         fs, data = read(filename)
         if self.mCalibrated:
             while True:
-                command_rms = getRms(data) + self.mouth_calibration  # The estimated dBSPL level of the mouth
-                delta = 94 - command_rms + lombard(self.noise)
-                print("Adjusting gain (%0.2fdB)" % delta)
-                print("RMS: %0.2fdBFS\t-->\t%0.2fdBSPL" % (getRms(data), command_rms))
+                total_gain = lombard(self.noise) + self.gain
+                print("Adjusting gain (%0.2fdB)" % total_gain)
                 try:
-                    data = addGain(data, delta)
+                    data = add_gain(data, total_gain)
                     break
                 except SaturationError:
                     a = input(
@@ -416,7 +411,7 @@ class Test:
                         self.calibrate_mouth()
                     else:
                         break
-        play_data(data, fs, device_out_index=4)
+        play_data(data, fs, self.recorder.deviceOut)
         return
 
     def calibrate_mic(self):
@@ -434,16 +429,35 @@ class Test:
         return
 
     def calibrate_mouth(self, reference=94):
+        max_attempts = 5
         if self.recorder.calibrated:  # microphone has to be calibrated first
-            input("\nPlace the measurement microphone at the MRP and press ENTER to continue\n-->")
+            # measure the RMS value of the calibration file
             c_file = self.calibDir + "FRF.wav"
-            _, played = read(c_file)
-            recorded = self.recorder.play_and_record(c_file)
-            calib_dbspl = getRms(recorded) + self.recorder.correction[self.micChannel]
-            self.mouth_calibration = reference - calib_dbspl
-            print("Intensity: %0.2fdBSPL\n --> Increase gain by %0.2fdB" % (calib_dbspl, self.mouth_calibration))
+            c_fs, c_data = read(c_file)
+            c_data_gain = add_gain(c_data, self.gain)
+            recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
+            recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
+            print("Mouth RMS: %0.1fdBSPL\tdelta = %0.2f" % (recorded_dbspl, (reference - recorded_dbspl)))
+            attempt = 0
+            while abs(reference - recorded_dbspl) > 0.5:
+                attempt += 1
+                # add gain and record again until the intensity is close to 94dBSPL
+                self.gain = reference - recorded_dbspl
+                try:
+                    c_data_gain = add_gain(c_data, self.gain)
+                    print("Gain: %0.1fdB" % self.gain)
+                    recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
+                    recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
+                except SaturationError:
+                    input("Cannot automatically increase the volume. Please manually increase the volume from "
+                          "the amplifier knob and press ENTER to continue\n-->")
+                    self.calibrate_mouth()
+                    break
+                if attempt == max_attempts:
+                    break
+            print("Calibration completed: %0.1fdB added" % self.gain)
             self.mCalibrated = True
-        return self.mouth_calibration
+        return self.gain
 
     def test(self, test, testid, translate=False):
         """
@@ -661,7 +675,7 @@ class Test:
     def listen_noise(self, seconds=3):
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
-        self.noise = getRms(noise_w) + self.recorder.correction[1]
+        self.noise = get_rms(noise_w) + self.recorder.correction[1]
         input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->" % (
             self.noise, lombard(self.noise)))
         return self.noise

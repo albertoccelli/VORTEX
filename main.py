@@ -18,12 +18,15 @@ clear_console()
 try:
     t = Test()
     if not t.mCalibrated:
-        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphone and the mouth?',
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and the mouth?',
                                         icon='question')
         print(MsgBox)
         if MsgBox:
-            t.calibrate_mic()  # calibration of the measurement microphone
-            t.calibrate_ear()  # calibration of Oscar's ear
+            if not t.recorder.calibrated[t.micChannel]:
+                t.calibrate_mic()  # calibration of the measurement microphone
+            if not t.recorder.calibrated[t.earChannel]:
+                t.calibrate_ear()  # calibration of Oscar's ear
+            input("\nPlace the measurement microphone at the MRP and press ENTER to continue\n-->")
             t.calibrate_mouth()  # calibration of the mouth
     t.execution()  # execute test
     if t.completed:

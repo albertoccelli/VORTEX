@@ -8,6 +8,9 @@ pyparsing==2.4.7
 python-can==3.3.4
 python-dateutil==2.8.1
 scipy==1.7.0
-simpy
 six==1.16.0
+sympy==1.8
 transliterate==1.10.2
+gTTS==2.2.3
+PyAudio==0.2.11
+requests==2.25.1

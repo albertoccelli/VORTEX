@@ -23,7 +23,7 @@ import numpy as np
 from numpy import pi, log10
 from scipy.signal import zpk2tf, zpk2sos, freqs, sosfilt
 
-__all__ = ['abc_weighting', 'A_weighting', 'a_weight']
+__all__ = ['abc_weighting', 'a_weighting', 'a_weight']
 
 
 def _relative_degree(z, p):
@@ -99,12 +99,13 @@ def abc_weighting(curve='A'):
     Plot all 3 curves:
 
     >>> from scipy import signal
+    >>> from numpy import logspace
     >>> import matplotlib.pyplot as plt
-    >>> for curve in ['A', 'B', 'C']:
-    ...     z, p, k = abc_weighting(curve)
+    >>> for w_curve in ['A', 'B', 'C']:
+    ...     z, p, k = abc_weighting(w_curve)
     ...     w = 2*pi*logspace(log10(10), log10(100000), 1000)
     ...     w, h = signal.freqs_zpk(z, p, k, w)
-    ...     plt.semilogx(w/(2*pi), 20*np.log10(h), label=curve)
+    ...     plt.semilogx(w/(2*pi), 20*np.log10(h), label=w_curve)
     >>> plt.title('Frequency response')
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Amplitude [dB]')
@@ -163,7 +164,7 @@ def abc_weighting(curve='A'):
     return np.array(z), np.array(p), k
 
 
-def A_weighting(fs, output='ba'):
+def a_weighting(fs, output='ba'):
     """
     Design of a digital A-weighting filter.
 
@@ -187,7 +188,7 @@ def A_weighting(fs, output='ba'):
     >>> from scipy.signal import freqz
     >>> import matplotlib.pyplot as plt
     >>> fs = 200000
-    >>> b, a = A_weighting(fs)
+    >>> b, a = a_weighting(fs)
     >>> f = np.logspace(np.log10(10), np.log10(fs/2), 1000)
     >>> w = 2*pi * f / fs
     >>> w, h = freqz(b, a, w)
@@ -227,7 +228,7 @@ def a_weight(signal, fs):
     # rates. So upsample 48 kHz by 6 times to get an accurate measurement?
     # TODO: Also this could just be a measurement function that doesn't
     # save the whole filtered waveform.
-    sos = A_weighting(fs, output='sos')
+    sos = a_weighting(fs, output='sos')
     return sosfilt(sos, signal)
 
 
@@ -246,7 +247,7 @@ def _derive_coefficients():
     f_h = sp.Pow(10, sp.Rational('3.9'))  # 10^3.9 Hz
     d = sp.sympify('1/sqrt(2)')  # d^2 = 1/2
 
-    f_A = sp.Pow(10, sp.Rational('2.45'))  # 10^2.45 Hz
+    f_a = sp.Pow(10, sp.Rational('2.45'))  # 10^2.45 Hz
 
     # Section 5.4.9
     c = f_l ** 2 * f_h ** 2
@@ -256,8 +257,8 @@ def _derive_coefficients():
     f_4 = sp.sqrt((-b + sp.sqrt(b ** 2 - 4 * c)) / 2)
 
     # Section 5.4.10
-    f_2 = (3 - sp.sqrt(5)) / 2 * f_A
-    f_3 = (3 + sp.sqrt(5)) / 2 * f_A
+    f_2 = (3 - sp.sqrt(5)) / 2 * f_a
+    f_3 = (3 + sp.sqrt(5)) / 2 * f_a
 
     # Section 5.4.11
     assert abs(float(f_1) - 20.60) < 0.005
@@ -270,19 +271,17 @@ def _derive_coefficients():
 
     # Section 5.4.8  Normalizations
     f = 1000
-    C1000 = (f_4 ** 2 * f ** 2) / ((f ** 2 + f_1 ** 2) * (f ** 2 + f_4 ** 2))
-    A1000 = (f_4 ** 2 * f ** 4) / ((f ** 2 + f_1 ** 2) * sp.sqrt(f ** 2 + f_2 ** 2) *
+    c1000 = (f_4 ** 2 * f ** 2) / ((f ** 2 + f_1 ** 2) * (f ** 2 + f_4 ** 2))
+    a1000 = (f_4 ** 2 * f ** 4) / ((f ** 2 + f_1 ** 2) * sp.sqrt(f ** 2 + f_2 ** 2) *
                                    sp.sqrt(f ** 2 + f_3 ** 2) * (f ** 2 + f_4 ** 2))
 
     # Section 5.4.11
-    assert abs(20 * log10(float(C1000)) + 0.062) < 0.0005
-    assert abs(20 * log10(float(A1000)) + 2.000) < 0.0005
+    assert abs(20 * log10(float(c1000)) + 0.062) < 0.0005
+    assert abs(20 * log10(float(a1000)) + 2.000) < 0.0005
 
     for norm in ('C1000', 'A1000'):
         print('{} = {}'.format(norm, float(eval(norm))))
 
 
 if __name__ == '__main__':
-    import pytest
-
-    pytest.main(['../tests/test_ABC_weighting.py', "--capture=sys"])
+    pass

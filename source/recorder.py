@@ -11,7 +11,7 @@ import pyaudio  # record
 from scipy.io.wavfile import read, write
 
 if __name__ != "__main__":
-    from .alb_pack.dsp import getRms
+    from .alb_pack.dsp import get_rms
 
 
 def clear_console():
@@ -137,7 +137,7 @@ class Recorder:
 
         # dialog
         clear_console()
-        print("Calibrating (94dBSPL):")
+        print("Calibrating (%0.1fdBSPL):" % reference)
         print("")
         print("-------------------------------------------------------------------")
         print("-------------------------------------------------------------------")
@@ -222,17 +222,17 @@ class Recorder:
         os.remove("temp.wav")
         audio_data = audio_data[:, channel]
         self.calibrated[channel] = True  # microphone calibrated
-        self.correction[channel] = reference - getRms(audio_data)  # correction factor
+        self.correction[channel] = reference - get_rms(audio_data)  # correction factor
         print(f"Power = {rms_global}dBFS\ndBSPL/dBFS = {self.correction[channel]:0.2f}")
         return audio_data
 
-    def play_and_record(self, filename):
+    def play_and_record(self, audio_data, audio_fs):
         """
         Record while playing 
         """
         sem = threading.Semaphore()
 
-        def play_wav_semaphore(file):
+        def _play_wav_semaphore(file):
             """
             Plays a wav file.
             """
@@ -247,17 +247,17 @@ class Recorder:
                             rate=wf.getframerate(),
                             output=True)
             # read data
-            data = wf.readframes(chunk)
+            file_data = wf.readframes(chunk)
             # play stream
             acquiring = False
-            while len(data) > 0:
-                stream.write(data)
+            while len(file_data) > 0:
+                stream.write(file_data)
                 if not acquiring:
-                    print("About to acquire")
+                    # print("About to acquire")
                     sem.release()
-                    print("acquired")
+                    # print("acquired")
                     acquiring = True
-                data = wf.readframes(chunk)
+                file_data = wf.readframes(chunk)
             # stop stream
             stream.stop_stream()
             stream.close()
@@ -266,13 +266,10 @@ class Recorder:
 
             return
 
-        def record_semaphore(secs, channel=0, threshold=None):
-            print("Record before")
+        def _record_semaphore(secs, channel=0):
+            # print("Record before")
             sem.acquire()
-            print("Record after")
-            if threshold is None:
-                threshold = self.threshold
-            print("Threshold value: %f" % threshold)
+            # print("Record after")
             # instantiate stream
             p = pyaudio.PyAudio()  # create an interface to PortAudio API
             stream = p.open(format=self.sample_format,
@@ -294,10 +291,10 @@ class Recorder:
 
             while current <= maxtime:
                 try:
-                    audio_data = stream.read(self.chunk)
-                    count = len(audio_data) / 2
+                    rec_data = stream.read(self.chunk)
+                    count = len(rec_data) / 2
                     data_format = "%dh" % count
-                    shorts = struct.unpack(data_format, audio_data)
+                    shorts = struct.unpack(data_format, rec_data)
 
                     shorts_array = []
                     for i in range(self.channels):
@@ -336,7 +333,7 @@ class Recorder:
                                 pass
                                 # print("%0.2f dBFS\t"%(rms[i]), end = ' ')
                         # print("\n")
-                        frames.append(audio_data)
+                        frames.append(rec_data)
                     if current >= end:
                         print("Silence TIMEOUT")
                         break
@@ -352,15 +349,15 @@ class Recorder:
 
             # write recorded data into an array
             if len(frames) > 0:
-                wf = wave.open("temp.wav", 'wb')
+                wf = wave.open(".temp_out.wav", 'wb')
                 wf.setnchannels(self.channels)
                 wf.setsampwidth(p.get_sample_size(self.sample_format))
                 wf.setframerate(self.fs)
                 wf.writeframes(b''.join(frames))
                 wf.close()
                 print('... done!')
-                _, self.data = read("temp.wav")
-                os.remove("temp.wav")
+                _, self.data = read(".temp_out.wav")
+                os.remove(".temp_out.wav")
                 # self.data = self.data[:,0]
                 return self.data
 
@@ -368,15 +365,16 @@ class Recorder:
                 print("No audio recorded!")
                 return 0
 
-        fs, filedata = read(filename)
-        seconds = len(filedata) / fs
+        write(".temp.wav", audio_fs, audio_data)
+        seconds = len(audio_data) / audio_fs
         sem.acquire()
-        play = threading.Thread(target=play_wav_semaphore, args=(filename,))
-        rec = threading.Thread(target=record_semaphore, args=(seconds,))
+        play = threading.Thread(target=_play_wav_semaphore, args=(".temp.wav",))
+        rec = threading.Thread(target=_record_semaphore, args=(seconds,))
         play.start()
         rec.start()
         play.join()
         rec.join()
+        os.remove(".temp.wav")
         print("End of main")
         return self.data
 
@@ -389,7 +387,7 @@ class Recorder:
         Reproduces the last recorded data.
         """
         if len(self.data) > 0:
-            play_data(self.data, self.fs, self.deviceOut)
+            play_data(self.data, self.fs)
         else:
             print("\nNo data to play! Record something first")
         return
@@ -477,15 +475,15 @@ class Recorder:
 
         # write recorded data into an array
         if len(frames) > 0:
-            wf = wave.open("temp.wav", 'wb')
+            wf = wave.open(".temp.wav", 'wb')
             wf.setnchannels(self.channels)
             wf.setsampwidth(p.get_sample_size(self.sample_format))
             wf.setframerate(self.fs)
             wf.writeframes(b''.join(frames))
             wf.close()
             print('... done!')
-            _, self.data = read("temp.wav")
-            os.remove("temp.wav")
+            _, self.data = read(".temp.wav")
+            os.remove(".temp.wav")
             # self.data = self.data[:,0]
             return self.data
 
@@ -541,10 +539,10 @@ sleep(0.5)
 
 if __name__ == "__main__":
     from play import play_data
-    from alb_pack.dsp import getRms
+    from alb_pack.dsp import get_rms
 
     r = Recorder()
-
-    r.play_and_record("../utilities/calibration/FRF.wav")
+    fs, data = read("../utilities/calibration/FRF.wav")
+    r.play_and_record(data, fs)
     r.save()
     input("Done. Press ENTER to exit.")
