@@ -19,3 +19,6 @@ vr_tests/test*
 
 # PyCharm utilities
 .idea/
+
+# temporary recordings
+*.temp.wav

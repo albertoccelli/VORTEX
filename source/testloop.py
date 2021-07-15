@@ -12,7 +12,7 @@ from scipy.io.wavfile import read
 
 from .ABC_weighting import a_weight
 # custom libraries
-from .alb_pack.dsp import get_rms, add_gain, SaturationError
+from dsp import get_rms, add_gain, SaturationError
 from .configure import load_list
 from .play import play_data
 from .recorder import Recorder
@@ -56,17 +56,22 @@ def clear_console():
 
 
 def splash():
+    _show_image("./utilities/logo_reply.txt")
+    sleep(1)
+    clear_console()
     _show_image("./utilities/logo.txt")
-    print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print("+                                                                                        +")
-    print("+                   VoRTEx v0.2.3a - Voice Recognition Test Execution                    +")
-    print("+                                                                                        +")
-    print("+                             'From testers, for testers'                                +")
-    print("+                                                                                        +")
-    print("+                               albertoccelli@gmail.com                                  +")
-    print("+                       https://github.com/albertoccelli/VoRTEx                          +")
-    print("+                                                                                        +")
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+    print("\n"
+          "\t++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("\t+                                                                                        +")
+    print("\t+                   VoRTEx v0.3.0a - Voice Recognition Test Execution                    +")
+    print("\t+                             'From testers, for testers'                                +")
+    print("\t+                                                                                        +")
+    print("\t+                                  Os: Windows                                           +")
+    print("\t+                          (c) Jul. 2021 - Alberto Occelli                               +")
+    print("\t+                email: albertoccelli@gmail.com / a.occelli@reply.it                     +")
+    print("\t+                       https://github.com/albertoccelli/VoRTEx                          +")
+    print("\t+                                                                                        +")
+    print("\t++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     return
 
 
@@ -125,7 +130,6 @@ class Test:
         # declare the attributes of the test
         self.wPath = "."  # The current working path of the selected test
         self.testName = ""
-        # default paths
         self.calibDir = "utilities/calibration/"
         self.databaseDir = "database/"
         self.testDir = "vr_tests/"
@@ -158,12 +162,22 @@ class Test:
         self.micChannel = 0
         self.earChannel = 1
         # choose whether to create a new test or open a existing one
-        option = int(input("\nDo you want to: \n1)start a new test\n2) open an existing one\n-->"))
-        if option == 1:
-            self.new()
-        elif option == 2:
-            self.resume()
-
+        print("------------------------------------------------------------------")
+        while True:
+            try:
+                option = int(input("\nDo you want to: \n1) start a new test\n2) open an existing one\n?\n-->"))
+                if option == 1:
+                    clear_console()
+                    self.new()
+                    break
+                elif option == 2:
+                    clear_console()
+                    self.resume()
+                    break
+                else:
+                    print("Invalid input!\n")
+            except ValueError:
+                print("Invalid input!")
         self.logname = "%s/testlog.log" % self.wPath
 
     def detectgenders(self, lang):
@@ -200,6 +214,7 @@ class Test:
                 self.resume()
 
     def resume(self, path=None):
+        print("------------------------------------------------------------------")
         if path is None:
             tests = show_dirs(self.testDir)
             if len(tests) == 0:
@@ -207,7 +222,7 @@ class Test:
                 self.new()
                 return
             else:
-                print("\nWhich test do you want to resume? \n")
+                print("Which test do you want to resume? \n")
                 for i in range(len(tests)):
                     print("\t%02d) %s ----> created: %s" % (i + 1,
                                                             tests[i],
@@ -236,10 +251,11 @@ class Test:
         return
 
     def new(self, testname=None):
+        print("------------------------------------------------------------------")
         if testname is None:
             # self.testname = simpledialog.askstring("New test",
             # "Choose a fancy name for this new vr test").replace(" ","_")
-            self.testName = input("\nCreating a new test...! Please choose a fancy name for it!\n-->")
+            self.testName = input("Creating a new test...! Please choose a fancy name for it!\n-->")
         else:
             self.testName = testname
         self.wPath = "%s%s" % (self.testDir, self.testName)  # this will be your new working directory
@@ -433,32 +449,38 @@ class Test:
 
     def calibrate_mouth(self, reference=94):
         max_attempts = 5
+        attempt = 1
         if self.recorder.calibrated:  # microphone has to be calibrated first
             # measure the RMS value of the calibration file
             c_file = self.calibDir + "FRF.wav"
+            print("Calibration file: %s" % c_file)
             c_fs, c_data = read(c_file)
+            print("\nApplying gain: %0.2fdB" % self.gain)
             c_data_gain = add_gain(c_data, self.gain)
             recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
             recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
-            print("Mouth RMS: %0.1fdBSPL\tdelta = %0.2f" % (recorded_dbspl, (reference - recorded_dbspl)))
-            attempt = 0
+            delta = reference - recorded_dbspl
+            print("\nTarget: %0.2fdBSPL\nMouth RMS: %0.2fdBSPL\ndelta = %0.2f" % (reference, recorded_dbspl, -delta))
             while abs(reference - recorded_dbspl) > 0.5:
                 attempt += 1
                 # add gain and record again until the intensity is close to 94dBSPL
-                self.gain = reference - recorded_dbspl
+                self.gain = self.gain + delta
                 try:
+                    print("\nApplying gain: %0.2fdB" % self.gain)
                     c_data_gain = add_gain(c_data, self.gain)
-                    print("Gain: %0.1fdB" % self.gain)
                     recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
                     recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
+                    delta = reference - recorded_dbspl
+                    print("\nTarget: %0.2fdBSPL\nMouth RMS: %0.2fdBSPL\ndelta = %0.2f"
+                          % (reference, recorded_dbspl, -delta))
                 except SaturationError:
                     input("Cannot automatically increase the volume. Please manually increase the volume from "
                           "the amplifier knob and press ENTER to continue\n-->")
                     self.calibrate_mouth()
-                    break
+                    return
                 if attempt == max_attempts:
                     break
-            print("Calibration completed: %0.1fdB added" % self.gain)
+            print("Calibration completed: %0.2fdB added" % self.gain)
             self.mCalibrated = True
         return self.gain
 
@@ -540,7 +562,7 @@ class Test:
         expected = []
         if not self.begun:
             # start test from 0
-            print("\n==================================================================")
+            print("==================================================================")
             print("Beginning test... Press ENTER when you are ready")
             print("------------------------------------------------------------------")
             input("-->")
@@ -572,7 +594,7 @@ class Test:
             for i in range(self.status, len(test)):
                 clear_console()
                 print("------------------------------------------------------------------")
-                print("%s: TEST %d OUT OF %d\n" % (_langDict[self.lang], i + 1, len(test)))  # test number counter
+                print("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))  # test number counter
                 print("------------------------------------------------------------------\n")
                 try:
                     print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))

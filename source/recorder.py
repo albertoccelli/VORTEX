@@ -4,7 +4,6 @@ import struct
 import threading
 import time
 import wave  # write to wav
-from time import sleep
 
 import numpy as np
 import pyaudio  # record
@@ -60,7 +59,6 @@ class Recorder:
         for i in range(self.channels):
             self.correction.append([])
             self.calibrated.append(False)
-
         # get audio info
         devinfo = self.get_device_info()
         # default sample rate
@@ -83,7 +81,8 @@ class Recorder:
         available devices currently connected.
 
         Example:
-        >>> information = get_device_info()
+        >>> recorder = Recorder()
+        >>> information = recorder.get_device_info()
         >>> default_device_index = info.get("default_input").get("index")
         """
         # stored data into the recorder
@@ -144,7 +143,6 @@ class Recorder:
             c_dir = c_path_short
 
         # dialog
-        clear_console()
         print("Calibrating (%0.1fdBSPL):" % reference)
         print("")
         print("-------------------------------------------------------------------")
@@ -244,7 +242,6 @@ class Recorder:
             """
             Plays a wav file.
             """
-
             chunk = 1024
             wf = wave.open(file, 'rb')
             # instantiate PyAudio
@@ -258,6 +255,7 @@ class Recorder:
             file_data = wf.readframes(chunk)
             # play stream
             acquiring = False
+            print("\nPlaying...\n")
             while len(file_data) > 0:
                 stream.write(file_data)
                 if not acquiring:
@@ -271,7 +269,6 @@ class Recorder:
             stream.close()
             # close PyAudio
             p.terminate()
-
             return
 
         def _record_semaphore(secs, channel=0):
@@ -286,9 +283,7 @@ class Recorder:
                             frames_per_buffer=self.chunk,
                             input_device_index=self.deviceIn,
                             input=True)
-            print("Recording with device %s" % self.deviceIn)
             frames = []  # initialize array to store frames
-
             # The actual recording
             started = False
             # print("Waiting for speech over the threshold...")
@@ -296,7 +291,6 @@ class Recorder:
             timeout = 5
             end = time.time() + timeout
             maxtime = time.time() + secs
-
             while current <= maxtime:
                 try:
                     rec_data = stream.read(self.chunk)
@@ -307,11 +301,9 @@ class Recorder:
                     shorts_array = []
                     for i in range(self.channels):
                         shorts_array.append([])
-
                     # get intensity
                     for sample in range(len(shorts)):
                         shorts_array[sample % self.channels].append(shorts[sample])
-
                     rms = []
                     for i in range(len(shorts_array)):
                         sum_squares = 0.0
@@ -329,9 +321,8 @@ class Recorder:
                         if not started:
                             started = True
                             maxtime = time.time() + secs
-                            print("\nRecording...\n")
+                            print("Recording...\n")
                     current = time.time()
-
                     if started:
                         for i in range(len(rms)):
                             if self.calibrated[i]:
@@ -383,7 +374,6 @@ class Recorder:
         play.join()
         rec.join()
         os.remove(".temp.wav")
-        print("End of main")
         return self.data
 
     def save(self, filename="output.wav"):
@@ -401,7 +391,6 @@ class Recorder:
         return
 
     def record(self, seconds, channel=0, threshold=None):
-        clear_console()
         if threshold is None:
             threshold = self.threshold
         print("Threshold value: %f" % threshold)
@@ -499,51 +488,6 @@ class Recorder:
             print("No audio recorded!")
             return 0
 
-
-def get_device_info():
-    """
-    Returns a dictionary containing the information about the default input and output devices, along with all the
-    available devices currently connected.
-
-    Example:
-    >>> information = get_device_info()
-    >>> default_device_index = info.get("default_input").get("index")
-    """
-
-    # open the stream
-    p = pyaudio.PyAudio()
-    # get number of connected devices
-    info = p.get_host_api_info_by_index(0)
-    numdevices = info.get('deviceCount')
-    devicesin = []
-    devicesout = []
-    nchannels = []
-    # determine if each device is a input or output
-    for i in range(0, numdevices):
-        if p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels') > 0:
-            print("Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'),
-                  " - N. Channels: ", p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels'))
-            devicesin.append("INPUT: %s" % p.get_device_info_by_host_api_device_index(0, i).get('name'))
-            nchannels.append(p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels'))
-        if p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels') > 0:
-            print("Output Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'),
-                  " - N. Channels: ", p.get_device_info_by_host_api_device_index(0, i).get('maxOutputChannels'))
-            devicesout.append("OUTPUT: %s" % p.get_device_info_by_host_api_device_index(0, i).get('name'))
-            nchannels.append(p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels'))
-
-    # create dictionary with default device and available devices
-    audioinfo = {'default_input': p.get_default_input_device_info(),
-                 'default_output': p.get_default_output_device_info(),
-                 'inputs': devicesin,
-                 'outputs': devicesout,
-                 }
-    # close stream
-    p.terminate()
-
-    return audioinfo
-
-
-sleep(0.5)
 
 if __name__ == "__main__":
     from play import play_data
