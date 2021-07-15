@@ -1,9 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.3.0-alpha] - 2021-07-15
+### Added
+- Automatic calibration of the mouth intensity.
+- Parallel playback and recording added to the Recorder class
+- New splash screen
+- Enhanced user experience
+- Bugfix
+
 ## [0.2.3-alpha] - 2021-07-14
 ### Added
 - Automatic ambient noise measurement for Lombard effect
+- Bugfix
 
 ## [0.2.2-alpha] - 2021-07-07
 ### Added
