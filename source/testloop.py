@@ -57,14 +57,16 @@ def clear_console():
 
 def splash():
     _show_image("./utilities/logo.txt")
-    print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print("+                                                                        +")
-    print("+           VoRTEx v0.2.3a - Voice Recognition Test Execution            +")
-    print("+                                                                        +")
-    print("+                       albertoccelli@gmail.com                          +")
-    print("+               https://github.com/albertoccelli/VoRTEx                  +")
-    print("+                                                                        +")
-    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+    print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("+                                                                                        +")
+    print("+                   VoRTEx v0.2.3a - Voice Recognition Test Execution                    +")
+    print("+                                                                                        +")
+    print("+                             'From testers, for testers'                                +")
+    print("+                                                                                        +")
+    print("+                               albertoccelli@gmail.com                                  +")
+    print("+                       https://github.com/albertoccelli/VoRTEx                          +")
+    print("+                                                                                        +")
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
     return
 
 
