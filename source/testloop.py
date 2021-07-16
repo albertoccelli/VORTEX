@@ -12,7 +12,7 @@ from scipy.io.wavfile import read
 
 from .ABC_weighting import a_weight
 # custom libraries
-from dsp import get_rms, add_gain, SaturationError
+from .dsp import get_rms, add_gain, SaturationError
 from .configure import load_list
 from .play import play_data
 from .recorder import Recorder
@@ -56,8 +56,6 @@ def clear_console():
 
 
 def splash():
-    _show_image("./utilities/logo_reply.txt")
-    sleep(1)
     clear_console()
     _show_image("./utilities/logo.txt")
     print("\n"
