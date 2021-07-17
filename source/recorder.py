@@ -10,7 +10,7 @@ import pyaudio  # record
 from scipy.io.wavfile import read, write
 
 if __name__ != "__main__":
-    from .alb_pack.dsp import get_rms
+    from .dsp import get_rms
 
 
 def clear_console():
@@ -357,7 +357,7 @@ class Recorder:
                 print('... done!')
                 _, self.data = read(".temp_out.wav")
                 os.remove(".temp_out.wav")
-                # self.data = self.data[:,0]
+                #self.data = self.data[]
                 return self.data
 
             else:
@@ -491,7 +491,7 @@ class Recorder:
 
 if __name__ == "__main__":
     from play import play_data
-    from alb_pack.dsp import get_rms
+    from dsp import get_rms
 
     r = Recorder()
     fs, data = read("../utilities/calibration/FRF.wav")

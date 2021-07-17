@@ -1,3 +1,5 @@
+# TODO merge common tests and Natural Language ones
+
 # default libraries
 import os
 import time
@@ -296,10 +298,6 @@ class Test:
             self.save_conf()  # save the configuration into the cfg file
             return
         except FileExistsError:
-            # n_testname = simpledialog.askstring("New test",
-            #                                   "The test '%s' already exists :(
-            #                                   \nPlease choose another name or press enter to resume the selected one
-            #                                   \n-->"%self.testname).replace(" ","_")
             n_testname = input(
                 "The directory '%s' already exists :( \nPlease choose another name or press enter to resume the "
                 "selected one\n-->" % self.testName)
@@ -446,15 +444,16 @@ class Test:
         return
 
     def calibrate_mouth(self, reference=94):
-        max_attempts = 5
+        max_attempts = 6
         attempt = 1
         if self.recorder.calibrated:  # microphone has to be calibrated first
             # measure the RMS value of the calibration file
-            c_file = self.calibDir + "FRF.wav"
+            c_file = self.phrasesPath + "/calibration.wav"
             print("Calibration file: %s" % c_file)
             c_fs, c_data = read(c_file)
             print("\nApplying gain: %0.2fdB" % self.gain)
             c_data_gain = add_gain(c_data, self.gain)
+            print(get_rms(c_data_gain))
             recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
             recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
             delta = reference - recorded_dbspl
@@ -462,11 +461,14 @@ class Test:
             while abs(reference - recorded_dbspl) > 0.5:
                 attempt += 1
                 # add gain and record again until the intensity is close to 94dBSPL
-                self.gain = self.gain + delta
+                self.gain = self.gain + delta*2
                 try:
                     print("\nApplying gain: %0.2fdB" % self.gain)
                     c_data_gain = add_gain(c_data, self.gain)
+                    print(get_rms(c_data))
+                    print(get_rms(c_data_gain))
                     recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
+                    self.recorder.save("calibration%02d.wav" % attempt)
                     recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                     delta = reference - recorded_dbspl
                     print("\nTarget: %0.2fdBSPL\nMouth RMS: %0.2fdBSPL\ndelta = %0.2f"
@@ -592,7 +594,7 @@ class Test:
             for i in range(self.status, len(test)):
                 clear_console()
                 print("------------------------------------------------------------------")
-                print("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))  # test number counter
+                print("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))
                 print("------------------------------------------------------------------\n")
                 try:
                     print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))

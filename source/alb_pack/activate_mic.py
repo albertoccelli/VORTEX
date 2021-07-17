@@ -19,8 +19,16 @@ def detectPort():
             return "Error"
     return port
 
+def detectCommand(port):
+    can_ear = can.Listener()
+    bus = can.interface.Bus(bustype="vector", channel = port, bitrate = BITRATE)
+    msg = bus.recv()
+    can_ear.on_message_received(msg)
+    can_ear.stop()
+
 
 def activateMic(port):
+    bus = can.interface.Bus(bustype="vector", channel = port, bitrate = BITRATE)
     if port != "Error":
         msg = can.Message(arbitration_id=0x2ee, extended_id=False, channel=port, dlc=4, data=[0x00, 0x04, 0x00, 0x00])     #voice button push
         msg2 = can.Message(arbitration_id=0x2ee, extended_id=False, channel=port, dlc=4, data=[0x00, 0x00, 0x00, 0x00])    #voice button release

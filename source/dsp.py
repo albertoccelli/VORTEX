@@ -223,16 +223,22 @@ def add_gain(data, gain):
     Adds gain (expressed in dB) to a signal.
 
     """
-    mpeak = max(abs(data))
-    max_gain = -(20 * np.log10(mpeak / np.iinfo(data.dtype).max))
+    n_data = []
+    for i in range(len(data)):
+        n_data.append(data[i])
+    n_data = np.array(n_data)
+    n_data.dtype = data.dtype
+    
+    mpeak = max(abs(n_data))
+    max_gain = -(20 * np.log10(mpeak / np.iinfo(n_data.dtype).max))
 
     if max_gain > gain:
         gain_lin = 10 ** (gain / 20)
-        for d in range(len(data)):
-            data[d] = int(data[d] * gain_lin)
+        for d in range(len(n_data)):
+            n_data[d] = int(n_data[d] * gain_lin)
     else:
         raise SaturationError("Cannot add that much gain. Try to increase the amplifier volume instead!")
-    return data
+    return n_data
 
 
 def mono_to_stereo(data):
@@ -289,5 +295,4 @@ if __name__ == "__main__":
     from scipy.io.wavfile import read
     from matplotlib import pyplot as plt
 
-    fs, noise = read("white.wav")
-    x = np.arange(0, len(noise) / fs, 1 / fs)
+    fs, noise = read("alb_pack/test_sounds/white.wav")
