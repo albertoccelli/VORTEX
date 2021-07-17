@@ -483,7 +483,7 @@ class Test:
             recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
             recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
             delta = reference - recorded_dbspl
-            print("++++++++++ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+            print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
             print("+                               +")
             print("+   Target      = %0.2fdBFS\t+" % reference)
             print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
@@ -503,7 +503,7 @@ class Test:
                     self.recorder.save("calibration%02d.wav" % attempt)
                     recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                     delta = reference - recorded_dbspl
-                    print("++++++++++ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+                    print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
                     print("+                               +")
                     print("+   Target      = %0.2fdBFS\t+" % reference)
                     print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
