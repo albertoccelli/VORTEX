@@ -35,6 +35,7 @@ try:
                 input("\nPress ENTER to proceed...\n-->")
             # calibration of artificial mouth
             clear_console()
+            print("------------------------------------------------------------------")
             input("Calibrating mouth: please place the measurement microphone at the MRP and press ENTER\n-->")
             t.calibrate_mouth()  # calibration of the mouth
             input("\nPress ENTER to proceed...\n-->")

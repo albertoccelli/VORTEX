@@ -176,7 +176,7 @@ class Recorder:
         current = time.time()
         maxtime = time.time() + timerec
         sum_squares_global = 0.0
-        print("\nCalibrating...")
+        print("\nCalibrating... ", end='')
         while current <= maxtime:
             try:
                 audio_data = stream.read(self.chunk)
@@ -206,7 +206,7 @@ class Recorder:
                 frames.append(audio_data)
                 current = time.time()
             except KeyboardInterrupt:
-                print("\nRecording stopped")
+                # print("\nRecording stopped")
                 break
         rms_global = round(
             20 * math.log10(math.pow((sum_squares_global / self.chunk), 0.5)) + 20 * math.log10(2 ** 0.5), 2)
@@ -217,19 +217,24 @@ class Recorder:
         # Terminate the portaudio interface
         p.terminate()
 
-        wf = wave.open("temp.wav", 'wb')
+        wf = wave.open('temp.wav', 'wb')
         wf.setnchannels(self.channels)
         wf.setsampwidth(p.get_sample_size(self.sample_format))
         wf.setframerate(self.fs)
         wf.writeframes(b''.join(frames))
         wf.close()
-        print('... done!')
-        _, audio_data = read("temp.wav")
-        os.remove("temp.wav")
+        print('done!\n')
+        _, audio_data = read('temp.wav')
+        os.remove('temp.wav')
         audio_data = audio_data[:, channel]
         self.calibrated[channel] = True  # microphone calibrated
         self.correction[channel] = reference - get_rms(audio_data)  # correction factor
-        print(f"Power = {rms_global}dBFS\ndBSPL/dBFS = {self.correction[channel]:0.2f}")
+        print("+++++++++++++++++++++++++++++++++")
+        print("+                               +")
+        print("+   Power      = %0.2fdBFS\t+" % rms_global)
+        print("+   dBSPL/dBFS = %0.2f    \t+" % self.correction[channel])
+        print("+                               +")
+        print("+++++++++++++++++++++++++++++++++")
         return audio_data
 
     def play_and_record(self, audio_data, audio_fs):
@@ -357,7 +362,7 @@ class Recorder:
                 print('... done!')
                 _, self.data = read(".temp_out.wav")
                 os.remove(".temp_out.wav")
-                #self.data = self.data[]
+                # self.data = self.data[]
                 return self.data
 
             else:

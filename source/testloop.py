@@ -9,6 +9,7 @@ from datetime import datetime
 from time import sleep
 from tkinter import filedialog
 
+import random
 import numpy as np
 from scipy.io.wavfile import read
 
@@ -387,7 +388,35 @@ class Test:
                 print("\n==================================================================")
                 print("!!!CONFIGURATION FILE CORRUPTED!!!")
                 print("\n==================================================================")
-        return
+
+    def _make_calibration_file(self):
+        treshold = 100
+        files = []
+        for i in os.listdir(self.phrasesPath):
+            if i.split(".")[-1] == "wav":
+                files.append(self.phrasesPath + "/" + i)
+
+        pdata = np.array([])
+        while True:
+            file = files[random.randint(1, len(files))]
+            fs, calib_data = read(file)
+            # cut silence at the beginning and at the end
+            for i in range(len(calib_data)):
+                if abs(calib_data[1]) > treshold and abs(calib_data[-1]) > treshold:
+                    break
+                else:
+                    if abs(calib_data[1]) < treshold:
+                        calib_data = calib_data[1:]
+                    if abs(calib_data[-1]) < treshold:
+                        calib_data = calib_data[:-1]
+            calib_data = np.concatenate((pdata, calib_data))
+            # if the obtained file is longer than 30s, break the loop
+            length = len(calib_data) / fs
+            if length > 30:
+                break
+            pdata = calib_data
+        len(calib_data)
+        return fs, calib_data.astype(np.int16)
 
     @staticmethod
     def activate_mic(mode=1):
@@ -448,17 +477,23 @@ class Test:
         attempt = 1
         if self.recorder.calibrated:  # microphone has to be calibrated first
             # measure the RMS value of the calibration file
-            c_file = self.phrasesPath + "/calibration.wav"
-            print("Calibration file: %s" % c_file)
-            c_fs, c_data = read(c_file)
-            print("\nApplying gain: %0.2fdB" % self.gain)
+            # c_file = self.phrasesPath + "/calibration.wav"
+            # print("Calibration file: %s" % c_file)
+            print("Writing mouth calibration file for %s... " % self.lang, end='')
+            c_fs, c_data = self._make_calibration_file()
+            print("done!")
             c_data_gain = add_gain(c_data, self.gain)
-            print(get_rms(c_data_gain))
             recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
             recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
             delta = reference - recorded_dbspl
-            print("\nTarget: %0.2fdBSPL\nMouth RMS: %0.2fdBSPL\ndelta = %0.2f" % (reference, recorded_dbspl, -delta))
-            while abs(reference - recorded_dbspl) > 0.5:
+            print("++++++++++ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+            print("+                               +")
+            print("+   Target      = %0.2fdBFS\t+" % reference)
+            print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
+            print("+   delta       = %0.2f    \t+" % -delta)
+            print("+                               +")
+            print("+++++++++++++++++++++++++++++++++")
+            while abs(delta) > 0.5:
                 attempt += 1
                 # add gain and record again until the intensity is close to 94dBSPL
                 self.gain = self.gain + delta*2
@@ -471,8 +506,13 @@ class Test:
                     self.recorder.save("calibration%02d.wav" % attempt)
                     recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                     delta = reference - recorded_dbspl
-                    print("\nTarget: %0.2fdBSPL\nMouth RMS: %0.2fdBSPL\ndelta = %0.2f"
-                          % (reference, recorded_dbspl, -delta))
+                    print("++++++++++ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+                    print("+                               +")
+                    print("+   Target      = %0.2fdBFS\t+" % reference)
+                    print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
+                    print("+   delta       = %0.2f    \t+" % -delta)
+                    print("+                               +")
+                    print("+++++++++++++++++++++++++++++++++")
                 except SaturationError:
                     input("Cannot automatically increase the volume. Please manually increase the volume from "
                           "the amplifier knob and press ENTER to continue\n-->")
