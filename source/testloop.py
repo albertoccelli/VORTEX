@@ -333,8 +333,8 @@ class Test:
 
     def save_conf(self):
         """
-        Writes the test attributes (including the current progress) into the config file, along
-        with information regarding the .vrtl file used for the test.
+        Writes the test attributes (including the current progress) into the config file, along with information
+        regarding the .vrtl file used for the test.
         """
         with open(self.configfile, "w", encoding="utf-16") as r:
             r.write("@YODA\n")
@@ -389,13 +389,16 @@ class Test:
                 print("!!!CONFIGURATION FILE CORRUPTED!!!")
                 print("\n==================================================================")
 
-    def _make_calibration_file(self):
+    def _make_calibration_file(self, duration=30):
+        """
+        Randomly chooses several audio files from the phrases folder and join them until a unique file of a fixed
+        duration is made. The file is suitable for the calibration of the artificial mouth.
+        """
         treshold = 100
         files = []
         for i in os.listdir(self.phrasesPath):
             if i.split(".")[-1] == "wav":
                 files.append(self.phrasesPath + "/" + i)
-
         pdata = np.array([])
         while True:
             file = files[random.randint(1, len(files))]
@@ -412,7 +415,7 @@ class Test:
             calib_data = np.concatenate((pdata, calib_data))
             # if the obtained file is longer than 30s, break the loop
             length = len(calib_data) / fs
-            if length > 30:
+            if length > duration:
                 break
             pdata = calib_data
         len(calib_data)
@@ -436,6 +439,8 @@ class Test:
     def play_command(self, cid):
         """
         Plays the command based on the current test language and on the command ID.
+        The gain is adjusted based on the mouth calibration (if made) and on the Lombard Effect (if a recording of the
+        background noise has been performed).
         """
         filename = self.phrasesPath + "/" + self.lang + "_" + str(cid) + ".wav"
         print(filename)
@@ -460,20 +465,30 @@ class Test:
 
     def calibrate_mic(self):
         """
-        Calibrates the microphone so that it expresses values in dBSPL
+        Calibrates the microphone so that it expresses values in dBSPL.
+        For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(self.micChannel)
         return
 
     def calibrate_ear(self):
         """
-        Calibrates Oscar's ear so that it expresses values in dBSPL
+        Calibrates Oscar's ear so that it expresses values in dBSPL.
+        For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
         return
 
-    def calibrate_mouth(self, reference=94):
-        max_attempts = 6
+    def calibrate_mouth(self, reference=94, max_attempts=6):
+        """
+        Reproduces a calibration file from the mouth, records it, measures its RMS power and, if needed, adjusts the
+        gain and records again the calibration file.
+
+        This operation is repeated until the RMS power is as close as possible to the nominal value of 94dBSPL.
+        The number of maximum attempts can be decided and specified among the function's arguments.
+        After the last attempt the last gain value is kept, whatever the difference between the RMS level and the
+        nominal one is.
+        """
         attempt = 1
         if self.recorder.calibrated:  # microphone has to be calibrated first
             print("Writing mouth calibration file... ", end='')
@@ -493,7 +508,7 @@ class Test:
             while abs(delta) > 0.5:
                 attempt += 1
                 # add gain and record again until the intensity is close to 94dBSPL
-                self.gain = self.gain + delta*2
+                self.gain = self.gain + delta * 2
                 try:
                     print("\nApplying gain: %0.2fdB" % self.gain)
                     c_data_gain = add_gain(c_data, self.gain)
