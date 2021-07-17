@@ -476,10 +476,7 @@ class Test:
         max_attempts = 6
         attempt = 1
         if self.recorder.calibrated:  # microphone has to be calibrated first
-            # measure the RMS value of the calibration file
-            # c_file = self.phrasesPath + "/calibration.wav"
-            # print("Calibration file: %s" % c_file)
-            print("Writing mouth calibration file for %s... " % self.lang, end='')
+            print("Writing mouth calibration file...", end='')
             c_fs, c_data = self._make_calibration_file()
             print("done!")
             c_data_gain = add_gain(c_data, self.gain)
