@@ -69,7 +69,7 @@ def splash():
     print("\t+                                                                                        +")
     print("\t+                                  Os: Windows                                           +")
     print("\t+                          (c) Jul. 2021 - Alberto Occelli                               +")
-    print("\t+                email: albertoccelli@gmail.com / a.occelli@reply.it                     +")
+    print("\t+                           email: albertoccelli@gmail.com                               +")
     print("\t+                       https://github.com/albertoccelli/VoRTEx                          +")
     print("\t+                                                                                        +")
     print("\t++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
