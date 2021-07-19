@@ -144,7 +144,6 @@ class Test:
         self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
         self.results = {}  # A list containing the test results
         self.mCalibrated = False  # Is the mouth calibrated?
-        self.mouth_calibration = 0  # The gain value for the mouth to reach 94dBSPL
         self.gain = 0  # The gain value for the mouth to reach 94dBSPL
         self.failed = []  # List of failed tests
         self.noise = 0  # RMS value of the background noise
@@ -214,43 +213,6 @@ class Test:
             except KeyboardInterrupt:
                 self.resume()
 
-    def resume(self, path=None):
-        print("------------------------------------------------------------------")
-        if path is None:
-            tests = show_dirs(self.testDir)
-            if len(tests) == 0:
-                print("No tests found! Let's start a new one")
-                self.new()
-                return
-            else:
-                print("Which test do you want to resume? \n")
-                for i in range(len(tests)):
-                    print("\t%02d) %s ----> created: %s" % (i + 1,
-                                                            tests[i],
-                                                            time.strftime('%Y/%m/%d at %H:%M:%S',
-                                                                          time.gmtime(os.path.getmtime(
-                                                                              self.testDir + tests[i])))))
-                print("\n\t%02d) browse..." % (len(tests) + 1))
-                choice = int(input("-->"))
-                if choice == len(tests) + 1:
-                    # choose the test directory with a dialog
-                    self.wPath = filedialog.askdirectory(title="Choose a test to resume",
-                                                         initialdir=self.testDir)
-                else:
-                    self.wPath = self.testDir + tests[choice - 1]
-                self.testName = self.wPath.split("/")[-1]
-                if self.wPath == "":
-                    print("Never mind, let's start from scratch")
-                    self.new()
-                    return
-        else:
-            self.wPath = path
-        self.configfile = "%s/config.cfg" % self.wPath  # the configuration file's path
-        self.load_conf()  # retrieve the paths and test status from the configuration file
-        self._configure_list()  # get the test configuration (languages, lists) from the listfile
-        self.getstatus()
-        return
-
     def new(self, testname=None):
         print("------------------------------------------------------------------")
         if testname is None:
@@ -309,6 +271,44 @@ class Test:
                 self.new(n_testname)
         return
 
+    def resume(self, path=None):
+        print("------------------------------------------------------------------")
+        if path is None:
+            tests = show_dirs(self.testDir)
+            if len(tests) == 0:
+                print("No tests found! Let's start a new one")
+                self.new()
+                return
+            else:
+                print("Which test do you want to resume? \n")
+                for i in range(len(tests)):
+                    print("\t%02d) %s ----> created: %s" % (i + 1,
+                                                            tests[i],
+                                                            time.strftime('%Y/%m/%d at %H:%M:%S',
+                                                                          time.gmtime(os.path.getmtime(
+                                                                              self.testDir + tests[i])))))
+                print("\n\t%02d) browse..." % (len(tests) + 1))
+                choice = int(input("-->"))
+                if choice == len(tests) + 1:
+                    # choose the test directory with a dialog
+                    self.wPath = filedialog.askdirectory(title="Choose a test to resume",
+                                                         initialdir=self.testDir)
+                else:
+                    self.wPath = self.testDir + tests[choice - 1]
+                self.testName = self.wPath.split("/")[-1]
+                if self.wPath == "":
+                    print("Never mind, let's start from scratch")
+                    self.new()
+                    return
+        else:
+            self.wPath = path
+        self.configfile = "%s/config.cfg" % self.wPath  # the configuration file's path
+        self.load_conf()  # retrieve the paths and test status from the configuration file
+        self._configure_list()  # get the test configuration (languages, lists) from the listfile
+        self.getstatus()
+        return
+
+    # save and load functions
     def _configure_list(self):
         """
         Opens the database file and converts it into a dictionary form suitable for the test.
@@ -341,7 +341,7 @@ class Test:
             r.write("@CONFIGURATION\n")
             r.write("LISTFILE=%s\n" % self.listfile)
             r.write("MOUTH_CALIBRATED=%s\n" % self.mCalibrated)
-            r.write("MOUTH_CORRECTION=%s\n" % self.mouth_calibration)
+            r.write("MOUTH_CORRECTION=%s\n" % self.gain)
             r.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
             r.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
             r.write("PHRASESPATH=%s\n" % self.phrasesPath)
@@ -389,38 +389,6 @@ class Test:
                 print("!!!CONFIGURATION FILE CORRUPTED!!!")
                 print("\n==================================================================")
 
-    def _make_calibration_file(self, duration=30):
-        """
-        Randomly chooses several audio files from the phrases folder and join them until a unique file of a fixed
-        duration is made. The file is suitable for the calibration of the artificial mouth.
-        """
-        treshold = 100
-        files = []
-        for i in os.listdir(self.phrasesPath):
-            if i.split(".")[-1] == "wav":
-                files.append(self.phrasesPath + "/" + i)
-        pdata = np.array([])
-        while True:
-            file = files[random.randint(1, len(files))]
-            fs, calib_data = read(file)
-            # cut silence at the beginning and at the end
-            for i in range(len(calib_data)):
-                if abs(calib_data[1]) > treshold and abs(calib_data[-1]) > treshold:
-                    break
-                else:
-                    if abs(calib_data[1]) < treshold:
-                        calib_data = calib_data[1:]
-                    if abs(calib_data[-1]) < treshold:
-                        calib_data = calib_data[:-1]
-            calib_data = np.concatenate((pdata, calib_data))
-            # if the obtained file is longer than 30s, break the loop
-            length = len(calib_data) / fs
-            if length > duration:
-                break
-            pdata = calib_data
-        len(calib_data)
-        return fs, calib_data.astype(np.int16)
-
     @staticmethod
     def activate_mic(mode=1):
         """
@@ -463,12 +431,46 @@ class Test:
         play_data(data, fs)
         return
 
+    # calibration functions
+    def _make_calibration_file(self, duration=30):
+        """
+        Randomly chooses several audio files from the phrases folder and join them until a unique file of a fixed
+        duration is made. The file is suitable for the calibration of the artificial mouth.
+        """
+        treshold = 100
+        files = []
+        for i in os.listdir(self.phrasesPath):
+            if i.split(".")[-1] == "wav":
+                files.append(self.phrasesPath + "/" + i)
+        pdata = np.array([])
+        while True:
+            file = files[random.randint(1, len(files))]
+            fs, calib_data = read(file)
+            # cut silence at the beginning and at the end
+            for i in range(len(calib_data)):
+                if abs(calib_data[1]) > treshold and abs(calib_data[-1]) > treshold:
+                    break
+                else:
+                    if abs(calib_data[1]) < treshold:
+                        calib_data = calib_data[1:]
+                    if abs(calib_data[-1]) < treshold:
+                        calib_data = calib_data[:-1]
+            calib_data = np.concatenate((pdata, calib_data))
+            # if the obtained file is longer than 30s, break the loop
+            length = len(calib_data) / fs
+            if length > duration:
+                break
+            pdata = calib_data
+        len(calib_data)
+        return fs, calib_data.astype(np.int16)
+
     def calibrate_mic(self):
         """
         Calibrates the microphone so that it expresses values in dBSPL.
         For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(self.micChannel)
+        self.save_conf()
         return
 
     def calibrate_ear(self):
@@ -477,6 +479,7 @@ class Test:
         For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
+        self.save_conf()
         return
 
     def calibrate_mouth(self, reference=94, max_attempts=6):
@@ -490,52 +493,65 @@ class Test:
         nominal one is.
         """
         attempt = 1
-        if self.recorder.calibrated:  # microphone has to be calibrated first
-            print("Writing mouth calibration file... ", end='')
-            c_fs, c_data = self._make_calibration_file()
-            print("done!")
-            c_data_gain = add_gain(c_data, self.gain)
-            recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
-            recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
-            delta = reference - recorded_dbspl
-            print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
-            print("+                               +")
-            print("+   Target      = %0.2fdBFS\t+" % reference)
-            print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
-            print("+   delta       = %0.2f    \t+" % -delta)
-            print("+                               +")
-            print("+++++++++++++++++++++++++++++++++")
-            while abs(delta) > 0.5:
-                attempt += 1
-                # add gain and record again until the intensity is close to 94dBSPL
-                self.gain = self.gain + delta * 2
-                try:
-                    print("\nApplying gain: %0.2fdB" % self.gain)
-                    c_data_gain = add_gain(c_data, self.gain)
-                    print(get_rms(c_data))
-                    print(get_rms(c_data_gain))
-                    recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
-                    self.recorder.save("calibration%02d.wav" % attempt)
-                    recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
-                    delta = reference - recorded_dbspl
-                    print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
-                    print("+                               +")
-                    print("+   Target      = %0.2fdBFS\t+" % reference)
-                    print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
-                    print("+   delta       = %0.2f    \t+" % -delta)
-                    print("+                               +")
-                    print("+++++++++++++++++++++++++++++++++")
-                except SaturationError:
-                    input("Cannot automatically increase the volume. Please manually increase the volume from "
-                          "the amplifier knob and press ENTER to continue\n-->")
-                    self.calibrate_mouth()
-                    return
-                if attempt == max_attempts:
-                    break
-            print("Calibration completed: %0.2fdB added" % self.gain)
+        try:
+            if self.recorder.calibrated:  # microphone has to be calibrated first
+                print("Writing mouth calibration file... ", end='')
+                c_fs, c_data = self._make_calibration_file()
+                print("done!")
+                c_data_gain = add_gain(c_data, self.gain)
+                recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
+                recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
+                delta = reference - recorded_dbspl
+                print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+                print("+                               +")
+                print("+   Target      = %0.2fdBFS\t+" % reference)
+                print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
+                print("+   delta       = %0.2f    \t+" % -delta)
+                print("+                               +")
+                print("+++++++++++++++++++++++++++++++++")
+                while abs(delta) > 0.5:
+                    attempt += 1
+                    # add gain and record again until the intensity is close to 94dBSPL
+                    self.gain = self.gain + delta * 2
+                    try:
+                        print("\nApplying gain: %0.2fdB" % self.gain)
+                        c_data_gain = add_gain(c_data, self.gain)
+                        recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
+                        self.recorder.save("calibration%02d.wav" % attempt)
+                        recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
+                        delta = reference - recorded_dbspl
+                        print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
+                        print("+                               +")
+                        print("+   Target      = %0.2fdBFS\t+" % reference)
+                        print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
+                        print("+   delta       = %0.2f    \t+" % -delta)
+                        print("+                               +")
+                        print("+++++++++++++++++++++++++++++++++")
+                    except SaturationError:
+                        input("Cannot automatically increase the volume. Please manually increase the volume from "
+                              "the amplifier knob and press ENTER to continue\n-->")
+                        self.calibrate_mouth()
+                        return
+                    if attempt == max_attempts:
+                        break
+                print("Calibration completed: %0.2fdB added" % self.gain)
+                self.mCalibrated = True
+                self.save_conf()
+        except KeyboardInterrupt:
+            print("Mouth calibration interrupted. Gain value: %0.2f" % self.gain)
             self.mCalibrated = True
+            self.save_conf()
         return self.gain
 
+    def listen_noise(self, seconds=3):
+        noise = self.recorder.record(seconds)[:, 1]
+        noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
+        self.noise = get_rms(noise_w) + self.recorder.correction[1]
+        input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->" % (
+            self.noise, lombard(self.noise)))
+        return self.noise
+
+    # functions for the actual test
     def test(self, test, testid, translate=False):
         """
         Run a single test.
@@ -748,14 +764,6 @@ class Test:
         print("------------------------------------------------------------------")
         self.save_conf()
         return self.status
-
-    def listen_noise(self, seconds=3):
-        noise = self.recorder.record(seconds)[:, 1]
-        noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
-        self.noise = get_rms(noise_w) + self.recorder.correction[1]
-        input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->" % (
-            self.noise, lombard(self.noise)))
-        return self.noise
 
     def print_report(self):
         """
