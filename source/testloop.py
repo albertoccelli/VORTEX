@@ -131,7 +131,6 @@ class Test:
         # declare the attributes of the test
         self.wPath = "."  # The current working path of the selected test
         self.testName = ""
-        self.calibDir = "utilities/calibration/"
         self.databaseDir = "database/"
         self.testDir = "vr_tests/"
         self.phrasesPath = "phrases/"  # The path of the audio files
@@ -165,7 +164,11 @@ class Test:
         print("------------------------------------------------------------------")
         while True:
             try:
-                option = int(input("\nDo you want to: \n1) start a new test\n2) open an existing one\n?\n-->"))
+                option = int(input("\nDo you want to: "
+                                   "\n1) start a new test"
+                                   "\n2) open an existing one"
+                                   "\n3) modify the audio device settings"
+                                   "\n?\n-->"))
                 if option == 1:
                     clear_console()
                     self.new()
@@ -174,6 +177,9 @@ class Test:
                     clear_console()
                     self.resume()
                     break
+                # TODO: add an option to modify the device settings
+                elif option == 3:
+                    input("Choosing input and output devices! (NOT IMPLEMENTED YET)")
                 else:
                     print("Invalid input!\n")
             except ValueError:

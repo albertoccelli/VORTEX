@@ -224,8 +224,8 @@ def add_gain(data, gain):
 
     """
     n_data = []
-    for i in range(len(data)):
-        n_data.append(data[i])
+    for index in range(len(data)):
+        n_data.append(data[index])
     n_data = np.array(n_data)
     n_data.dtype = data.dtype
     
