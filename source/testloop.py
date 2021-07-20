@@ -130,6 +130,7 @@ class Test:
         self.gain = 0  # The gain value for the mouth to reach 94dBSPL
         self.failed = []  # List of failed tests
         self.noise = 0  # RMS value of the background noise
+        self.noise_radio = 0  # RMS value of the background noise plus the radio on
         # open the sound recorder for calibration and translation
         clear_console()
         print("------------------------------------------------------------------")
@@ -205,7 +206,7 @@ class Test:
             raise FileNotFoundError("Settings file not found!")
         return
 
-    def detectgenders(self, lang):
+    def _detectgenders(self, lang):
         """
         For the selected language, detects if both male and female voice are available,
         based on the folders on the "phrases" directory.
@@ -417,7 +418,11 @@ class Test:
         fs, data = read(filename)
         if self.mCalibrated:
             while True:
-                total_gain = lombard(self.noise) + self.gain
+                # wake word is pronounced with radio on
+                if int(cid) == 0:
+                    total_gain = lombard(self.noise_radio) + self.gain
+                else:
+                    total_gain = lombard(self.noise) + self.gain
                 print("Adjusting gain (%0.2fdB)" % total_gain)
                 try:
                     data = add_gain(data, total_gain)
@@ -581,11 +586,19 @@ class Test:
         return self.gain
 
     def listen_noise(self, seconds=3):
+        # Only background noise
+        input("Measuring background noise with radio OFF. Press ENTER to continue.\n-->")
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = get_rms(noise_w) + self.recorder.correction[1]
-        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise, lombard(self.noise)))
-        return self.noise
+        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise, lombard(self.noise)), title="RADIO OFF")
+        # Background noise and radio on
+        input("Measuring background noise with radio ON. Press ENTER to continue.\n-->")
+        noise = self.recorder.record(seconds)[:, 1]
+        noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
+        self.noise_radio = get_rms(noise_w) + self.recorder.correction[1]
+        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise_radio, lombard(self.noise_radio)), title="RADIO ON")
+        return self.noise, self.noise_radio
 
     # functions for the actual test
     def test(self, test, testid, translate=False):
@@ -686,7 +699,6 @@ class Test:
             pass
         _log("SELECTED LANGUAGE: %s - %s" % (self.lang, _langDict[self.lang]), self.logname)
         if self.recorder.calibrated[self.earChannel]:
-            print("Listening to ambient noise...")
             self.listen_noise()
             input("Press ENTER to continue\n-->")
         i = 0

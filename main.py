@@ -18,9 +18,6 @@ clear_console()
 
 try:
     t = Test()
-    print(t.mCalibrated)
-    print(t.recorder.calibrated[t.micChannel])
-    print(t.recorder.calibrated[t.earChannel])
     if not t.mCalibrated or not t.recorder.calibrated[t.micChannel] or not t.recorder.calibrated[t.earChannel]:
         MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and the mouth?',
                                         icon='question')

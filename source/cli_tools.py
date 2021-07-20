@@ -28,13 +28,13 @@ def print_square(string, title=None, margin=None, centering="left"):
     for i in strings:
         if len(i) > m_length:
             m_length = len(i)
-    if len(title) > m_length:
-        m_length = len(title)
     if title is None:
         print("+" * m_length + "++" + margin[0] * "+" + margin[1] * "+")
     else:
-        print("+" + margin[0] * " " + (" " * int((m_length - len(title)) * 0.5)) + title +
-              (" " * (m_length - len(title) - int((m_length - len(title)) * 0.5))) + margin[1] * " " + "+")
+        if len(title) > m_length:
+            m_length = len(title)
+        print(margin[0] * "+" + ("+" * int((m_length - len(title)) * 0.5 - 1)) + " " + title + " " +
+              ("+" * (m_length - len(title) - int((m_length - len(title)) * 0.5 - 1))) + margin[1] * "+")
     for i in range(margin[2]):
         print("+" + margin[0] * " " + m_length * " " + margin[1] * " " + "+")
     # print the actual string
