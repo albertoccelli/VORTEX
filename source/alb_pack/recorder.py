@@ -1,11 +1,9 @@
 import pyaudio                          #record
-from pydub.playback import play
 import wave                             #write to wav
 import os
 import struct
 import math
 import time
-import numpy as np
 from scipy.io.wavfile import read, write
 
 class Recorder():
@@ -96,7 +94,7 @@ class Recorder():
 
         return audioinfo
 
-
+    '''
     def calculate_threshold(self):
         timerec = 10
         #instantiate stream
@@ -188,7 +186,7 @@ class Recorder():
         input("Threshold: %.2f dBFS\nPress ENTER to continue..."%self.threshold)
 
         return self.threshold
-
+    '''
         
     def calibrate(self, reference = 94, timerec = 10, widget = None):
         '''
@@ -283,8 +281,7 @@ class Recorder():
     
     def record(self, seconds, filename = "temp.wav", threshold = None):
         if threshold == None:
-            threshold = self.threshold
-        print("Threshold value: %f"%self.threshold)
+            pass
         # recording time
         minutes = int((seconds/60))%60
         hours = int((seconds/3600))

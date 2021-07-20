@@ -44,6 +44,7 @@ try:
         input("Calibrating mouth: please place the measurement microphone at the MRP and press ENTER\n-->")
         t.calibrate_mouth()  # calibration of the mouth
         input("\nPress ENTER to proceed...\n-->")
+        t.save_settings()
 
     clear_console()
     t.mic_mode = int(input("Please choose the microphone activation mode:\n"

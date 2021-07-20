@@ -150,19 +150,11 @@ class Test:
         self.failed = []  # List of failed tests
         self.noise = 0  # RMS value of the background noise
         # open the sound recorder for calibration and translation
-        print("------------------------------------------------------------------")
-        try:
-            self.load_settings()
-            print("Loading VoRTEx settings...")
-        except FileNotFoundError:
-            print("Creating VoRTEx settings file...")
-            with open(self.settingsFile, "w", encoding="utf-16"):
-                pass
         clear_console()
         print("------------------------------------------------------------------")
         print("Opening sound recorder\n")
         self.recorder = Recorder()
-        print("\nChannels: %d" % self.recorder.channels)
+        print("\nChannels: %d\n" % self.recorder.channels)
         # set 2 channels 
         self.recorder.channels = 2
         # channel assignment
@@ -172,11 +164,19 @@ class Test:
         # input
         self.micChannel = 0
         self.earChannel = 1
+        print("------------------------------------------------------------------")
+        try:
+            self.load_settings()
+            print("Loading VoRTEx settings... done!")
+        except FileNotFoundError:
+            print("Creating VoRTEx settings file... done!")
+            with open(self.settingsFile, "w", encoding="utf-16"):
+                pass
         # choose whether to create a new test or open a existing one
         print("------------------------------------------------------------------")
         while True:
             try:
-                option = int(input("\nDo you want to: "
+                option = int(input("Do you want to: "
                                    "\n1) start a new test"
                                    "\n2) open an existing one"
                                    "\n3) modify the audio device settings"
@@ -617,8 +617,11 @@ class Test:
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = get_rms(noise_w) + self.recorder.correction[1]
-        input("\nNoise intensity: %0.2fdBA\nThe gain due to lombard effect is %0.2fdB\n-->" % (
-            self.noise, lombard(self.noise)))
+        print("+++++++++++++++++++++++++++++++++")
+        print("+ Noise intensity: %0.2fdBA\t\t+" % self.noise)
+        print("+ Lombard effect: %0.2fdB\t\t+" % (lombard(self.noise)))
+        print("+++++++++++++++++++++++++++++++++")
+        input("\nPress ENTER to continue...\n-->")
         return self.noise
 
     # functions for the actual test
@@ -724,7 +727,7 @@ class Test:
             pass
         _log("SELECTED LANGUAGE: %s - %s" % (self.lang, _langDict[self.lang]), self.logname)
         if self.recorder.calibrated[self.earChannel]:
-            print("Listening to ambiance noise...\n")
+            print("Listening to ambient noise...\n")
             self.listen_noise()
             input("Press ENTER to continue\n-->")
         i = 0
