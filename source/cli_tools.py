@@ -3,6 +3,23 @@ from time import sleep
 
 
 def print_square(string, title=None, margin=None, centering="left"):
+    """
+    Print text into a box.
+    Specify margins ([left, right, up, down]), centering and title.
+
+    Example:
+
+    >>> print_square("Ciao!!!!!!!!!!!!!", margin=[3,3,1,1], title="HELLO IN ITALIAN", centering="center")
+
+    output:
+
+    +++ HELLO IN ITALIAN ++++
+    +                       +
+    +   Ciao!!!!!!!!!!!!!   +
+    +                       +
+    +++++++++++++++++++++++++
+
+    """
     if margin is None:
         margin = [2, 2, 0, 0]
     strings = string.split("\n")
@@ -11,6 +28,8 @@ def print_square(string, title=None, margin=None, centering="left"):
     for i in strings:
         if len(i) > m_length:
             m_length = len(i)
+    if len(title) > m_length:
+        m_length = len(title)
     if title is None:
         print("+" * m_length + "++" + margin[0] * "+" + margin[1] * "+")
     else:
@@ -40,6 +59,9 @@ def clear_console():
 
 
 def show_image(txt):
+    """
+    Print ASCII art (saved as txt file.
+    """
     with open(txt, "r") as f:
         for line in f.readlines():
             print(line, end="")

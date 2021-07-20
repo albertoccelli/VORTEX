@@ -10,6 +10,7 @@ __pycache__/
 
 # Useless lists
 lists/
+source/to_separe.txt
 
 # Tests
 vr_tests/.*
