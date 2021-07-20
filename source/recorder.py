@@ -406,7 +406,6 @@ class Recorder:
                         frames_per_buffer=self.chunk,
                         input_device_index=self.deviceIn,
                         input=True)
-        print("Recording with device %s" % self.deviceIn)
         frames = []  # initialize array to store frames
 
         # The actual recording
@@ -447,7 +446,7 @@ class Recorder:
                     if not started:
                         started = True
                         maxtime = time.time() + seconds
-                        print("\nRecording...\n")
+                        print("\nRecording...")
                 current = time.time()
 
                 if started:
@@ -482,7 +481,7 @@ class Recorder:
             wf.setframerate(self.fs)
             wf.writeframes(b''.join(frames))
             wf.close()
-            print('... done!')
+            print('...done!')
             _, self.data = read(".temp.wav")
             os.remove(".temp.wav")
             # self.data = self.data[:,0]
