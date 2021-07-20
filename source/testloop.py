@@ -223,14 +223,15 @@ class Test:
         while True:
             print_square("LANGUAGE: %s\n"
                          "STARTED: %s\n"
-                         "COMPLETED: %s" % (self.lang, self.begun, self.completed),
+                         "STATUS: %s/%s\n"
+                         "COMPLETED: %s" % (self.lang, self.begun, self.status,
+                                            len(self.database[self.lang]), self.completed),
                          margin=[5, 5, 1, 1],
                          title="TEST STATUS")
             try:
                 if self.begun:
-                    input(
-                        "Do you want to continue with this test? (ENTER to continue, CTRL+C to cancel and choose "
-                        "another one)")
+                    input("Do you want to continue with this test? (ENTER to continue, CTRL+C to cancel and choose "
+                          "another one) ")
                 else:
                     input("Press ENTER to continue")
                 break
@@ -377,7 +378,6 @@ class Test:
     def load_conf(self):
         """
         Reads the configuration file for the selected test
-
         """
         with open(self.testfile, "r", encoding="utf-16") as r:
             # CHECK INTEGRITY
@@ -391,7 +391,6 @@ class Test:
                     # read configuration
                     if "STARTED" in line:
                         self.begun = eval(line.split("=")[-1])
-                        print(line.split("=")[-1])
                     elif "STATUS" in line:
                         self.status = int(line.split("=")[-1])
                     elif "COMPLETED" in line:
@@ -471,7 +470,6 @@ class Test:
             try:
                 print_square("Cancel", centering="center")
                 self.play_command("999")
-                input("DONE. Press Enter to proceed\n-->")
             except FileNotFoundError:
                 input("'Cancel' command not found. Please place it under the command id '999'.")
                 pass
@@ -709,7 +707,7 @@ class Test:
                 clear_console()
                 print_square("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))
                 try:
-                    print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))
+                    input("Preconditions:\n%s\n\nPress ENTER\n-->" % (preconditions[i].replace("\n", "")))
                 except NameError:
                     pass
                 _log("=========================== TEST #%03d ===========================" % (i + 1), self.logname)
@@ -724,12 +722,18 @@ class Test:
                             next_command = "End"
                         exp = expected[i][test_index].replace("\n", "")
                         if cid == "000":
-                            # activate the infotainment microphone for the voice recognition
-                            # (1: manual, 2: wake word, 3: automatic)
-                            self.activate_mic(self.mic_mode)
-                            if self.mic_mode == 2:
-                                _log("HEY MASERATI", self.logname)
-                            _log("MIC_ACTIVATED", self.logname)
+                            while True:
+                                # activate the infotainment microphone for the voice recognition
+                                # (1: manual, 2: wake word, 3: automatic)
+                                self.activate_mic(self.mic_mode)
+                                if self.mic_mode == 2:
+                                    _log("HEY MASERATI", self.logname)
+                                _log("MIC_ACTIVATED", self.logname)
+                                if str(input("Press ENTER to continue ('r' to repeat)\n-->")) == 'r':
+                                    print("\nRepeating...")
+                                    _log("REPEATING WAKEWORD", self.logname)
+                                else:
+                                    break
                         else:
                             while True:
                                 print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
@@ -750,13 +754,14 @@ class Test:
                                     _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
                                 else:
                                     _log("RADIO: <<%s>>" % response, self.logname)
-                                if test_index + 1 < len(test[i]):
+                                if len(test[i]) > 2:
                                     q = input("Press ENTER to proceed with next step ('%s'). Press 'r' to repeat\n-->"
                                               % next_command)
                                     if q == "":
                                         break
                                     elif q == "r":
                                         print("\nRepeating step...\n")
+                                        _log("REPEATING STEP", self.logname)
                                 else:
                                     break
                     result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
@@ -765,7 +770,7 @@ class Test:
                     if result != "r":
                         if result == "0":
                             _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
-                            note = input("Place note here\n-->")
+                            note = input("Notes: ")
                             _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                             self.failed.append(i + 1)
                             result = "%s (%s)" % (result, note)
@@ -786,12 +791,15 @@ class Test:
                 except KeyError:
                     self.results[str(i + 1)] = []
                     self.results[str(i + 1)].append(result)
+                self.save_conf()  # save current progress of the test
             print("------------------------------------------------------------------")
             print("TEST COMPLETED")
             _log("TEST_STATUS: COMPLETED", self.logname)
             self.completed = True
             self.status = 0
             self.save_conf()  # save current progress of the test
+            print_square("Test completed!\n\nSaving report as csv file")
+            self.print_report()
 
         except KeyboardInterrupt:
             print("------------------------------------------------------------------")

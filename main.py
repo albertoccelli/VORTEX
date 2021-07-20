@@ -1,4 +1,5 @@
 # /.venv/bin/python
+import os
 
 from source.testloop import Test, splash
 from source.cli_tools import clear_console
@@ -57,6 +58,8 @@ try:
         "Report printed!"
     else:
         messagebox.showinfo(t.testName, "Test interrupted")
+    t.print_report()
+    os.system("")
 
 except KeyboardInterrupt:
     print("Goodbye")
