@@ -71,6 +71,12 @@ A **free-field microphone** (e.g. Bruel & Kjaer 4191/4939), placed at the MRP (m
 
 <img src="https://www.bksv.com/-/media/New_Products/Transducers/Microphones/4191.ashx?w=768&hash=DBC3220A6663A77F6931862CA2D40543B70FFA9B" width="200" >
 
+#### Preparing the test
+The cables and microphones should be organized as follows:
+* The measurement free-field microphone should be connected to channel 1 (or L) of the sound card
+* The artificial ear should be connected to channel 2 (or R) of the sound card. If available, the second ear can be connected to a third channel of the sound card for a stereo background noise recording.
+* The output 1 (or L) of the sound card should be connected to the amplifier for the artificial mouth.
+
 ## 3. Test Execution
 
 Double click on the main.py file or run `python main.py`. A dialog box will appear.
