@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.0-alpha] - 2021-07-20
+### Added
+- Wake word and cancel commands implemented
+- Now each test step can be repeated
+- Notes can be added after negative result
+
 ## [0.3.0-alpha] - 2021-07-15
 ### Added
 - Automatic calibration of the mouth intensity.
