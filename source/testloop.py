@@ -729,7 +729,7 @@ class Test:
                                 if self.mic_mode == 2:
                                     _log("HEY MASERATI", self.logname)
                                 _log("MIC_ACTIVATED", self.logname)
-                                print("Press ENTER to continue ('r' to repeat)\n-->", end = "")
+                                print("Press ENTER to continue ('r' to repeat)\n-->", end="")
                                 if getch().decode("utf-8") == 'r':
                                     print("\nRepeating...")
                                     _log("REPEATING WAKEWORD", self.logname)
@@ -757,10 +757,10 @@ class Test:
                                     _log("RADIO: <<%s>>" % response, self.logname)
                                 if len(test[i]) > 2:
                                     print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
-                                              % next_command, end = "")
+                                          % next_command, end="")
                                     q = getch()
                                     if q.decode("utf-8") == "r":
-                                        print("\n\nRepeating step...", end = "")
+                                        print("\n\nRepeating step...", end="")
                                         _log("REPEATING STEP", self.logname)
                                     else:
                                         break
