@@ -454,7 +454,7 @@ class Test:
                 self.play_command("000")
                 time.sleep(1)
             except FileNotFoundError:
-                input("Mode not implemented. Falling back to 1")
+                print("Mode not implemented. Falling back to 1")
                 pass
         else:
             input("Mode not implemented. Falling back to 1")
@@ -587,17 +587,19 @@ class Test:
 
     def listen_noise(self, seconds=3):
         # Only background noise
-        input("Measuring background noise with radio OFF. Press ENTER to continue.\n-->")
+        input("\nMeasuring background noise with radio OFF. Press ENTER to continue.\n-->")
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = get_rms(noise_w) + self.recorder.correction[1]
-        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise, lombard(self.noise)), title="RADIO OFF")
+        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB"
+                     % (self.noise, lombard(self.noise)), title="RADIO OFF")
         # Background noise and radio on
-        input("Measuring background noise with radio ON. Press ENTER to continue.\n-->")
+        input("\nMeasuring background noise with radio ON. Press ENTER to continue.\n-->")
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise_radio = get_rms(noise_w) + self.recorder.correction[1]
-        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise_radio, lombard(self.noise_radio)), title="RADIO ON")
+        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB"
+                     % (self.noise_radio, lombard(self.noise_radio)), title="RADIO ON")
         return self.noise, self.noise_radio
 
     # functions for the actual test
@@ -729,34 +731,44 @@ class Test:
                                 _log("HEY MASERATI", self.logname)
                             _log("MIC_ACTIVATED", self.logname)
                         else:
-                            print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
-                            try:
-                                self.play_command(
-                                    cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
-                            except Exception as e:
-                                print("ERROR: %s" % e)
-                            _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
-                            try:
-                                print("\nExpected behaviour --> %s\n" % exp)
-                            except NameError:
-                                pass
-                            # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
-                            response = "[Answer]"
-                            if translate:
-                                translation = "Translation"
-                                _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
-                            else:
-                                _log("RADIO: <<%s>>" % response, self.logname)
-                            if test_index + 1 < len(test[i]):
-                                pass
-                                input("==> Press ENTER to proceed with next step ('%s')\n" % next_command)
+                            while True:
+                                print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
+                                try:
+                                    self.play_command(
+                                        cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
+                                except Exception as e:
+                                    print("ERROR: %s" % e)
+                                _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
+                                try:
+                                    print("\nExpected behaviour --> %s\n" % exp)
+                                except NameError:
+                                    pass
+                                # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
+                                response = "[Answer]"
+                                if translate:
+                                    translation = "Translation"
+                                    _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
+                                else:
+                                    _log("RADIO: <<%s>>" % response, self.logname)
+                                if test_index + 1 < len(test[i]):
+                                    q = input("Press ENTER to proceed with next step ('%s'). Press 'r' to repeat\n-->"
+                                              % next_command)
+                                    if q == "":
+                                        break
+                                    elif q == "r":
+                                        print("\nRepeating step...\n")
+                                else:
+                                    break
                     result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
                     print(result)
                     self.status += 1  # status updated
                     if result != "r":
                         if result == "0":
                             _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
+                            note = input("Place note here\n-->")
+                            _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                             self.failed.append(i + 1)
+                            result = "%s (%s)" % (result, note)
                             self.cancel(1)
                         elif result == "1":
                             _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
@@ -799,19 +811,6 @@ class Test:
             _log("TEST_STATUS: %03d" % self.status, self.logname)
             self.save_conf()  # save current progress of the test
 
-        # calculate the score and display it
-        score = 0
-        scores = []
-        for i in range(len(self.results)):
-            scores.append(max(self.results[str(i + 1)]))
-        for i in scores:
-            score += int(i)
-        try:
-            score = 100 * score / len(scores)
-        except ZeroDivisionError:
-            score = 0
-        _log("TEST_RESULT: %d%%" % score, self.logname)
-        print_square("Results: %d%%" % score)
         self.save_conf()
         return self.status
 
