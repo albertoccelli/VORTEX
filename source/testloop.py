@@ -621,7 +621,6 @@ class Test:
         print("+ Noise intensity: %0.2fdBA\t\t+" % self.noise)
         print("+ Lombard effect: %0.2fdB\t\t+" % (lombard(self.noise)))
         print("+++++++++++++++++++++++++++++++++")
-        input("\nPress ENTER to continue...\n-->")
         return self.noise
 
     # functions for the actual test
