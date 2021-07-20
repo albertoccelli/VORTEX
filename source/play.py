@@ -21,7 +21,7 @@ def play_wav(filename):
     # read data
     wav_data = wf.readframes(chunk)
     # play stream
-    print("Playing...")
+    # print("Playing...")
     while len(wav_data) > 0:
         stream.write(wav_data)
         wav_data = wf.readframes(chunk)
@@ -30,7 +30,7 @@ def play_wav(filename):
     stream.close()
     # close PyAudio
     p.terminate()
-    print("Stop!")
+    # print("Stop!")
     return
 
 
