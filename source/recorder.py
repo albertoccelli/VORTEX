@@ -8,6 +8,7 @@ import wave  # write to wav
 import numpy as np
 import pyaudio  # record
 from scipy.io.wavfile import read, write
+from .cli_tools import print_square
 
 if __name__ != "__main__":
     from .dsp import get_rms
@@ -229,12 +230,9 @@ class Recorder:
         audio_data = audio_data[:, channel]
         self.calibrated[channel] = True  # microphone calibrated
         self.correction[channel] = reference - get_rms(audio_data)  # correction factor
-        print("+++++++++++++++++++++++++++++++++")
-        print("+                               +")
-        print("+   Power      = %0.2fdBFS\t+" % rms_global)
-        print("+   dBSPL/dBFS = %0.2f    \t+" % self.correction[channel])
-        print("+                               +")
-        print("+++++++++++++++++++++++++++++++++")
+        print_square("Power      = %0.2fdBFS\n"
+                     "dBSPL/dBFS = %0.2f" % (rms_global, self.correction[channel]),
+                     margin=[4, 4, 1, 1])
         return audio_data
 
     def play_and_record(self, audio_data, audio_fs):
