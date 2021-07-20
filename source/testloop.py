@@ -6,7 +6,6 @@ import time
 # user interface
 import tkinter as tk
 from datetime import datetime
-from time import sleep
 from tkinter import filedialog
 
 import random
@@ -19,6 +18,7 @@ from .dsp import get_rms, add_gain, SaturationError
 from .configure import load_list
 from .play import play_data
 from .recorder import Recorder
+from .cli_tools import print_square, clear_console, show_image
 
 root = tk.Tk()
 root.wm_attributes("-topmost", 1)
@@ -51,36 +51,17 @@ _langDict = {"ARW": "Arabic",
              }
 
 
-def clear_console():
-    command = 'clear'
-    if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
-        command = 'cls'
-    os.system(command)
-
-
 def splash():
     clear_console()
-    _show_image("./utilities/logo.txt")
-    print("\n"
-          "\t++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    print("\t+                                                                                        +")
-    print("\t+                   VoRTEx v0.3.0a - Voice Recognition Test Execution                    +")
-    print("\t+                             'From testers, for testers'                                +")
-    print("\t+                                                                                        +")
-    print("\t+                                  Os: Windows                                           +")
-    print("\t+                          (c) Jul. 2021 - Alberto Occelli                               +")
-    print("\t+                           email: albertoccelli@gmail.com                               +")
-    print("\t+                       https://github.com/albertoccelli/VoRTEx                          +")
-    print("\t+                                                                                        +")
-    print("\t++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
-    return
-
-
-def _show_image(txt):
-    with open(txt, "r") as f:
-        for line in f.readlines():
-            print(line, end="")
-            sleep(0.01)
+    show_image("./utilities/logo.txt")
+    welcome = "VoRTEx v0.4.0a - Voice Recognition Test Execution\n" \
+              "'From testers, for testers'\n" \
+              "\n" \
+              "Os: Windows\n" \
+              "(c) Jul. 2021 - Alberto Occelli\n" \
+              "email: albertoccelli@gmail.com\n" \
+              "https://github.com/albertoccelli/VoRTEx"
+    print_square(welcome, margin=[20, 20, 1, 1], centering="center")
     return
 
 
@@ -155,7 +136,7 @@ class Test:
         print("Opening sound recorder\n")
         self.recorder = Recorder()
         print("\nChannels: %d\n" % self.recorder.channels)
-        # set 2 channels 
+        # set 2 channels
         self.recorder.channels = 2
         # channel assignment
         # output
@@ -239,13 +220,11 @@ class Test:
     def getstatus(self):
         # print the status of the test and ask for confirmation
         while True:
-            print("\n------------------------------------------------------------------")
-            print("---------------------STATUS OF THE TEST---------------------------")
-            print("------------------------------------------------------------------")
-            print("\tLANGUAGE: %s" % self.lang)
-            print("\tSTARTED: %s" % self.begun)
-            print("\tCOMPLETED: %s" % self.completed)
-            print("------------------------------------------------------------------")
+            print_square("LANGUAGE: %s\n"
+                         "STARTED: %s\n"
+                         "COMPLETED: %s" % (self.lang, self.begun, self.completed),
+                         margin=[5, 5, 1, 1],
+                         title="TEST STATUS")
             try:
                 if self.begun:
                     input(
@@ -425,9 +404,7 @@ class Test:
                     elif "LANG" in line:
                         self.lang = str(line.split("=")[-1]).replace("\n", "")
             else:
-                print("\n==================================================================")
-                print("!!!CONFIGURATION FILE CORRUPTED!!!")
-                print("\n==================================================================")
+                print_square("!!! CONFIGURATION FILE CORRUPTED", centering="center")
 
     def play_command(self, cid):
         """
@@ -468,9 +445,7 @@ class Test:
             input("Press PTT")
         elif mode == 2:
             try:
-                print("+++++++++++++++++++")
-                print("+  Ehy Maserati!  +")
-                print("+++++++++++++++++++")
+                print_square("Hey Maserati!", centering="center")
                 self.play_command("000")
                 time.sleep(1)
             except FileNotFoundError:
@@ -489,9 +464,7 @@ class Test:
         """
         if mode == 1:
             try:
-                print("++++++++++++")
-                print("+  Cancel  +")
-                print("++++++++++++")
+                print_square("Cancel", centering="center")
                 self.play_command("999")
                 input("DONE. Press Enter to proceed\n-->")
             except FileNotFoundError:
@@ -572,13 +545,10 @@ class Test:
                 recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
                 recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                 delta = reference - recorded_dbspl
-                print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
-                print("+                               +")
-                print("+   Target      = %0.2fdBFS\t+" % reference)
-                print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
-                print("+   delta       = %0.2f    \t+" % -delta)
-                print("+                               +")
-                print("+++++++++++++++++++++++++++++++++")
+                print_square("Target      = %0.2fdBSPL\n"
+                             "Mouth RMS   = %0.2fdBSPL\n"
+                             "delta       = %0.2fdB" % (reference, recorded_dbspl, -delta),
+                             title="ATTEMPT %d of %d" % (attempt, max_attempts))
                 while abs(delta) > 0.5:
                     attempt += 1
                     # add gain and record again until the intensity is close to 94dBSPL
@@ -590,13 +560,10 @@ class Test:
                         self.recorder.save("calibration%02d.wav" % attempt)
                         recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                         delta = reference - recorded_dbspl
-                        print("+++++++++ ATTEMPT %d of %d ++++++++" % (attempt, max_attempts))
-                        print("+                               +")
-                        print("+   Target      = %0.2fdBFS\t+" % reference)
-                        print("+   Mouth RMS   = %0.2f    \t+" % recorded_dbspl)
-                        print("+   delta       = %0.2f    \t+" % -delta)
-                        print("+                               +")
-                        print("+++++++++++++++++++++++++++++++++")
+                        print_square("Target      = %0.2fdBSPL\n"
+                                     "Mouth RMS   = %0.2fdBSPL\n"
+                                     "delta       = %0.2fdB" % (reference, recorded_dbspl, -delta),
+                                     title="ATTEMPT %d of %d" % (attempt, max_attempts))
                     except SaturationError:
                         input("Cannot automatically increase the volume. Please manually increase the volume from "
                               "the amplifier knob and press ENTER to continue\n-->")
@@ -617,10 +584,7 @@ class Test:
         noise = self.recorder.record(seconds)[:, 1]
         noise_w = a_weight(noise, self.recorder.fs).astype(np.int16)
         self.noise = get_rms(noise_w) + self.recorder.correction[1]
-        print("+++++++++++++++++++++++++++++++++")
-        print("+ Noise intensity: %0.2fdBA\t\t+" % self.noise)
-        print("+ Lombard effect: %0.2fdB\t\t+" % (lombard(self.noise)))
-        print("+++++++++++++++++++++++++++++++++")
+        print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB" % (self.noise, lombard(self.noise)))
         return self.noise
 
     # functions for the actual test
@@ -702,18 +666,14 @@ class Test:
         expected = []
         if not self.begun:
             # start test from 0
-            print("==================================================================")
-            print("Beginning test... Press ENTER when you are ready")
-            print("------------------------------------------------------------------")
+            print_square("Beginning test... Press ENTER when you are ready")
             input("-->")
             _log("MAY THE FORCE BE WITH YOU", self.logname)  # the first line of the log file
             self.results = {}
             self.begun = True
         else:
             # resume the test
-            print("==================================================================")
-            print("Resuming test from %d... Press ENTER when you are ready" % (self.status + 1))
-            print("------------------------------------------------------------------")
+            print_square("Resuming test from %d... Press ENTER when you are ready" % (self.status + 1))
             input("-->")
             _log("WELCOME BACK", self.logname)
 
@@ -726,16 +686,14 @@ class Test:
             pass
         _log("SELECTED LANGUAGE: %s - %s" % (self.lang, _langDict[self.lang]), self.logname)
         if self.recorder.calibrated[self.earChannel]:
-            print("Listening to ambient noise...\n")
+            print("Listening to ambient noise...")
             self.listen_noise()
             input("Press ENTER to continue\n-->")
         i = 0
         try:
             for i in range(self.status, len(test)):
                 clear_console()
-                print("------------------------------------------------------------------")
-                print("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))
-                print("------------------------------------------------------------------\n")
+                print_square("%s: TEST %d OUT OF %d" % (_langDict[self.lang], i + 1, len(test)))
                 try:
                     print("Preconditions:\n%s\n" % (preconditions[i].replace("\n", "")))
                 except NameError:
@@ -747,7 +705,7 @@ class Test:
                             0]  # reading database, splits commands into command id and phrase
                         command = test[i][test_index].split("\t")[1].replace("\n", "")
                         try:
-                            next_command = test[i][test_index+1].split("\t")[1].replace("\n", "")
+                            next_command = test[i][test_index + 1].split("\t")[1].replace("\n", "")
                         except IndexError:
                             next_command = "End"
                         exp = expected[i][test_index].replace("\n", "")
@@ -841,9 +799,7 @@ class Test:
         except ZeroDivisionError:
             score = 0
         _log("TEST_RESULT: %d%%" % score, self.logname)
-        print("------------------------------------------------------------------")
-        print("Results: %d%%" % score)
-        print("------------------------------------------------------------------")
+        print_square("Results: %d%%" % score)
         self.save_conf()
         return self.status
 

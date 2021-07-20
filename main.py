@@ -1,6 +1,7 @@
 # /.venv/bin/python
 
-from source.testloop import Test, splash, clear_console
+from source.testloop import Test, splash
+from source.cli_tools import clear_console
 import warnings
 # user interface
 import tkinter as tk
