@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.4.1-alpha] - 2021-07-20
+### Added
+- Bugfixes
+
 ## [0.4.0-alpha] - 2021-07-20
 ### Added
 - Wake word and cancel commands implemented
