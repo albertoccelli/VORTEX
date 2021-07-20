@@ -131,12 +131,15 @@ class Test:
         # declare the attributes of the test
         self.wPath = "."  # The current working path of the selected test
         self.testName = ""
+        self.settingsDir = "settings/"  # the directory for the settings of the program
+        self.settingsFile = "settings/settings.vcfg"
         self.databaseDir = "database/"
         self.testDir = "vr_tests/"
         self.phrasesPath = "phrases/"  # The path of the audio files
-        self.configfile = ""  # The configuration file of the current test
-        self.listfile = ""  # The list file for the command database
-        self.lang = "ITA"  # The language used for the test
+        self.testfile = ""  # The configuration file of the current test (to be defined during the test configuration)
+        self.listfile = ""  # The list file for the command database (to be defined during the test configuration)
+        self.lang = "ITA"  # The language used for the test (to be defined during the test configuration)
+        self.mic_mode = 1  # how the infotainment microphone is activated: ptt(1), wakeword(2), can message(3)
         # status of the test
         self.begun = False  # Has the test already started?
         self.completed = False  # Has the test been completed?
@@ -147,6 +150,15 @@ class Test:
         self.failed = []  # List of failed tests
         self.noise = 0  # RMS value of the background noise
         # open the sound recorder for calibration and translation
+        print("------------------------------------------------------------------")
+        try:
+            self.load_settings()
+            print("Loading VoRTEx settings...")
+        except FileNotFoundError:
+            print("Creating VoRTEx settings file...")
+            with open(self.settingsFile, "w", encoding="utf-16"):
+                pass
+        clear_console()
         print("------------------------------------------------------------------")
         print("Opening sound recorder\n")
         self.recorder = Recorder()
@@ -185,6 +197,32 @@ class Test:
             except ValueError:
                 print("Invalid input!")
         self.logname = "%s/testlog.log" % self.wPath
+
+    def save_settings(self):
+        with open(self.settingsFile, "w", encoding="utf-16") as f:
+            f.write("@YODA\n")
+            f.write("@SETTINGS\n")
+            f.write("MOUTH_CALIBRATED=%s\n" % self.mCalibrated)
+            f.write("MOUTH_CORRECTION=%s\n" % self.gain)
+            f.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
+            f.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
+        return
+
+    def load_settings(self):
+        try:
+            with open(self.settingsFile, "r", encoding="utf-16") as f:
+                for line in f.readlines():
+                    if "MOUTH_CALIBRATED" in line:
+                        self.mCalibrated = eval(line.split("=")[-1])
+                    elif "MOUTH_CORRECTION" in line:
+                        self.gain = eval(line.split("=")[-1])
+                    elif "MIC_CALIBRATED" in line:
+                        self.recorder.calibrated = eval(line.split("=")[-1])
+                    elif "MIC_DBFSTODBSPL" in line:
+                        self.recorder.correction = eval(line.split("=")[-1])
+        except FileNotFoundError:
+            raise FileNotFoundError("Settings file not found!")
+        return
 
     def detectgenders(self, lang):
         """
@@ -230,7 +268,7 @@ class Test:
         self.wPath = "%s%s" % (self.testDir, self.testName)  # this will be your new working directory
         try:
             os.mkdir(self.wPath)  # create a new directory for the test
-            self.configfile = "%s/config.cfg" % self.wPath
+            self.testfile = "%s/config.cfg" % self.wPath
             print("Creating test (%s)" % self.wPath)
             # select the proper list file with the command lists
             self.listfile = filedialog.askopenfilename(title="Choose the list file for the test",
@@ -308,7 +346,7 @@ class Test:
                     return
         else:
             self.wPath = path
-        self.configfile = "%s/config.cfg" % self.wPath  # the configuration file's path
+        self.testfile = "%s/config.cfg" % self.wPath  # the configuration file's path
         self.load_conf()  # retrieve the paths and test status from the configuration file
         self._configure_list()  # get the test configuration (languages, lists) from the listfile
         self.getstatus()
@@ -340,16 +378,12 @@ class Test:
     def save_conf(self):
         """
         Writes the test attributes (including the current progress) into the config file, along with information
-        regarding the .vrtl file used for the test.
+        regarding the .vrtl file used for the single test.
         """
-        with open(self.configfile, "w", encoding="utf-16") as r:
+        with open(self.testfile, "w", encoding="utf-16") as r:
             r.write("@YODA\n")
             r.write("@CONFIGURATION\n")
             r.write("LISTFILE=%s\n" % self.listfile)
-            r.write("MOUTH_CALIBRATED=%s\n" % self.mCalibrated)
-            r.write("MOUTH_CORRECTION=%s\n" % self.gain)
-            r.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
-            r.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
             r.write("PHRASESPATH=%s\n" % self.phrasesPath)
             r.write("LANG=%s\n" % self.lang)
             r.write("\n")
@@ -365,13 +399,13 @@ class Test:
         Reads the configuration file for the selected test
 
         """
-        with open(self.configfile, "r", encoding="utf-16") as r:
+        with open(self.testfile, "r", encoding="utf-16") as r:
             # CHECK INTEGRITY
             healthy = False
             for line in r.readlines():
                 if "@YODA" in line:
                     healthy = True
-        with open(self.configfile, "r", encoding="utf-16") as r:
+        with open(self.testfile, "r", encoding="utf-16") as r:
             if healthy:
                 for line in r.readlines():
                     # read configuration
@@ -394,21 +428,6 @@ class Test:
                 print("\n==================================================================")
                 print("!!!CONFIGURATION FILE CORRUPTED!!!")
                 print("\n==================================================================")
-
-    @staticmethod
-    def activate_mic(mode=1):
-        """
-        Function to activate the vehicle's microphone for the voice recognition.
-        Modes:
-        1 - Manual
-        2 - Reproduce wake word (to be chosen among the audio files)
-        3 - Send PTT can message
-        """
-        if mode == 1:
-            input("Press PTT")
-        else:
-            input("Mode not implemented. Falling back to 1")
-        return
 
     def play_command(self, cid):
         """
@@ -435,6 +454,51 @@ class Test:
                     else:
                         break
         play_data(data, fs)
+        return
+
+    def activate_mic(self, mode=1):
+        """
+        Function to activate the vehicle's microphone for the voice recognition.
+        Modes:
+        1 - Manual
+        2 - Reproduce wake word (to be chosen among the audio files)
+        3 - Send PTT can message
+        """
+        if mode == 1:
+            input("Press PTT")
+        elif mode == 2:
+            try:
+                print("+++++++++++++++++++")
+                print("+  Ehy Maserati!  +")
+                print("+++++++++++++++++++")
+                self.play_command("000")
+                time.sleep(1)
+            except FileNotFoundError:
+                input("Mode not implemented. Falling back to 1")
+                pass
+        else:
+            input("Mode not implemented. Falling back to 1")
+        return
+
+    def cancel(self, mode=1):
+        """
+        Function to cancel recognition prompt
+
+        1 - Reproduce "cancel" command
+        2 - Send PTT can message
+        """
+        if mode == 1:
+            try:
+                print("++++++++++++")
+                print("+  Cancel  +")
+                print("++++++++++++")
+                self.play_command("999")
+                input("DONE. Press Enter to proceed\n-->")
+            except FileNotFoundError:
+                input("'Cancel' command not found. Please place it under the command id '999'.")
+                pass
+        else:
+            input("Mode not implemented. Falling back to 1")
         return
 
     # calibration functions
@@ -680,10 +744,17 @@ class Test:
                         cid = test[i][test_index].split("\t")[
                             0]  # reading database, splits commands into command id and phrase
                         command = test[i][test_index].split("\t")[1].replace("\n", "")
+                        try:
+                            next_command = test[i][test_index+1].split("\t")[1].replace("\n", "")
+                        except IndexError:
+                            next_command = "End"
                         exp = expected[i][test_index].replace("\n", "")
                         if cid == "000":
-                            self.activate_mic(1)  # activate the infotainment microphone for the voice recognition
+                            # activate the infotainment microphone for the voice recognition
                             # (1: manual, 2: wake word, 3: automatic)
+                            self.activate_mic(self.mic_mode)
+                            if self.mic_mode == 2:
+                                _log("HEY MASERATI", self.logname)
                             _log("MIC_ACTIVATED", self.logname)
                         else:
                             print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
@@ -706,7 +777,7 @@ class Test:
                                 _log("RADIO: <<%s>>" % response, self.logname)
                             if test_index + 1 < len(test[i]):
                                 pass
-                                input("==> Press ENTER to proceed with next step\n")
+                                input("==> Press ENTER to proceed with next step ('%s')\n" % next_command)
                     result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
                     print(result)
                     self.status += 1  # status updated
@@ -714,20 +785,23 @@ class Test:
                         if result == "0":
                             _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
                             self.failed.append(i + 1)
+                            self.cancel(1)
                         elif result == "1":
                             _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
+                            self.cancel(1)
                         else:
                             result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))
                         break
                     else:  # repeats test
                         _log("REPEATING", self.logname)
+                    # cancels prompt
+                    self.cancel(1)
                 try:
                     # at the end of the selected test, writes the results into a array
                     self.results[str(i + 1)].append(result)
                 except KeyError:
                     self.results[str(i + 1)] = []
                     self.results[str(i + 1)].append(result)
-                print("DONE")
             print("------------------------------------------------------------------")
             print("TEST COMPLETED")
             _log("TEST_STATUS: COMPLETED", self.logname)

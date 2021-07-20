@@ -17,13 +17,16 @@ clear_console()
 
 try:
     t = Test()
+    print(t.mCalibrated)
+    print(t.recorder.calibrated[t.micChannel])
+    print(t.recorder.calibrated[t.earChannel])
     if not t.mCalibrated or not t.recorder.calibrated[t.micChannel] or not t.recorder.calibrated[t.earChannel]:
         MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and the mouth?',
                                         icon='question')
     else:
-        MsgBox = not (tk.messagebox.askyesno('Calibration', 'Calibration files found. Do you want to proceed? '
-                                                            '(Press NO to redo the calibration.',
-                                             icon='question'))
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and the mouth? '
+                                                       '(Press "No" to proceed with the previously saved calibration)',
+                                        icon='question')
     if MsgBox:
         # calibration of measurement microphone
         clear_console()
@@ -41,6 +44,13 @@ try:
         input("Calibrating mouth: please place the measurement microphone at the MRP and press ENTER\n-->")
         t.calibrate_mouth()  # calibration of the mouth
         input("\nPress ENTER to proceed...\n-->")
+
+    clear_console()
+    t.mic_mode = int(input("Please choose the microphone activation mode:\n"
+                           "1) Manual (Push To Talk from the steering wheel\n"
+                           "2) Wake-word\n"
+                           "-->"))
+
     t.execution()  # execute test
     if t.completed:
         messagebox.showinfo(t.testName, "Test completed!")
