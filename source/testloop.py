@@ -7,6 +7,7 @@ import time
 import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog
+from msvcrt import getch
 
 import random
 import numpy as np
@@ -413,7 +414,6 @@ class Test:
         background noise has been performed).
         """
         filename = self.phrasesPath + "/" + self.lang + "_" + str(cid) + ".wav"
-        print(filename)
         fs, data = read(filename)
         if self.mCalibrated:
             while True:
@@ -729,14 +729,15 @@ class Test:
                                 if self.mic_mode == 2:
                                     _log("HEY MASERATI", self.logname)
                                 _log("MIC_ACTIVATED", self.logname)
-                                if str(input("Press ENTER to continue ('r' to repeat)\n-->")) == 'r':
+                                print("Press ENTER to continue ('r' to repeat)\n-->", end = "")
+                                if getch().decode("utf-8") == 'r':
                                     print("\nRepeating...")
                                     _log("REPEATING WAKEWORD", self.logname)
                                 else:
                                     break
                         else:
                             while True:
-                                print("Reproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
+                                print("\nReproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
                                 try:
                                     self.play_command(
                                         cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
@@ -744,7 +745,7 @@ class Test:
                                     print("ERROR: %s" % e)
                                 _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
                                 try:
-                                    print("\nExpected behaviour --> %s\n" % exp)
+                                    print("Expected behaviour --> %s\n" % exp)
                                 except NameError:
                                     pass
                                 # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
@@ -755,31 +756,35 @@ class Test:
                                 else:
                                     _log("RADIO: <<%s>>" % response, self.logname)
                                 if len(test[i]) > 2:
-                                    q = input("Press ENTER to proceed with next step ('%s'). Press 'r' to repeat\n-->"
-                                              % next_command)
-                                    if q == "":
-                                        break
-                                    elif q == "r":
-                                        print("\nRepeating step...\n")
+                                    print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
+                                              % next_command, end = "")
+                                    q = getch()
+                                    if q.decode("utf-8") == "r":
+                                        print("\n\nRepeating step...", end = "")
                                         _log("REPEATING STEP", self.logname)
+                                    else:
+                                        break
                                 else:
                                     break
-                    result = str(input("Result: 1(passed), 0(failed), r(repeat)\n-->"))
+                    result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
                     print(result)
                     self.status += 1  # status updated
                     if result != "r":
-                        if result == "0":
-                            _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
-                            note = input("Notes: ")
-                            _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
-                            self.failed.append(i + 1)
-                            result = "%s (%s)" % (result, note)
-                            self.cancel(1)
-                        elif result == "1":
-                            _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
-                            self.cancel(1)
-                        else:
-                            result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat)\n-->"))
+                        while True:
+                            if result == "0":
+                                _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
+                                note = input("Notes: ")
+                                _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                self.failed.append(i + 1)
+                                result = "%s (%s)" % (result, note)
+                                self.cancel(1)
+                                break
+                            elif result == "1":
+                                _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
+                                self.cancel(1)
+                                break
+                            else:
+                                result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat all)\n-->"))
                         break
                     else:  # repeats test
                         _log("REPEATING", self.logname)
