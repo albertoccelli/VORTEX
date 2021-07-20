@@ -397,8 +397,7 @@ class Recorder:
 
     def record(self, seconds, channel=0, threshold=None):
         if threshold is None:
-            threshold = self.threshold
-        print("Threshold value: %f" % threshold)
+            pass
         # instantiate stream
         p = pyaudio.PyAudio()  # create an interface to PortAudio API
         stream = p.open(format=self.sample_format,
