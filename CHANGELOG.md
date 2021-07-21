@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## [0.4.1-alpha] - 2021-07-21
+## [0.4.2-alpha] - 2021-07-21
 ### Added
 - The test can be resumed even from another pc
 - Enhanced user experience
