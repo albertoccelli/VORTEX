@@ -52,10 +52,18 @@ _langDict = {"ARW": "Arabic",
              }
 
 
+def _abs_to_rel(path):
+    """
+    Convert path from absolute to relative
+    """
+    cwd = os.getcwd().replace("\\", "/")
+    return path.split(cwd)[-1]
+
+
 def splash():
     clear_console()
     show_image("./utilities/logo.txt")
-    welcome = "VoRTEx v0.4.0a - Voice Recognition Test Execution\n" \
+    welcome = "VoRTEx v0.4.2a - Voice Recognition Test Execution\n" \
               "'From testers, for testers'\n" \
               "\n" \
               "Os: Windows\n" \
@@ -257,6 +265,7 @@ class Test:
                                                        filetypes=[("Voice Recognition Test List files", "*.vrtl"),
                                                                   ("All files", "*")],
                                                        initialdir=self.databaseDir)
+            self.listfile = _abs_to_rel(self.listfile)
             self._configure_list()  # get the command database (languages, lists) from the list file
             print("\n\nChoose the language to be used in the test among the following:\n")
             for i in range(len(self.langs)):
@@ -344,7 +353,8 @@ class Test:
                 ecc...
                 }
         """
-        self.database = load_list(self.listfile)  # create the test sequence dictionary from the vrtl file
+        self.database = load_list(
+            os.getcwd().replace("\\", "/") + self.listfile)  # create the test sequence dictionary from the vrtl file
         self.langs = []  # list of the currently supported languages
         for k in self.database.keys():
             if k != "preconditions" and k != "expected" and k != "AUDIOPATH":

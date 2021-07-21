@@ -1,3 +1,5 @@
+import os
+
 def save_list(test, filename="../database/r1h.vrtl", exp=True):
     """
     Saves the dictionary containing the commands information into a special file (.vrtl) to be imported
@@ -35,5 +37,5 @@ def load_list(filename="../database/r1h.vrtl"):
             for line in p.readlines():
                 test = eval(line)
     except FileNotFoundError:
-        print("\nConfiguration file not found!")
+        print("\nConfiguration file not found! (%s)" % (filename))
     return test
