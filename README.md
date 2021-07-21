@@ -79,5 +79,12 @@ The cables and microphones should be organized as follows:
 
 ## 3. Test Execution
 
+### New test
 Double click on the main.py file or run `python main.py`. A dialog box will appear.
-Choose wether to start a new test or resume one (1 or 2 and then ENTER). 
+Choose wether to start a new test or resume one (1 or 2 and then ENTER. The third option has not been implemented yet...). For the first test, we will select the first option.
+
+Choose a name for the test. You'd better avoid spaces and use underscores instead (anyway, space are eventually replaced by underscores). From the prompt that opens, select the proper VRTL file. The VRTL contains all the information about the test, including the test steps, commands, preconditions and expected behavior. So far only the test regardin Harman radio has got a VRTL file, so select that one.
+
+From the language lists choose one and select it by writing the coresponding number into the command line input. If both female and male voices are available, choose between them with the character 'm' or 'f'.
+
+If the calibrator is available, choose "yes" when asked to calibrate the microphone. The calibration is strongly advised, since without it won't be possible to calibrate the mouth at the nominal level of 94dBSPL or to record the background noise. To calibrate each microphone, simply follows the instructions: first, place the measurement microphone into the 1kHz calibrator and hit ENTER. The calibration will last around 10 seconds. Similarly, place the calibrator to the artificial ear, press ENTER and wait another 10 seconds. Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly.
