@@ -1,6 +1,6 @@
 # For development purposes only
 
-#from transliterate import translit
+from transliterate import translit
 
 
 def capitalize(string):
@@ -154,17 +154,9 @@ if __name__ == "__main__":
     print("Loading configuration file\n")
     oldtest = load_list()
 
-
-
     # read new commands from list
     test = oldtest
-    for i in test.keys():
-        if len(i) == 3:
-            for j in range(len(test[i])):
-                if j != 14:
-                    if test[i][j][0] != test[i][0][0]:
-                        test[i][j].insert(0, test[i][0][0])
-                        
+
     # select new language to add
     '''
     lang = "ITA"
@@ -172,4 +164,8 @@ if __name__ == "__main__":
     commands, cid = make_commands(lang, "../lists/to_separe.txt", transliteration=False)
     test[lang] = commands
     '''
-
+    read_preconditions()
+    # write_to_files(test[lang], lang)
+    print(test["preconditions"])
+    input("Press ENTER to save preconditions")
+    save_list(test)
