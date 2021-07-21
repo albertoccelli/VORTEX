@@ -50,7 +50,8 @@ try:
                            "1) Manual (Push To Talk from the steering wheel\n"
                            "2) Wake-word\n"
                            "-->"))
-    t.status = int(input("From which test do you want to start??\n-->"))
+    if t.begun == False:
+        t.status = int(input("From which test do you want to start??\n-->"))-1
     t.execution()  # execute test
     if t.completed:
         messagebox.showinfo(t.testName, "Test completed!")
