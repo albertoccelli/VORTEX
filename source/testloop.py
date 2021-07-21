@@ -451,7 +451,6 @@ class Test:
             try:
                 print_square("Hey Maserati!", centering="center")
                 self.play_command("000")
-                time.sleep(1)
             except FileNotFoundError:
                 print("Mode not implemented. Falling back to 1")
                 pass
@@ -755,7 +754,7 @@ class Test:
                                     _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
                                 else:
                                     _log("RADIO: <<%s>>" % response, self.logname)
-                                if len(test[i]) > 2:
+                                if len(test[i]) > 1:
                                     print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
                                           % next_command, end="")
                                     q = getch()
@@ -778,6 +777,7 @@ class Test:
                                 self.failed.append(i + 1)
                                 result = "%s (%s)" % (result, note)
                                 self.cancel(1)
+                                input("(ENTER)-->")
                                 break
                             elif result == "1":
                                 _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
