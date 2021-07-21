@@ -2,7 +2,7 @@
 A Python-based framework for the voice-recognition test automation.
 
 ## Introduction
-VoRTEx (Voice Recognition Test Execution) was created with the aim of helping with the test of the voice recognition performances of the car infotainment systems.
+**VoRTEx (Voice Recognition Test Execution)** was created with the aim of helping with the test of the voice recognition performances of the car infotainment systems.
 The project is originally born around the database of vocal commands provided by Harman, so it's best suitable for tests on R1 radios. However, further improvements are being implemented in order for the tool to be as versatile as possible.
 
 The test includes several voice commands recorded by native speakers, based on the Harman list. For other commands, a TTS system based on Google Translate engine will be included.
@@ -32,7 +32,6 @@ To be added:
 ### Coming soon features
 New features are being implemented in the software as you read this. Among those, the most important are:
 - **Recording and translation of the radio's answer**. This is pretty useful when dealing with languages such as russian, arabic, chinese, japanese,...
-- **Lombard Effect** to automatically adjust the mouth output gain based on the background noise intensity at the ERP;
 
 # Setup
 ## 1. Requirements
@@ -66,13 +65,13 @@ The ear microphone (the 4128-C HATS is provided with two type 3.3 ear simulators
 * measure the environmental noise in order to apply the Lombard effect to the output file
 * calibrate the loudspeaker level, if available
 
-#### Calibration microphone
+#### Measurement microphone
 A **free-field microphone** (e.g. Bruel & Kjaer 4191/4939), placed at the MRP (mouth reference point), is used to calibrate the level of the voice.
 
 <img src="https://www.bksv.com/-/media/New_Products/Transducers/Microphones/4191.ashx?w=768&hash=DBC3220A6663A77F6931862CA2D40543B70FFA9B" width="200" >
 
 #### Preparing the test
-The cables and microphones should be organized as follows:
+The wiring should be organized as follows:
 * The measurement free-field microphone should be connected to channel 1 (or L) of the sound card
 * The artificial ear should be connected to channel 2 (or R) of the sound card. If available, the second ear can be connected to a third channel of the sound card for a stereo background noise recording.
 * The output 1 (or L) of the sound card should be connected to the amplifier for the artificial mouth.
@@ -96,4 +95,4 @@ From the language lists choose one and select it by writing the coresponding num
 If the calibrator is available, choose "yes" when asked to calibrate the microphone. The calibration is strongly advised, since without it won't be possible to calibrate the mouth at the nominal level of 94dBSPL or to record the background noise. To calibrate each microphone, simply follows the instructions: first, place the measurement microphone into the 1kHz calibrator and hit ENTER. The calibration will last around 10 seconds. Similarly, place the calibrator to the artificial ear, press ENTER and wait another 10 seconds. 
 
 #### 5. Calibrate the mouth
-Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly.
+Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly. This is repeated until the desired level is measured (or if the maximum number of attempts is reached).
