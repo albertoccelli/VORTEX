@@ -163,9 +163,10 @@ if __name__ == "__main__":
     test[lang] = []  # resets command list to avoid conflicts
     commands, cid = make_commands(lang, "../lists/to_separe.txt", transliteration=False)
     test[lang] = commands
-    '''
+    
     read_preconditions()
     # write_to_files(test[lang], lang)
     print(test["preconditions"])
     input("Press ENTER to save preconditions")
     save_list(test)
+    '''
