@@ -2,6 +2,7 @@
 __pycache__/
 */__pycache__/
 .venv/
+venv/
 *.py[cod]
 *$py.class
 
@@ -23,3 +24,6 @@ vr_tests/test*
 
 # temporary recordings
 *.temp.wav
+
+# computer settings
+settings/settings.vcfg
