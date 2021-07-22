@@ -231,7 +231,7 @@ class Recorder:
         self.calibrated[channel] = True  # microphone calibrated
         self.correction[channel] = reference - get_rms(audio_data)  # correction factor
         print_square("Power      = %0.2fdBFS\n"
-                     "dBSPL/dBFS = %0.2f" % (rms_global, self.correction[channel]),
+                     "dBSPL/dBFS = %0.2f" % (get_rms(audio_data), self.correction[channel]),
                      margin=[4, 4, 1, 1])
         return audio_data
 
