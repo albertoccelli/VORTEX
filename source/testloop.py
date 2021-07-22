@@ -683,6 +683,12 @@ class Test:
         If the test has already started, resume it.
         """
         clear_console()
+        if self.completed:
+            q = input("Test appears to be completed! Do you want to print the report? (y/n)\n-->")
+            if q.lower() == "y":
+                self.print_report()
+            input("Bye!")
+            return
         # Test begins
         preconditions = []
         expected = []
@@ -800,6 +806,7 @@ class Test:
                         _log("REPEATING", self.logname)
                     # cancels prompt
                     self.cancel(1)
+                    input("Press ENTER -->")
                 try:
                     # at the end of the selected test, writes the results into a array
                     self.results[str(i + 1)].append(result)
@@ -807,15 +814,9 @@ class Test:
                     self.results[str(i + 1)] = []
                     self.results[str(i + 1)].append(result)
                 self.save_conf()  # save current progress of the test
-            print("------------------------------------------------------------------")
-            print("TEST COMPLETED")
-            _log("TEST_STATUS: COMPLETED", self.logname)
-            self.completed = True
-            self.status = 0
-            self.save_conf()  # save current progress of the test
-            print_square("Test completed!\n\nSaving report as csv file")
-            self.print_report()
-
+                if len(self.results) == len(test):
+                    self._complete()
+                    return
         except KeyboardInterrupt:
             print("------------------------------------------------------------------")
             print("Test aborted! Saving...")
@@ -837,17 +838,36 @@ class Test:
         self.save_conf()
         return self.status
 
+    def _complete(self):
+        print("------------------------------------------------------------------")
+        print("TEST COMPLETED")
+        _log("TEST_STATUS: COMPLETED", self.logname)
+        self.completed = True
+        self.status = 0
+        self.save_conf()  # save current progress of the test
+        print_square("Test completed!\n\nSaving report as csv file")
+        self.print_report()
+
     def print_report(self):
         """
         Print the results in a csv file suitable for the analysis with Excel.
         """
         report_file = "%s/report.csv" % self.wPath
-        print("\nSaving test results into %s...\n" % report_file)
-        with open(report_file, "w", encoding="utf-16") as r:
-            r.write("LANGUAGE: %s\n" % self.lang)
-            r.write("TEST N.\tRESULT\n")
-            for i in range(len(self.results)):
-                r.write("%s\t %s\n" % (i + 1, self.results[i]))
+        while True:
+            try:
+                print("\nSaving test results into %s...\n" % report_file)
+                with open(report_file, "w", encoding="utf-16") as r:
+                    r.write("LANGUAGE: %s\n" % self.lang)
+                    r.write("TEST N.\tRESULT\n")
+                    for i in range(len(self.results)):
+                        # write key
+                        r.write("%s\t" % list(self.results.keys())[i])
+                        for result in self.results[list(self.results.keys())[i]]:
+                            r.write("%s\t" % result)
+                        r.write("\n")
+                break
+            except PermissionError:
+                input("Can't access to file! Make sure it's not open and press ENTER to continue\n-->")
         return
 
 
