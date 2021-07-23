@@ -810,16 +810,22 @@ class Test:
                         while True:
                             if result == "0":
                                 _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
-                                note = input("Notes: ")
-                                _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                note = input("Write notes if needed: ")
+                                if len(note)>0:
+                                    _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                    result = "%s (%s)" % (result, note)
                                 self.failed.append(i + 1)
-                                result = "%s (%s)" % (result, note)
                                 input("(ENTER)-->")
                                 break
                             elif result == "1":
                                 _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
+                                note = input("Write notes if needed: ")
+                                if len(note)>0:
+                                    _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                    result = "%s (%s)" % (result, note)
                                 break
                             else:
+                                # TODO: fix bug when answered "r"
                                 result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat all)\n-->"))
                         break
                     else:  # repeats test
