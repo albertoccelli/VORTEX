@@ -137,6 +137,7 @@ class Test:
         self.testfile = ""  # The configuration file of the current test (to be defined during the test configuration)
         self.listfile = ""  # The list file for the command database (to be defined during the test configuration)
         self.lang = "ITA"  # The language used for the test (to be defined during the test configuration)
+        self.nlu = True  # Is Natural Language enabled?
         self.mic_mode = 1  # how the infotainment microphone is activated: ptt(1), wakeword(2), can message(3)
         # status of the test
         self.running = False  # Is the test running?
@@ -300,6 +301,8 @@ class Test:
                         break
                     else:
                         response = input("Invalid input! Please choose between m and f.\n-->")
+            if self.nlu:
+                input("Natural Language enabled! (Press ENTER to continue)")
             self.phrasesPath = self.database["AUDIOPATH"] + langpath  # build the path for the speech files
             self.save_conf()  # save the configuration into the cfg file
             return
@@ -369,9 +372,12 @@ class Test:
                 self.langs.append(k)
         for lang in self.langs:
             if len(self.database[lang]) > 157:  # detects if natural language is available
+                '''
                 self.langs.append(lang + "_NLU")
                 self.database[lang + "_NLU"] = self.database[lang][157:]
                 self.database[lang] = self.database[lang][0:157]
+                '''
+                self.nlu = True
         self.langs.sort()
         return
 
@@ -386,6 +392,7 @@ class Test:
             r.write("LISTFILE=%s\n" % self.listfile)
             r.write("PHRASESPATH=%s\n" % self.phrasesPath)
             r.write("LANG=%s\n" % self.lang)
+            r.write("NLU=%s\n" % self.nlu)
             r.write("\n")
             # save progress
             r.write("@PROGRESS\n")
@@ -422,6 +429,8 @@ class Test:
                         self.phrasesPath = str(line.split("=")[-1].replace("\n", ""))
                     elif "LANG" in line:
                         self.lang = str(line.split("=")[-1]).replace("\n", "")
+                    elif "NLU" in line:
+                        self.nlu = str(line.split("=")[-1]).replace("\n", "")
             else:
                 print_square("!!! CONFIGURATION FILE CORRUPTED", centering="center")
 
@@ -741,6 +750,8 @@ class Test:
                     input("Preconditions:\n%s\n\nPress ENTER\n-->" % (preconditions[i].replace("\n", "")))
                 except NameError:
                     pass
+                except IndexError:
+                    print("No preconditions for NLU commands!")
                 _log("=========================== TEST #%03d ===========================" % (i + 1), self.logname)
                 while True:
                     for test_index in range(len(test[i])):
@@ -751,7 +762,10 @@ class Test:
                             next_command = test[i][test_index + 1].split("\t")[1].replace("\n", "")
                         except IndexError:
                             next_command = "End"
-                        exp = expected[i][test_index].replace("\n", "")
+                        try:
+                            exp = expected[i][test_index].replace("\n", "")
+                        except IndexError:
+                            exp = "None"
                         if cid == "000":
                             while True:
                                 # activate the infotainment microphone for the voice recognition
