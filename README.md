@@ -9,6 +9,7 @@ The test includes several voice commands recorded by native speakers, based on t
 Currently on database:
 1. French (France) - female
 3. Spanish (Spain) - female
+6. German - female
 15. Russian - female
 10. Italian - male and female
 
@@ -20,7 +21,6 @@ To be added:
 3. English (USA)
 4. Arabic
 5. French (Canada)
-6. German
 7. Dutch
 8. Portuguese (Portugal)
 9. Portuguese (Brazil)
