@@ -25,6 +25,7 @@ try:
         if q.lower() == "y":
             pass
     '''
+
     if not t.mCalibrated or not t.recorder.calibrated[t.micChannel] or not t.recorder.calibrated[t.earChannel]:
         MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and '
                                                        'the mouth?',

@@ -811,7 +811,7 @@ class Test:
                             if result == "0":
                                 _log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
                                 note = input("Write notes if needed: ")
-                                if len(note)>0:
+                                if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                                     result = "%s (%s)" % (result, note)
                                 self.failed.append(i + 1)
@@ -820,7 +820,7 @@ class Test:
                             elif result == "1":
                                 _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
                                 note = input("Write notes if needed: ")
-                                if len(note)>0:
+                                if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                                     result = "%s (%s)" % (result, note)
                                 break
