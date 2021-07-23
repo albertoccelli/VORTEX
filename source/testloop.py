@@ -63,7 +63,7 @@ def _abs_to_rel(path):
 def splash():
     clear_console()
     show_image("./utilities/logo.txt")
-    welcome = "VoRTEx v0.4.2a - Voice Recognition Test Execution\n" \
+    welcome = "VoRTEx v0.4.3a - Voice Recognition Test Execution\n" \
               "'From testers, for testers'\n" \
               "\n" \
               "Os: Windows\n" \
@@ -683,12 +683,6 @@ class Test:
         If the test has already started, resume it.
         """
         clear_console()
-        if self.completed:
-            q = input("Test appears to be completed! Do you want to print the report? (y/n)\n-->")
-            if q.lower() == "y":
-                self.print_report()
-            input("Bye!")
-            return
         # Test begins
         preconditions = []
         expected = []
@@ -781,6 +775,7 @@ class Test:
                                         break
                                 else:
                                     break
+                    self.cancel(1)
                     result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
                     print(result)
                     self.status += 1  # status updated
@@ -792,12 +787,10 @@ class Test:
                                 _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                                 self.failed.append(i + 1)
                                 result = "%s (%s)" % (result, note)
-                                self.cancel(1)
                                 input("(ENTER)-->")
                                 break
                             elif result == "1":
                                 _log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
-                                self.cancel(1)
                                 break
                             else:
                                 result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat all)\n-->"))
@@ -805,7 +798,6 @@ class Test:
                     else:  # repeats test
                         _log("REPEATING", self.logname)
                     # cancels prompt
-                    self.cancel(1)
                     input("Press ENTER -->")
                 try:
                     # at the end of the selected test, writes the results into a array
@@ -840,8 +832,10 @@ class Test:
 
     def _complete(self):
         print("------------------------------------------------------------------")
-        print("TEST COMPLETED")
-        _log("TEST_STATUS: COMPLETED", self.logname)
+        print("TEST COMPLETED!!!!!! CONGRATULATIONS")
+        _log("======================================================", self.logname)
+        _log("TEST_STATUS: COMPLETED! CONGRATULATIONS", self.logname)
+        _log("======================================================", self.logname)
         self.completed = True
         self.status = 0
         self.save_conf()  # save current progress of the test
@@ -865,6 +859,8 @@ class Test:
                         for result in self.results[list(self.results.keys())[i]]:
                             r.write("%s\t" % result)
                         r.write("\n")
+
+                _log("PRINTED REPORT", self.logname)
                 break
             except PermissionError:
                 input("Can't access to file! Make sure it's not open and press ENTER to continue\n-->")
