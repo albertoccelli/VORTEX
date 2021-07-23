@@ -63,7 +63,7 @@ def _abs_to_rel(path):
 def splash():
     clear_console()
     show_image("./utilities/logo.txt")
-    welcome = "VoRTEx v0.4.3a - Voice Recognition Test Execution\n" \
+    welcome = "VoRTEx v0.5.0a - Voice Recognition Test Execution\n" \
               "'From testers, for testers'\n" \
               "\n" \
               "Os: Windows\n" \
@@ -543,6 +543,7 @@ class Test:
         For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(self.micChannel)
+        self.recorder.save("%smic_calibration.wav" % self.settingsDir)
         self.save_conf()
         return
 
@@ -552,6 +553,7 @@ class Test:
         For that a 94dBSPL calibrator is mandatory.
         """
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
+        self.recorder.save("%sear_calibration.wav" % self.settingsDir)
         self.save_conf()
         return
 
@@ -587,7 +589,6 @@ class Test:
                         print("\nApplying gain: %0.2fdB" % self.gain)
                         c_data_gain = add_gain(c_data, self.gain)
                         recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
-                        self.recorder.save("calibration%02d.wav" % attempt)
                         recorded_dbspl = get_rms(recorded) + self.recorder.correction[self.micChannel]
                         delta = reference - recorded_dbspl
                         print_square("Target      = %0.2fdBSPL\n"
@@ -602,6 +603,7 @@ class Test:
                     if attempt == max_attempts:
                         break
                 print("Calibration completed: %0.2fdB added" % self.gain)
+                self.recorder.save("%smouth_calibration.wav" % self.settingsDir)
                 self.mCalibrated = True
                 self.save_conf()
         except KeyboardInterrupt:
@@ -610,7 +612,7 @@ class Test:
             self.save_conf()
         return self.gain
 
-    def listen_noise(self, seconds=3):
+    def listen_noise(self, seconds=5):
         # Only background noise
         input("\nMeasuring background noise with radio OFF. Press ENTER to continue.\n-->")
         noise = self.recorder.record(seconds)[:, 1]
@@ -618,6 +620,7 @@ class Test:
         self.noise = get_rms(noise_w) + self.recorder.correction[1]
         print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB"
                      % (self.noise, lombard(self.noise)), title="RADIO OFF")
+        self.recorder.save("%s/noise_radio_off.wav" % self.wPath)
         # Background noise and radio on
         input("\nMeasuring background noise with radio ON. Press ENTER to continue.\n-->")
         noise = self.recorder.record(seconds)[:, 1]
@@ -625,6 +628,7 @@ class Test:
         self.noise_radio = get_rms(noise_w) + self.recorder.correction[1]
         print_square("Noise intensity: %0.2fdBA\nLombard effect: %0.2fdB"
                      % (self.noise_radio, lombard(self.noise_radio)), title="RADIO ON")
+        self.recorder.save("%s/noise_radio_on.wav" % self.wPath)
         return self.noise, self.noise_radio
 
     # functions for the actual test
@@ -792,6 +796,7 @@ class Test:
                                             _log("REPEATING STEP", self.logname)
                                         else:
                                             break
+
                                     else:
                                         break
                             except KeyboardInterrupt:
