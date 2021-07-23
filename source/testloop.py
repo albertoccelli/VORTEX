@@ -74,6 +74,14 @@ def splash():
     return
 
 
+def _clr_tmp():
+    try:
+        os.remove("temp.wav")
+    except FileNotFoundError:
+        pass
+    return
+
+
 def _now():
     """
     Returns the current date and time.
@@ -131,8 +139,8 @@ class Test:
         self.lang = "ITA"  # The language used for the test (to be defined during the test configuration)
         self.mic_mode = 1  # how the infotainment microphone is activated: ptt(1), wakeword(2), can message(3)
         # status of the test
-        self.begun = False  # Has the test already started?
-        self.completed = False  # Has the test been completed?
+        self.running = False  # Is the test running?
+        self.completed = 0  # How many times has the test been completed?
         self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
         self.results = {}  # A list containing the test results
         self.mCalibrated = False  # Is the mouth calibrated?
@@ -231,14 +239,14 @@ class Test:
         # print the status of the test and ask for confirmation
         while True:
             print_square("LANGUAGE: %s\n"
-                         "STARTED: %s\n"
+                         "RUNNING: %s\n"
                          "STATUS: %s/%s\n"
-                         "COMPLETED: %s" % (self.lang, self.begun, self.status,
+                         "COMPLETED: %s" % (self.lang, self.running, self.status,
                                             len(self.database[self.lang]), self.completed),
                          margin=[5, 5, 1, 1],
                          title="TEST STATUS")
             try:
-                if self.begun:
+                if self.running:
                     input("Do you want to continue with this test? (ENTER to continue, CTRL+C to cancel and choose "
                           "another one) ")
                 else:
@@ -381,7 +389,7 @@ class Test:
             r.write("\n")
             # save progress
             r.write("@PROGRESS\n")
-            r.write("STARTED=%s\n" % self.begun)
+            r.write("STARTED=%s\n" % self.running)
             r.write("STATUS=%s\n" % self.status)
             r.write("COMPLETED=%s\n" % self.completed)
             r.write("RESULTS=%s\n" % self.results)
@@ -401,7 +409,7 @@ class Test:
                 for line in r.readlines():
                     # read configuration
                     if "STARTED" in line:
-                        self.begun = eval(line.split("=")[-1])
+                        self.running = eval(line.split("=")[-1])
                     elif "STATUS" in line:
                         self.status = int(line.split("=")[-1])
                     elif "COMPLETED" in line:
@@ -416,6 +424,16 @@ class Test:
                         self.lang = str(line.split("=")[-1]).replace("\n", "")
             else:
                 print_square("!!! CONFIGURATION FILE CORRUPTED", centering="center")
+
+    def _check_completed(self):
+        lengths = []
+        for i in list(self.results.keys()):
+            lengths.append(len(self.results[i]))
+        self.completed = min(lengths)
+        if len(self.results) == len(self.database[self.lang]):
+            if min(lengths) == max(lengths):
+                self.running = False
+        return self.running, self.completed
 
     def play_command(self, cid):
         """
@@ -686,13 +704,13 @@ class Test:
         # Test begins
         preconditions = []
         expected = []
-        if not self.begun:
+        if not self.running:
             # start test from 0
             print_square("Beginning test... Press ENTER when you are ready")
             input("-->")
             _log("MAY THE FORCE BE WITH YOU", self.logname)  # the first line of the log file
             self.results = {}
-            self.begun = True
+            self.running = True
         else:
             # resume the test
             print_square("Resuming test from %d... Press ENTER when you are ready" % (self.status + 1))
@@ -745,36 +763,40 @@ class Test:
                                 else:
                                     break
                         else:
-                            while True:
-                                print("\nReproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
-                                try:
-                                    self.play_command(
-                                        cid)  # the mouth reproduces the command (after adjusting the gain, if wanted)
-                                except Exception as e:
-                                    print("ERROR: %s" % e)
-                                _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
-                                try:
-                                    print("Expected behaviour --> %s\n" % exp)
-                                except NameError:
-                                    pass
-                                # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
-                                response = "[Answer]"
-                                if translate:
-                                    translation = "Translation"
-                                    _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
-                                else:
-                                    _log("RADIO: <<%s>>" % response, self.logname)
-                                if len(test[i]) > 1:
-                                    print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
-                                          % next_command, end="")
-                                    q = getch()
-                                    if q.decode("utf-8") == "r":
-                                        print("\n\nRepeating step...", end="")
-                                        _log("REPEATING STEP", self.logname)
+                            try:
+                                while True:
+                                    print("\nReproducing %s_%s.wav - '%s'" % (self.lang, cid, command))
+                                    try:
+                                        # the mouth reproduces the command (after adjusting the gain, if wanted)
+                                        self.play_command(cid)
+                                    except Exception as e:
+                                        print("ERROR: %s" % e)
+                                    _log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
+                                    try:
+                                        print("Expected behaviour --> %s\n" % exp)
+                                    except NameError:
+                                        pass
+                                    # PLACE HERE THE FUNCTION TO LISTEN TO THE RADIO RESPONSE
+                                    response = "[Answer]"
+                                    if translate:
+                                        translation = "Translation"
+                                        _log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
+                                    else:
+                                        _log("RADIO: <<%s>>" % response, self.logname)
+                                    if len(test[i]) > 1:
+                                        print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
+                                              % next_command)
+                                        q = getch()
+                                        if q.decode("utf-8") == "r":
+                                            print("\n\nRepeating step...", end="")
+                                            _log("REPEATING STEP", self.logname)
+                                        else:
+                                            break
                                     else:
                                         break
-                                else:
-                                    break
+                            except KeyboardInterrupt:
+                                _log("CANCEL", self.logname)
+                                break
                     self.cancel(1)
                     result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
                     print(result)
@@ -806,13 +828,12 @@ class Test:
                     self.results[str(i + 1)] = []
                     self.results[str(i + 1)].append(result)
                 self.save_conf()  # save current progress of the test
-                if len(self.results) == len(test):
+                self.running, self.completed = self._check_completed()
+                if self.completed > 0 and not self.running:
                     self._complete()
-                    return
         except KeyboardInterrupt:
             print("------------------------------------------------------------------")
             print("Test aborted! Saving...")
-            self.completed = False
             _log("TEST_INTERRUPTED", self.logname)
             self.status = i
             _log("TEST_STATUS: %03d" % self.status, self.logname)
@@ -821,13 +842,13 @@ class Test:
         except Exception as e:
             print("------------------------------------------------------------------")
             print("Test aborted due to a error (%s)! Saving..." % e)
-            self.completed = False
             _log("ERROR %s" % e, self.logname)
             self.status = i
             _log("TEST_STATUS: %03d" % self.status, self.logname)
             self.save_conf()  # save current progress of the test
 
-        self.save_conf()
+        self.save_conf()  # save current progress of the test
+        _clr_tmp()
         return self.status
 
     def _complete(self):
@@ -836,11 +857,12 @@ class Test:
         _log("======================================================", self.logname)
         _log("TEST_STATUS: COMPLETED! CONGRATULATIONS", self.logname)
         _log("======================================================", self.logname)
-        self.completed = True
+        self.running, self.completed = self._check_completed()
         self.status = 0
         self.save_conf()  # save current progress of the test
         print_square("Test completed!\n\nSaving report as csv file")
         self.print_report()
+        return
 
     def print_report(self):
         """
