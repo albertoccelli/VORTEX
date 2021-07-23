@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-alpha] - 2021-07-23
+### Added
+- The same testloop can be repeated.
+- Notes can be added even for positive results.
+- Better handling of NLU commands
+
+## [0.4.3-alpha] - 2021-07-22
+### Added
+- Test execution optimized
+- Bugfixes
 
 ## [0.4.2-alpha] - 2021-07-21
 ### Added
