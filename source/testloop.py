@@ -438,8 +438,8 @@ class Test:
         lengths = []
         for i in list(self.results.keys()):
             lengths.append(len(self.results[i]))
-        self.completed = min(lengths)
         if len(self.results) == len(self.database[self.lang]):
+            self.completed = min(lengths)
             if min(lengths) == max(lengths):
                 self.running = False
         return self.running, self.completed
@@ -614,6 +614,7 @@ class Test:
                     except SaturationError:
                         input("Cannot automatically increase the volume. Please manually increase the volume from "
                               "the amplifier knob and press ENTER to continue\n-->")
+                        self.gain = self.gain - delta * 2
                         self.calibrate_mouth()
                         return
                     if attempt == max_attempts:
