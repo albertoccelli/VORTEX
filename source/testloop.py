@@ -63,7 +63,7 @@ def _abs_to_rel(path):
 def splash():
     clear_console()
     show_image("./utilities/logo.txt")
-    welcome = "VoRTEx v0.5.0a - Voice Recognition Test Execution\n" \
+    welcome = "VoRTEx v0.5.1a - Voice Recognition Test Execution\n" \
               "'From testers, for testers'\n" \
               "\n" \
               "Os: Windows\n" \
