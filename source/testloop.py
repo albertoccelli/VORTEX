@@ -11,7 +11,7 @@ from msvcrt import getch
 
 import random
 import numpy as np
-from scipy.io.wavfile import read
+from scipy.io.wavfile import read, write
 
 from .ABC_weighting import a_weight
 # custom libraries
@@ -544,6 +544,7 @@ class Test:
                 break
             pdata = calib_data
         len(calib_data)
+        write(self.phrasesPath+"/calibration.wav", fs, calib_data.astype(np.int16))
         return fs, calib_data.astype(np.int16)
 
     def calibrate_mic(self):
@@ -553,6 +554,7 @@ class Test:
         """
         self.recorder.calibrate(self.micChannel)
         self.recorder.save("%smic_calibration.wav" % self.settingsDir)
+        self.recorder.save("%smic_calibration.wav" % self.wPath)
         self.save_conf()
         return
 
@@ -563,6 +565,7 @@ class Test:
         """
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
         self.recorder.save("%sear_calibration.wav" % self.settingsDir)
+        self.recorder.save("%sear_calibration.wav" % self.wPath)
         self.save_conf()
         return
 
@@ -579,8 +582,12 @@ class Test:
         attempt = 1
         try:
             if self.recorder.calibrated:  # microphone has to be calibrated first
-                print("Writing mouth calibration file... ", end='')
-                c_fs, c_data = self._make_calibration_file()
+                print("Opening calibration file... ")
+                try:
+                    c_fs, c_data = read(self.phrasesPath+"/calibration.wav")
+                except FileNotFoundError:
+                    print("Calibration file not found! Creating a new one...", end='')
+                    c_fs, c_data = self._make_calibration_file()
                 print("done!")
                 c_data_gain = add_gain(c_data, self.gain)
                 recorded = self.recorder.play_and_record(c_data_gain, c_fs)[:, self.micChannel]
@@ -613,6 +620,7 @@ class Test:
                         break
                 print("Calibration completed: %0.2fdB added" % self.gain)
                 self.recorder.save("%smouth_calibration.wav" % self.settingsDir)
+                self.recorder.save("%smouth_calibration.wav" % self.wPath)
                 self.mCalibrated = True
                 self.save_conf()
         except KeyboardInterrupt:

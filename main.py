@@ -26,12 +26,11 @@ try:
             pass
     '''
 
-    if not t.mCalibrated or not t.recorder.calibrated[t.micChannel] or not t.recorder.calibrated[t.earChannel]:
-        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and '
-                                                       'the mouth?',
+    if not t.recorder.calibrated[t.micChannel] or not t.recorder.calibrated[t.earChannel]:
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones?',
                                         icon='question')
     else:
-        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones and the mouth?'
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the microphones?'
                                                        '(Press "No" to proceed with the previously saved '
                                                        'calibration)',
                                         icon='question')
@@ -47,6 +46,19 @@ try:
         t.calibrate_ear()
         input("\nPress ENTER to proceed...\n-->")
         # calibration of artificial mouth
+        clear_console()
+        t.save_settings()
+
+    if not t.mCalibrated:
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the mouth?',
+                                        icon='question')
+    else:
+        MsgBox = tk.messagebox.askyesno('Calibration', 'Do you want to calibrate the mouth?'
+                                                       '(Advised if the language has changed.'
+                                                       'Press "No" to proceed with the previously saved '
+                                                       'calibration.)',
+                                        icon='question')
+    if MsgBox:
         clear_console()
         print("------------------------------------------------------------------")
         input("Calibrating mouth: please place the measurement microphone at the MRP and press ENTER\n-->")
