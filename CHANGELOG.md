@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.3-alpha] - 2021-07-27
+### Added
+- Portuguese test added
+- Bugfixes
+
 ## [0.5.0-alpha] - 2021-07-23
 ### Added
 - The same testloop can be repeated.
