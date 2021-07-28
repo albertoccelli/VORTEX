@@ -833,7 +833,7 @@ class Test:
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
-                                    result = "%s (%s)" % (result, note)
+                                    result = "%s\t%s" % (result, note)
                                 self.failed.append(i + 1)
                                 input("(ENTER)-->")
                                 break
@@ -842,7 +842,7 @@ class Test:
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
-                                    result = "%s (%s)" % (result, note)
+                                    result = "%s\t%s" % (result, note)
                                 break
                             else:
                                 # TODO: fix bug when answered "r"
