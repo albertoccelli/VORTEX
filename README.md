@@ -8,10 +8,11 @@ The project is originally born around the database of vocal commands provided by
 The test includes several voice commands recorded by native speakers, based on the Harman list. For other commands, a TTS system based on Google Translate engine will be included.
 Currently on database:
 1. French (France) - female
-3. Spanish (Spain) - female
 6. German - female
-15. Russian - female
 10. Italian - male and female
+8. Portuguese (Portugal)
+9. Russian - female
+10. Spanish (Spain) - female
 
 To be added:
 1. English (India)  
@@ -22,7 +23,6 @@ To be added:
 4. Arabic
 5. French (Canada)
 7. Dutch
-8. Portuguese (Portugal)
 9. Portuguese (Brazil)
 11. Japanese
 12. Korean
