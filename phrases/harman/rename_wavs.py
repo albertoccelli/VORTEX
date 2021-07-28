@@ -1,7 +1,7 @@
 import os
 
 cPath = os.getcwd()
-lang = "ITA_M"
+lang = "FRF"
 
 
 wavs = []
@@ -10,7 +10,7 @@ for i in files:
     if i.split(".")[-1] == "wav":
         wavs.append(i)
 
-os.chdir("ITA_M")
+os.chdir("FRF")
 
 for j in range(len(wavs)):
-    os.rename(wavs[j], "%s_%03d.wav"%("ITA", j))
+    os.rename(wavs[j], "%s_%03d.wav"%("FRF", j))
