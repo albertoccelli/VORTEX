@@ -22,6 +22,9 @@ vr_tests/test*
 # PyCharm utilities
 .idea/
 
+# Adobe Audition files
+*.pk
+
 # temporary recordings
 *.temp.wav
 
