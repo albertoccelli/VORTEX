@@ -158,12 +158,12 @@ if __name__ == "__main__":
     test = oldtest
 
     # select new language to add
-    '''
-    lang = "ITA"
-    test[lang] = []  # resets command list to avoid conflicts
-    commands, cid = make_commands(lang, "../lists/to_separe.txt", transliteration=False)
-    test[lang] = commands
     
+    lang = "PTP"
+    test[lang] = []  # resets command list to avoid conflicts
+    commands, cid = make_commands(lang, "to_separe.txt", transliteration=False)
+    test[lang] = commands
+    '''
     read_preconditions()
     # write_to_files(test[lang], lang)
     print(test["preconditions"])
