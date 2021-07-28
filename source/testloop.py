@@ -301,8 +301,12 @@ class Test:
                         break
                     else:
                         response = input("Invalid input! Please choose between m and f.\n-->")
-            if self.nlu:
+            print("Test length: %d" % len(self.database[self.lang]))
+            if len(self.database[self.lang]) > 157:  # detects if natural language is available
+                self.nlu = True
                 input("Natural Language enabled! (Press ENTER to continue)")
+            else:
+                self.nlu = False
             self.phrasesPath = self.database["AUDIOPATH"] + langpath  # build the path for the speech files
             self.save_conf()  # save the configuration into the cfg file
             return
@@ -370,14 +374,6 @@ class Test:
         for k in self.database.keys():
             if k != "preconditions" and k != "expected" and k != "AUDIOPATH":
                 self.langs.append(k)
-        for lang in self.langs:
-            if len(self.database[lang]) > 157:  # detects if natural language is available
-                '''
-                self.langs.append(lang + "_NLU")
-                self.database[lang + "_NLU"] = self.database[lang][157:]
-                self.database[lang] = self.database[lang][0:157]
-                '''
-                self.nlu = True
         self.langs.sort()
         return
 
@@ -554,7 +550,7 @@ class Test:
         """
         self.recorder.calibrate(self.micChannel)
         self.recorder.save("%smic_calibration.wav" % self.settingsDir)
-        self.recorder.save("%smic_calibration.wav" % self.wPath)
+        self.recorder.save("%s/mic_calibration.wav" % self.wPath)
         self.save_conf()
         return
 
@@ -565,7 +561,7 @@ class Test:
         """
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
         self.recorder.save("%sear_calibration.wav" % self.settingsDir)
-        self.recorder.save("%sear_calibration.wav" % self.wPath)
+        self.recorder.save("%s/ear_calibration.wav" % self.wPath)
         self.save_conf()
         return
 
@@ -600,7 +596,7 @@ class Test:
                 while abs(delta) > 0.5:
                     attempt += 1
                     # add gain and record again until the intensity is close to 94dBSPL
-                    self.gain = self.gain + delta * 2
+                    self.gain = self.gain + delta
                     try:
                         print("\nApplying gain: %0.2fdB" % self.gain)
                         c_data_gain = add_gain(c_data, self.gain)
@@ -614,14 +610,15 @@ class Test:
                     except SaturationError:
                         input("Cannot automatically increase the volume. Please manually increase the volume from "
                               "the amplifier knob and press ENTER to continue\n-->")
-                        self.gain = self.gain - delta * 2
+                        self.gain = self.gain - delta
                         self.calibrate_mouth()
                         return
                     if attempt == max_attempts:
                         break
                 print("Calibration completed: %0.2fdB added" % self.gain)
+                self.recorder.data = self.recorder.data[:, self.micChannel]
                 self.recorder.save("%smouth_calibration.wav" % self.settingsDir)
-                self.recorder.save("%smouth_calibration.wav" % self.wPath)
+                self.recorder.save("%s/mouth_calibration.wav" % self.wPath)
                 self.mCalibrated = True
                 self.save_conf()
         except KeyboardInterrupt:
