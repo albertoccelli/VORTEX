@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.5.4-alpha] - 2021-08-02
+### Added
+- [EXPERIMENTAL - USE CAREFULLY!] test sequence can be defined in the main.py file (line 76 - check comments)
+- The report now prints results, comments and timestamp
+- Bugfix
+
 ## [0.5.3-alpha] - 2021-07-27
 ### Added
 - Portuguese test added
