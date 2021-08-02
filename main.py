@@ -72,8 +72,9 @@ try:
                            "1) Manual (Push To Talk from the steering wheel\n"
                            "2) Wake-word\n"
                            "-->"))
+
 # if you don't want to execute the whole test, specify the test sequence below. Comment it otherwise
-    t.testlist = [62, 63, 87, 92, 141, 149, 150]
+#    t.testlist = [62, 63, 87, 92, 141, 149, 150]
 
     t.execution()  # execute test
     if t.completed > 0 and not t.running:
