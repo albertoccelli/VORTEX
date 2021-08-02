@@ -90,7 +90,7 @@ def _now():
     return now_time
 
 
-def _log(event, log_time=None, log_name="test_status.log"):
+def _log(event, log_name="test_status.log", log_time=None):
     """
     Log every test event with a timestamp.
     """
