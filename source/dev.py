@@ -1,7 +1,9 @@
 # For development purposes only
+import os
 
+import numpy as np
 from transliterate import translit
-
+from scipy.io.wavfile import read, write
 
 def capitalize(string):
     """
@@ -146,14 +148,37 @@ def read_preconditions(filename="to_separe.txt"):
         p.replace("\n", "")
     return prec
 
+def cut_pauses(audio_file, treshold = 100, out_file = None):
+    fs, audio_data = read(audio_file)
+    # cut silence at the beginning and at the end
+    for i in range(len(audio_data)):
+        if abs(audio_data[1]) > treshold and abs(audio_data[-1]) > treshold:
+            break
+        else:
+            if abs(audio_data[1]) < treshold:
+                audio_data = audio_data[1:]
+            if abs(audio_data[-1]) < treshold:
+                audio_data = audio_data[:-1]
+    if out_file == None:
+        out_file = audio_file
+    write(out_file, fs, audio_data.astype(np.int16))
+    return
 
 if __name__ == "__main__":
     from configure import load_list, save_list
 
+    folder = "../phrases/harman/PTP/"
+    '''
+    files = [(folder + i) for i in os.listdir(folder) if i[-4:] == ".wav"]
+    for i in range(len(files)):
+        print("Progress: %0.2f" % (100*((i+1)/len(files))))
+        cut_pauses(files[i], treshold=80)
+    '''
     # load test file
     print("Loading configuration file\n")
-    oldtest = load_list()
+    test = load_list()
 
+    '''
     # read new commands from list
     test = oldtest
 
@@ -163,7 +188,7 @@ if __name__ == "__main__":
     test[lang] = []  # resets command list to avoid conflicts
     commands, cid = make_commands(lang, "to_separe.txt", transliteration=False)
     test[lang] = commands
-    '''
+
     read_preconditions()
     # write_to_files(test[lang], lang)
     print(test["preconditions"])
