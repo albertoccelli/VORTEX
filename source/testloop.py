@@ -128,14 +128,11 @@ class Test:
     def __init__(self):
         # declare the attributes of the test
         self.wPath = "."  # The current working path of the selected test
-        self.testName = ""
         self.settingsDir = "settings/"  # the directory for the settings of the program
         self.settingsFile = "settings/settings.vcfg"
         self.databaseDir = "database/"
         self.testDir = "vr_tests/"
         self.phrasesPath = "phrases/"  # The path of the audio files
-        self.testfile = ""  # The configuration file of the current test (to be defined during the test configuration)
-        self.listfile = ""  # The list file for the command database (to be defined during the test configuration)
         self.lang = "ITA"  # The language used for the test (to be defined during the test configuration)
         self.nlu = True  # Is Natural Language enabled?
         self.mic_mode = 1  # how the infotainment microphone is activated: ptt(1), wakeword(2), can message(3)
@@ -200,7 +197,7 @@ class Test:
             except ValueError:
                 print("Invalid input!")
         self.logname = "%s/testlog.log" % self.wPath
-        self.testlist = range(self.database[self.lang])
+        self.testlist = range(len(self.database[self.lang]))
 
     def save_settings(self):
         with open(self.settingsFile, "w", encoding="utf-16") as f:
