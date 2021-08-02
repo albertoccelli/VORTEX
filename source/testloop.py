@@ -90,12 +90,14 @@ def _now():
     return now_time
 
 
-def _log(event, log_name="test_status.log"):
+def _log(event, log_time=None, log_name="test_status.log"):
     """
     Log every test event with a timestamp.
     """
+    if log_time is None:
+        log_time = _now()
     with open(log_name, "a", encoding="utf-16") as r:
-        r.write(_now() + "\t")
+        r.write(log_time + "\t")
         r.write(event + "\n")
     return
 
@@ -846,6 +848,7 @@ class Test:
                                 break
                     self.cancel(1)
                     result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
+                    r_time = _now()
                     print(result)
                     self.status += 1  # status updated
                     if result != "r":
@@ -855,7 +858,7 @@ class Test:
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
-                                result = "%s\t%s\t%s\t" % (result, note, _now().replace("_", " "))
+                                result = "%s\t%s\t%s\t" % (result, note, r_time.replace("_", " "))
                                 self.failed.append(i + 1)
                                 input("(ENTER)-->")
                                 break
@@ -864,7 +867,7 @@ class Test:
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
                                     _log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
-                                result = "%s\t%s\t%s\t" % (result, note, _now().replace("_", " "))
+                                result = "%s\t%s\t%s\t" % (result, note, r_time.replace("_", " "))
                                 break
                             else:
                                 # TODO: fix bug when answered "r"
@@ -891,6 +894,7 @@ class Test:
             self.status = self.testlist[i]
             _log("TEST_STATUS: %03d" % self.status, self.logname)
             self.save_conf()  # save current progress of the test
+            return
 
         except Exception as e:
             print("------------------------------------------------------------------")
@@ -899,6 +903,7 @@ class Test:
             self.status = self.testlist[i]
             _log("TEST_STATUS: %03d" % self.status, self.logname)
             self.save_conf()  # save current progress of the test
+            return
 
         self._complete()
         self.save_conf()  # save current progress of the test

@@ -73,6 +73,7 @@ try:
                            "2) Wake-word\n"
                            "-->"))
 
+# EXPERIMENTAL FUNCTION!!!!!
 # if you don't want to execute the whole test, specify the test sequence below. Comment it otherwise
 #    t.testlist = [62, 63, 87, 92, 141, 149, 150]
 
