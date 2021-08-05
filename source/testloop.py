@@ -113,15 +113,15 @@ def show_dirs(path):
 # noinspection SpellCheckingInspection
 def lombard(noise):
     """
-    The noise is expressed in dBSPL
+    The noise is expressed in dBA
     """
-    if 50 < noise < 77:
-        lombard_gain = 0.3 * (noise - 50)
+    if 50 <= noise <= 77:
+        lombard_gain = (8/27) * (noise - 50)
     elif noise > 77:
         lombard_gain = 8
     else:
         lombard_gain = 0
-    return lombard_gain
+    return np.round(lombard_gain, 3)
 
 
 # noinspection SpellCheckingInspection
@@ -534,7 +534,7 @@ class Test:
             file = files[random.randint(1, len(files))]
             fs, calib_data = read(file)
             # cut silence at the beginning and at the end
-            for i in range(len(calib_data)):
+            for _ in range(len(calib_data)):
                 if abs(calib_data[1]) > treshold and abs(calib_data[-1]) > treshold:
                     break
                 else:
