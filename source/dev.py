@@ -93,7 +93,7 @@ def write_to_files(comms, language):
         for p in playlist_nr_trad:
             o.write(p)
             # o.write(c.split(":")[-1].replace('"', ''))
-    with open("../lists/s_playlist.txt" % language, "w", encoding="utf-16") as o:
+    with open("../lists/%s_playlist.txt" % language, "w", encoding="utf-16") as o:
         for p in playlist:
             o.write(p)
             # o.write(c.split(":")[-1].replace('"', ''))
@@ -166,32 +166,28 @@ def cut_pauses(audio_file, treshold = 100, out_file = None):
 
 if __name__ == "__main__":
     from configure import load_list, save_list
-
-    folder = "../phrases/harman/PTP/"
     '''
+
     files = [(folder + i) for i in os.listdir(folder) if i[-4:] == ".wav"]
     for i in range(len(files)):
         print("Progress: %0.2f" % (100*((i+1)/len(files))))
         cut_pauses(files[i], treshold=80)
+     folder = "../phrases/harman/PTP/"
     '''
     # load test file
     print("Loading configuration file\n")
     test = load_list()
 
-    '''
-    # read new commands from list
-    test = oldtest
-
     # select new language to add
-    
-    lang = "PTP"
+    lang = "ENG"
     test[lang] = []  # resets command list to avoid conflicts
     commands, cid = make_commands(lang, "to_separe.txt", transliteration=False)
     test[lang] = commands
-
+    '''
     read_preconditions()
     # write_to_files(test[lang], lang)
     print(test["preconditions"])
     input("Press ENTER to save preconditions")
+    '''  
     save_list(test)
-    '''
+    save_list(test, exp = False)
