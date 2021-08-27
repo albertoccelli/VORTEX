@@ -19,6 +19,7 @@ from .configure import load_list
 from .play import play_data
 from .recorder import Recorder
 from .cli_tools import print_square, clear_console, show_image
+from . import metadata
 
 root = tk.Tk()
 root.wm_attributes("-topmost", 1)
@@ -54,6 +55,9 @@ nonsense = ["Collecting shells...", "Parkouring...", "Harvesting potatoes...", "
             "Destroing the Death Star", "Learning Kung Fu...", "Fixing the time machine", "Unboxing cats...",
             "Parking Millennium Falcon..."]
 
+class CorruptedTestError(Exception):
+    pass
+
 
 class TestExistsError(Exception):
     pass
@@ -70,13 +74,14 @@ def _abs_to_rel(path):
 def splash():
     clear_console()
     show_image("./utilities/logo.txt")
-    welcome = "VoRTEx v0.5.4a - Voice Recognition Test Execution\n" \
-              "'From testers, for testers'\n" \
+    welcome = "VoRTEx %s - Voice Recognition Test Execution\n" \
+              "%s\n" \
               "\n" \
-              "Os: Windows\n" \
-              "(c) Jul. 2021 - Alberto Occelli\n" \
-              "email: albertoccelli@gmail.com\n" \
-              "https://github.com/albertoccelli/VoRTEx"
+              "Os: %s\n" \
+              "%s\n" \
+              "email: %s\n" \
+              "%s" % (metadata["version"], metadata["description_short"], metadata["os"], metadata["copyright"],
+                      metadata["email"], metadata["url"])
     print_square(welcome, margin=[20, 20, 1, 1], centering="center")
     return
 
@@ -193,13 +198,13 @@ class Test:
             with open(self.settingsFile, "w", encoding="utf-16"):
                 pass
 
-    def load_database(self, database_file = None):
+    def load_database(self, database_file=None):
         # select the proper list file with the command lists
         if database_file is None:
             database_file = filedialog.askopenfilename(title="Choose the list file for the test",
-                                                    filetypes=[("Voice Recognition Test List files", "*.vrtl"),
-                                                               ("All files", "*")],
-                                                    initialdir=self.databaseDir)
+                                                       filetypes=[("Voice Recognition Test List files", "*.vrtl"),
+                                                                  ("All files", "*")],
+                                                       initialdir=self.databaseDir)
             if not database_file:
                 return
         try:
@@ -233,6 +238,7 @@ class Test:
         """
         resume the last done test before the app was closed
         """
+        # check if last test is present. Otherwise, the test is at its first start
         try:
             self.load_conf(self.lastTestFile)
         except FileNotFoundError:
@@ -244,7 +250,8 @@ class Test:
         try:
             self.load_conf()  # retrieve the paths and test status from the configuration file
         except FileNotFoundError:
-            pass
+            raise CorruptedTestError
+        # check test integrity
         return
 
     def new(self, testname=None, l_index=None, gender=0):
@@ -262,7 +269,7 @@ class Test:
         print("Creating test (%s)" % self.wPath)
         # decide the language
         self.lang = self.langs[l_index]
-        print("Language: %s"%self.lang)
+        print("Language: %s" % self.lang)
         try:  # if available, imports the array for the preconditions and expected behaviour
             self.expected = self.database["expected"]
         except KeyError:
@@ -290,7 +297,7 @@ class Test:
         else:
             self.isNluEnabled = False
         self.phrasesPath = self.database["AUDIOPATH"] + langpath  # build the path for the speech files
-        self.save_conf()  # save the configuration into the cfg file
+        self.save()  # save the configuration into the cfg file
         # reset status values
         self.testlist = range(len(self.database[self.lang]))
         self.status = 1
@@ -433,6 +440,7 @@ class Test:
                 self.sequence = self.database[self.lang]
             else:
                 print_square("!!! CONFIGURATION FILE CORRUPTED", centering="center")
+            self.isSaved = True
 
     # settings functions
     def save_settings(self):

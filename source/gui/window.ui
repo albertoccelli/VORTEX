@@ -690,7 +690,7 @@ p, li { white-space: pre-wrap; }
     <string>Visit the GitHub page of the creator</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+H</string>
+    <string>F1</string>
    </property>
   </action>
   <action name="actionResume">

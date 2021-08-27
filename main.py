@@ -3,18 +3,20 @@ import os
 import shutil
 import sys
 import time
-# user interface
-import tkinter as tk
 import webbrowser
 from random import randint
-from tkinter import messagebox
 from source import metadata
+from source.testloop import Test
+from source.testloop import langDict, show_dirs, log, now, nonsense
+from source.testloop import TestExistsError, CorruptedTestError
 
+# gui utilities
+import tkinter as tk
+from tkinter import messagebox
 from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-
 from source.gui.about import Ui_About
 from source.gui.newtest import Ui_Dialog
 from source.gui.note import Note_Dialog
@@ -24,7 +26,6 @@ from source.gui.settings import Ui_Settings
 from source.gui.splash import Ui_Splash
 from source.gui.window import Ui_MainWindow
 from source.gui.record import Ui_Record
-from source.testloop import Test, langDict, TestExistsError, show_dirs, log, now, nonsense
 
 
 class GuiTest(Test):
@@ -169,6 +170,7 @@ class MyMain(QMainWindow):
                 self.measure_noise_radio()
             if not t.isRunning:
                 # start test from 0
+                print(t.logname)
                 log("MAY THE FORCE BE WITH YOU", t.logname)  # the first line of the log file
                 t.results = {}
                 t.isRunning = True
@@ -549,10 +551,17 @@ class Resume(QDialog):
         self.ui.resumeButton.pressed.connect(lambda: self.on_resume_pressed())
         self.ui.cancelButton.pressed.connect(lambda: self.close())
         self.ui.cancelButton_2.pressed.connect(lambda: self.delete_test())
+        self.ui.newButton.pressed.connect(lambda: self.new_pressed())
         self.ui.listWidget.itemClicked.connect(lambda: self.update_info())
         self.test_list = []
         self.setWindowTitle("Resume test")
         self.update_list()
+
+    def new_pressed(self):
+        print(t.isFirstStart)
+        n = NewDialog()
+        n.exec_()
+        self.close()
 
     def update_list(self):
         self.test_list = show_dirs(t.testDir)
@@ -579,9 +588,17 @@ class Resume(QDialog):
         self.ui.textBrowser.setText("Created:\n%s\n\nLast modified:\n%s" % (created, modified))
 
     def on_resume_pressed(self):
+        if not t.isSaved:
+            if messagebox.askyesno("VoRTEx",
+                                   "Do you want to save the current text (any unsaved progress will be lost)?"):
+                t.save()
         t.resume(t.testDir + self.test_list[self.ui.listWidget.currentRow()])
         MainWindow.update()
         self.close()
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        if t.isFirstStart:
+            quit()
 
 
 # dialog to start a new test
@@ -624,32 +641,34 @@ class NewDialog(QDialog):
         self.fill_lang_combo()
 
     def submit_pressed(self):
-        if self.ui.nameEdit.text().replace(" ", "") == "":
-            messagebox.showerror("Vortex", "Please choose a valid name for the test")
-        else:
-            try:
-                # set multigender
-                if t.isMultigenderEnabled:
-                    if self.ui.radioButton.isChecked():
-                        t.gender = 0
-                    else:
-                        t.gender = 1
+        if not t.isSaved:
+            if messagebox.askyesno("VoRTEx",
+                                   "Do you want to save the current text (any unsaved progress will be lost)?"):
+                t.save()
+        try:
+            # set multigender
+            if t.isMultigenderEnabled:
+                if self.ui.radioButton.isChecked():
+                    t.gender = 0
                 else:
-                    t.gender = None
-                # set micmode
-                if self.ui.radioButton_5.isChecked():
-                    t.mic_mode = 1
-                else:
-                    t.mic_mode = 2
-                # set lombard
-                t.isLombardEnabled = self.ui.checkBox.isChecked()
-                # setup a new test
-                t.new(self.ui.nameEdit.text(), self.ui.langBox.currentIndex(), t.gender)
-                t.save_settings()
-                self.close()
-            except TestExistsError:
-                messagebox.showerror("Vortex", "The test %s already exists. Please choose another name"
-                                     % self.ui.nameEdit.text())
+                    t.gender = 1
+            else:
+                t.gender = None
+            # set micmode
+            if self.ui.radioButton_5.isChecked():
+                t.mic_mode = 1
+            else:
+                t.mic_mode = 2
+            # set lombard
+            t.isLombardEnabled = self.ui.checkBox.isChecked()
+            # setup a new test
+            t.new(self.ui.nameEdit.text(), self.ui.langBox.currentIndex(), t.gender)
+            t.save_settings()
+            t.isFirstStart = False
+            self.close()
+        except TestExistsError:
+            messagebox.showerror("Vortex", "The test %s already exists. Please choose another name"
+                                 % self.ui.nameEdit.text())
 
     def update(self):
         t.lang = t.langs[self.ui.langBox.currentIndex()]
@@ -744,9 +763,16 @@ if __name__ == "__main__":
     splash.load(80)
     try:
         t.resume_last()
+        t.isFirstStart = False
+    except CorruptedTestError:
+        t.isFirstStart = True
+        print(messagebox.showerror("VoRTEx", "Test corrupted!! Please resume another one"))
+        res = Resume()
+        res.exec_()
     except FileNotFoundError:
-        new = NewDialog()
-        new.exec_()
+        t.isFirstStart = True
+        res = Resume()
+        res.exec_()
     splash.load(99)
     time.sleep(0.5)
     # open main window
