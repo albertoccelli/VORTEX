@@ -90,7 +90,6 @@ class MyMain(QMainWindow):
         self.ui.repeatButton.pressed.connect(lambda: self.repeat())
         self.ui.printButton.setText("Export csv")
         self.ui.printButton.clicked.connect(lambda: self.print_csv())
-        # tooltip
         self.ui.commandsBox.doubleClicked.connect(lambda: self.double_clicked_command())
         self.condition = -1
         self.update_screens()
