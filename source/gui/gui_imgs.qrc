@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="images">
+    <file>vortex_splash.png</file>
+    <file>ico.ico</file>
+    <file>vortex_logo_2.png</file>
+    <file>vortex_logo.png</file>
+  </qresource>
+</RCC>

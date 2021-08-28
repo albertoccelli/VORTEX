@@ -14,3 +14,4 @@ transliterate==1.10.2
 gTTS>=2.2.3
 PyAudio==0.2.11
 requests==2.25.1
+PyQt5==5.15.4

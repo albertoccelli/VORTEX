@@ -80,7 +80,8 @@ The wiring should be organized as follows:
 
 ### New test
 Double click on the main.py file or run `python main.py`. A dialog box will appear.
-Choose wether to start a new test or resume one (1 or 2 and then ENTER. The third option has not been implemented yet...). For the first test, we will select the first option.
+Choose wether to start a new test or resume one (1 or 2 and then ENTER. The third option has not been implemented yet...). 
+Since this is our first test, we will select the first option.
 
 #### 1. Naming
 Choose a name for the test. You'd better avoid spaces and use underscores instead (anyway, space are eventually replaced by underscores). 

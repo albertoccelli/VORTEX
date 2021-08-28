@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="images">
+    <file>ico.ico</file>
+    <file>vortex_logo.png</file>
+    <file>../source/gui/vortex_logo.png</file>
+  </qresource>
+</RCC>
