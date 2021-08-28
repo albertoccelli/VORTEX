@@ -52,8 +52,9 @@ langDict = {"ARW": "Arabic",
             }
 
 nonsense = ["Collecting shells...", "Parkouring...", "Harvesting potatoes...", "Eating sugar", "Holding beers...",
-            "Destroing the Death Star", "Learning Kung Fu...", "Fixing the time machine", "Unboxing cats...",
+            "Destroying the Death Star", "Learning Kung Fu...", "Fixing the time machine", "Unboxing cats...",
             "Parking Millennium Falcon..."]
+
 
 class CorruptedTestError(Exception):
     pass
