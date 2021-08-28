@@ -457,16 +457,19 @@ class Test:
             f.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
             f.write("MIC_MODE=%s\n" % self.mic_mode)
             f.write("LOMBARD=%s\n" % self.isLombardEnabled)
+            f.write("NOISE_RADIO_OFF=%s\n" % self.noise)
+            f.write("NOISE_RADIO_ON=%s\n" % self.noise_radio)
         return
 
     def load_settings(self):
         """
         Load saved settings
         """
-        print("VoRTEx settings loaded!")
+        print("Loading VoRTEx settings...")
         try:
             with open(self.settingsFile, "r", encoding="utf-16") as f:
                 for line in f.readlines():
+                    print(line)
                     if "MOUTH_CALIBRATED" in line:
                         self.isMouthCalibrated = eval(line.split("=")[-1])
                     elif "MOUTH_CORRECTION" in line:
@@ -479,6 +482,10 @@ class Test:
                         self.mic_mode = eval(line.split("=")[-1])
                     elif "LOMBARD" in line:
                         self.isLombardEnabled = eval(line.split("=")[-1])
+                    elif "NOISE_RADIO_OFF" in line:
+                        self.noise = eval(line.split("=")[-1])
+                    elif "NOISE_RADIO_ON" in line:
+                        self.noise_radio = eval(line.split("=")[-1])
         except FileNotFoundError:
             raise FileNotFoundError("Settings file not found!")
         return
@@ -617,7 +624,9 @@ class Test:
         Calibrates Oscar's ear so that it expresses values in dBSPL.
         For that a 94dBSPL calibrator is mandatory.
         """
+        print(self.earChannel)
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
+        print(self.recorder.correction)
         self.recorder.save("%sear_calibration.wav" % self.settingsDir)
         self.recorder.save("%s/ear_calibration.wav" % self.wPath)
         self.save_settings()

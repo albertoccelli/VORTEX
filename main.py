@@ -70,6 +70,7 @@ class MyMain(QMainWindow):
         super(MyMain, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.raise_()
         self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
         self.setStyleSheet(stylesheet)
         # actions
@@ -99,7 +100,6 @@ class MyMain(QMainWindow):
         print(t.logname)
 
     def print_csv(self):
-        print(t.wPath)
         t.print_report()
         if messagebox.askyesno("VoRTEx", "CSV file saved. Do you want to open it?"):
             self.open_csv()
@@ -144,16 +144,24 @@ class MyMain(QMainWindow):
         self.do_test()
 
     def measure_noise(self):
+        if not t.recorder.calibrated[t.earChannel]:
+            messagebox.showerror("VoRTEx", "You first have to calibrate the ear")
+            return
         r = RecordDialog()
         r.ui.label.setText("Turn OFF the radio and press OK to measure the background noise")
+        r.resize(r.sizeHint())
         r.ui.pushButton.pressed.disconnect()
         r.ui.pushButton.pressed.connect(lambda: r.measure_noise())
         r.exec_()
         self.update()
 
     def measure_noise_radio(self):
+        if not t.recorder.calibrated[t.earChannel]:
+            messagebox.showerror("VoRTEx", "You first have to calibrate the ear")
+            return
         r = RecordDialog()
         r.ui.label.setText("Turn ON the radio and press OK to measure the background noise")
+        r.resize(r.sizeHint())
         r.ui.pushButton.pressed.disconnect()
         r.ui.pushButton.pressed.connect(lambda: r.measure_noise_radio())
         r.exec_()
@@ -337,6 +345,7 @@ class MyMain(QMainWindow):
         self.update()
 
     def update(self):
+        print(t.noise)
         if self.condition == -1:  # test to be started
             if t.isRunning:
                 self.ui.playButton.setText("Resume test")
@@ -376,6 +385,8 @@ class MyMain(QMainWindow):
             self.ui.wwLabel.setText("WW accuracy: (not started yet)")
         self.ui.pushButton_2.setEnabled(t.isLombardEnabled)
         self.ui.pushButton_3.setEnabled(t.isLombardEnabled)
+        self.ui.noiseLabel.setDisabled(not t.isLombardEnabled)
+        self.ui.noiseLabel_2.setDisabled(not t.isLombardEnabled)
         if t.isLombardEnabled:
             self.ui.lombardLabel.setText("Lombard effect: enabled")
             self.ui.pushButton.setText("Disable")
@@ -384,6 +395,8 @@ class MyMain(QMainWindow):
             self.ui.pushButton.setText("Enable")
         self.ui.noiseLabel.setText("BG noise: %0.2fdBA" % t.noise)
         self.ui.noiseLabel_2.setText("BG noise + radio: %0.2fdBA" % t.noise_radio)
+        app.processEvents()
+        self.resize(self.sizeHint())
         app.processEvents()
 
 
@@ -466,7 +479,7 @@ class Settings(QDialog):
     def calibrate_ear(self):
         messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
         self.ui.ear_calibration.setText("calibrating...")
-        t.calibrate_mic()
+        t.calibrate_ear()
         print(t.recorder.correction)
         messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
         self.update_calib()
@@ -495,7 +508,7 @@ class Settings(QDialog):
             self.ui.mic_calibration.setText("calib. needed")
         print(t.recorder.correction[1])
         if t.recorder.calibrated[1]:
-            self.ui.ear_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[1][0])
+            self.ui.ear_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
         else:
             self.ui.ear_calibration.setText("calib. needed")
         print("DEBUG")
@@ -699,6 +712,7 @@ class SplashScreen(QDialog):
     def __init__(self):
         super(SplashScreen, self).__init__()
         self.ui = Ui_Splash()
+        self.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.ui.setupUi(self)
         self.ui.label_2.setText("Loading...")
         self.ui.label_2.setStyleSheet("color: grey")
