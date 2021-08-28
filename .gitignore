@@ -28,5 +28,5 @@ vr_tests/test*
 # temporary recordings
 *.temp.wav
 
-# computer settings
-settings/settings.vcfg
+# local computer settings
+settings/*
