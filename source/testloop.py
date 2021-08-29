@@ -107,6 +107,7 @@ def log(event, log_name="test_status.log", log_time=None):
     """
     Log every test event with a timestamp.
     """
+    print("Logging into %s" % log_name)
     if log_time is None:
         log_time = now()
     with open(log_name, "a", encoding="utf-16") as r:
@@ -192,12 +193,7 @@ class Test:
         self.micChannel = 0
         self.earChannel = 1
         print("------------------------------------------------------------------")
-        try:  # Load program settings. If the settings file is not available, create it
-            self.load_settings()
-        except FileNotFoundError:
-            print("Creating VoRTEx settings file... done!")
-            with open(self.settingsFile, "w", encoding="utf-16"):
-                pass
+
 
     def load_database(self, database_file=None):
         # select the proper list file with the command lists
@@ -233,26 +229,6 @@ class Test:
             if k != "preconditions" and k != "expected" and k != "AUDIOPATH":
                 self.langs.append(k)
         self.langs.sort()
-        return
-
-    def resume_last(self):
-        """
-        resume the last done test before the app was closed
-        """
-        # check if last test is present. Otherwise, the test is at its first start
-        try:
-            self.load_conf(self.lastTestFile)
-        except FileNotFoundError:
-            self.isFirstStart = True
-            raise FileNotFoundError
-        self.testlist = range(len(self.database[self.lang]))
-        self.logname = "%s/testlog.log" % self.wPath
-        self.testfile = "%s/config.cfg" % self.wPath  # the configuration file's path
-        try:
-            self.load_conf()  # retrieve the paths and test status from the configuration file
-        except FileNotFoundError:
-            raise CorruptedTestError
-        # check test integrity
         return
 
     def new(self, testname=None, l_index=None, gender=0):
@@ -314,10 +290,13 @@ class Test:
         return
 
     def resume(self, path=None):
-        self.wPath = path
+        if path is not None:
+            self.wPath = path
         self.testfile = "%s/config.cfg" % self.wPath  # the configuration file's path
         self.load_conf()  # retrieve the paths and test status from the configuration file
         self._configure_list()  # get the test configuration (languages, lists) from the listfile
+        self.testlist = range(len(self.database[self.lang]))
+        self.save()
         return
 
     def detectgenders(self, lang):
@@ -354,8 +333,8 @@ class Test:
 
     # save and load functions
     def save(self):
+        self.save_settings()
         self.save_conf()
-        self.save_conf(self.lastTestFile)
         self.isSaved = True
 
     def save_conf(self, testfile=None):
@@ -452,6 +431,7 @@ class Test:
         with open(self.settingsFile, "w", encoding="utf-16") as f:
             f.write("@YODA\n")
             f.write("@SETTINGS\n")
+            f.write("LAST=%s\n" % self.wPath)
             f.write("MOUTH_CALIBRATED=%s\n" % self.isMouthCalibrated)
             f.write("MOUTH_CORRECTION=%s\n" % self.gain)
             f.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
@@ -466,11 +446,10 @@ class Test:
         """
         Load saved settings
         """
-        print("Loading VoRTEx settings...")
+        print("Loading VoRTEx settings: %s" % self.settingsFile)
         try:
             with open(self.settingsFile, "r", encoding="utf-16") as f:
                 for line in f.readlines():
-                    print(line)
                     if "MOUTH_CALIBRATED" in line:
                         self.isMouthCalibrated = eval(line.split("=")[-1])
                     elif "MOUTH_CORRECTION" in line:
@@ -487,7 +466,14 @@ class Test:
                         self.noise = eval(line.split("=")[-1])
                     elif "NOISE_RADIO_ON" in line:
                         self.noise_radio = eval(line.split("=")[-1])
+                    elif "LAST" in line:
+                        self.wPath = str(line.split("=")[-1]).replace("\n", "")
+                if os.path.exists(self.wPath):
+                    print("Working directory: %s" % self.wPath)
+                else:
+                    raise CorruptedTestError("Test directory not found")
         except FileNotFoundError:
+            self.isFirstStart = True
             raise FileNotFoundError("Settings file not found!")
         return
 
@@ -625,9 +611,7 @@ class Test:
         Calibrates Oscar's ear so that it expresses values in dBSPL.
         For that a 94dBSPL calibrator is mandatory.
         """
-        print(self.earChannel)
         self.recorder.calibrate(channel=self.earChannel, reference=92.1)
-        print(self.recorder.correction)
         self.recorder.save("%sear_calibration.wav" % self.settingsDir)
         self.recorder.save("%s/ear_calibration.wav" % self.wPath)
         self.save_settings()
@@ -760,10 +744,6 @@ class Test:
             self.listen_noise()
             input("Press ENTER to continue\n-->")
         i = 0
-
-        print("Testlist: ")
-        input(self.testlist)
-
         try:
             for i in range(self.status, len(self.testlist)):
                 clear_console()

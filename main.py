@@ -97,7 +97,6 @@ class MyMain(QMainWindow):
         self.update()
         self.update()
         app.processEvents()
-        print(t.logname)
 
     def print_csv(self):
         t.print_report()
@@ -168,8 +167,6 @@ class MyMain(QMainWindow):
         self.update()
 
     def do_test(self):
-        print(t.status)
-        print(self.condition)
         if self.condition == -1:
             # First step
             if t.isLombardEnabled:
@@ -177,7 +174,6 @@ class MyMain(QMainWindow):
                 self.measure_noise_radio()
             if not t.isRunning:
                 # start test from 0
-                print(t.logname)
                 log("MAY THE FORCE BE WITH YOU", t.logname)  # the first line of the log file
                 t.results = {}
                 t.isRunning = True
@@ -286,7 +282,6 @@ class MyMain(QMainWindow):
         result_box = TestResultDialog()
         result_box.exec()
         result = result_box.value
-        print(result)
         return result
 
     @staticmethod
@@ -312,7 +307,6 @@ class MyMain(QMainWindow):
 
     @staticmethod
     def open_log():
-        print(t.logname.replace("/", "\\"))
         os.system("notepad %s" % t.logname.replace("/", "\\"))
 
     def clear_screens(self):
@@ -345,8 +339,8 @@ class MyMain(QMainWindow):
         self.update()
 
     def update(self):
-        print(t.noise)
         if self.condition == -1:  # test to be started
+            self.update_screens()
             if t.isRunning:
                 self.ui.playButton.setText("Resume test")
             else:
@@ -364,7 +358,10 @@ class MyMain(QMainWindow):
         else:
             self.ui.statusLabel.setText("Status: WAITING")
         self.ui.groupBox_2.setTitle("Test %s of %s" % (t.status + 1, len(t.testlist)))
-        progress = round(100 * t.status / len(t.testlist))
+        try:
+            progress = round(100 * t.status / len(t.testlist))
+        except ZeroDivisionError:
+            progress = 0
         self.ui.progressBar.setProperty("value", progress)
         if t.isMultigenderEnabled:
             if t.gender == 0:
@@ -480,7 +477,6 @@ class Settings(QDialog):
         messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
         self.ui.ear_calibration.setText("calibrating...")
         t.calibrate_ear()
-        print(t.recorder.correction)
         messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
         self.update_calib()
         return
@@ -501,17 +497,14 @@ class Settings(QDialog):
             self.ui.mouth_gain.setText("Gain = %0.2ddB" % t.gain)
         else:
             self.ui.mouth_gain.setText("calib. needed")
-        print(t.recorder.correction[1])
         if t.recorder.calibrated[0]:
             self.ui.mic_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[0])
         else:
             self.ui.mic_calibration.setText("calib. needed")
-        print(t.recorder.correction[1])
         if t.recorder.calibrated[1]:
             self.ui.ear_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
         else:
             self.ui.ear_calibration.setText("calib. needed")
-        print("DEBUG")
 
     def submit(self):
         self.apply()
@@ -568,12 +561,12 @@ class Resume(QDialog):
         self.test_list = []
         self.setWindowTitle("Resume test")
         self.update_list()
+        self.temp = False
+
 
     def new_pressed(self):
-        print(t.isFirstStart)
         n = NewDialog()
         n.exec_()
-        self.close()
 
     def update_list(self):
         self.test_list = show_dirs(t.testDir)
@@ -600,20 +593,21 @@ class Resume(QDialog):
         self.ui.textBrowser.setText("Created:\n%s\n\nLast modified:\n%s" % (created, modified))
 
     def on_resume_pressed(self):
+        self.temp = False
         if not t.isSaved:
             if messagebox.askyesno("VoRTEx",
                                    "Do you want to save the current text (any unsaved progress will be lost)?"):
                 t.save()
         t.resume(t.testDir + self.test_list[self.ui.listWidget.currentRow()])
-        MainWindow.update()
+        t.isFirstStart = False
         self.close()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        if t.isFirstStart:
+        if self.temp:
             quit()
 
 
-# dialog to start a new test
+# dialog to start a new testz
 class NewDialog(QDialog):
     def __init__(self):
         super(NewDialog, self).__init__()
@@ -625,6 +619,7 @@ class NewDialog(QDialog):
         self.ui.databaseLabel.setText(default_database)
         self.ui.nameEdit.textEdited.connect(lambda: self.update_ok())
         self.ui.pushButton.clicked.connect(lambda: self.browse_pressed())
+        self.ui.pushButton_3.clicked.connect(lambda: self.close())
         self.ui.submitButton.clicked.connect(lambda: self.submit_pressed())
         self.ui.langBox.setCurrentIndex(5)
         self.ui.langBox.currentIndexChanged.connect(lambda: self.update())
@@ -637,9 +632,9 @@ class NewDialog(QDialog):
         t.load_database(default_database)
         self.fill_lang_combo()
         self.ui.checkBox.setChecked(t.isLombardEnabled)
+        self.temp = False
 
     def update_ok(self):
-        print("Ciao")
         if self.ui.nameEdit.text().replace(" ", "") == "":
             self.ui.submitButton.setEnabled(False)
         else:
@@ -653,6 +648,7 @@ class NewDialog(QDialog):
         self.fill_lang_combo()
 
     def submit_pressed(self):
+        t.temp = False
         if not t.isSaved:
             if messagebox.askyesno("VoRTEx",
                                    "Do you want to save the current text (any unsaved progress will be lost)?"):
@@ -699,21 +695,23 @@ class NewDialog(QDialog):
 
     def fill_lang_combo(self):
         self.ui.langBox.clear()
-        print(t.langs)
         try:
             for i in range(len(t.langs)):
                 self.ui.langBox.addItem(langDict[t.langs[i]])
         except AttributeError:
             pass
 
+    def closeEvent(self, QCloseEvent):
+        if self.temp:
+            quit()
 
 # splash screen
 class SplashScreen(QDialog):
     def __init__(self):
         super(SplashScreen, self).__init__()
         self.ui = Ui_Splash()
-        self.setWindowFlag(Qt.WindowStaysOnTopHint)
         self.ui.setupUi(self)
+        self.raise_()
         self.ui.label_2.setText("Loading...")
         self.ui.label_2.setStyleSheet("color: grey")
         self.ui.label_2.setAlignment(Qt.AlignHCenter)
@@ -756,7 +754,6 @@ stylesheet = """
 """
 
 if __name__ == "__main__":
-    print(metadata["version"])
     # creating application
     app = QApplication(sys.argv)
     splash = SplashScreen()  # defining the splashscreen
@@ -767,25 +764,39 @@ if __name__ == "__main__":
     iconfile = "source/gui/ico.ico"
     splash.load(40)
     root = tk.Tk()
-    root.iconbitmap(r'source/gui/ico.ico')
+    root.iconbitmap('source/gui/ico.ico')
     root.title('VoRTEx')
     root.withdraw()
     splash.load(60)
     t = GuiTest()  # create new istance of the test
     tests = show_dirs(t.testDir)
+    print(tests)
     splash.load(80)
+    # load settings
     try:
-        t.resume_last()
-        t.isFirstStart = False
-    except CorruptedTestError:
-        t.isFirstStart = True
-        print(messagebox.showerror("VoRTEx", "Test corrupted!! Please resume another one"))
+        t.load_settings()
+        t.resume()  # resume the test file contained in the "LAST" line of the settings file
+    except CorruptedTestError:  # if the file in the "LAST" line is not available, choose another one
+        messagebox.showerror("VoRTEx", "Corrupted test! Please start a new one!")
         res = Resume()
+        res.temp = True
+        res.ui.cancelButton.clicked.connect(lambda: quit())
         res.exec_()
-    except FileNotFoundError:
-        t.isFirstStart = True
-        res = Resume()
-        res.exec_()
+        t.save_settings()
+    except FileNotFoundError:  # If the settings file is not available, assume this is the first time the app is started
+        if len(tests) == 0:
+            messagebox.showinfo("VoRTEx", "Welcome! Let's start a new test!")
+            new = NewDialog()
+            new.temp = True
+            new.ui.pushButton_3.clicked.connect(lambda: new.close())
+            new.exec_()
+        elif len(tests) == 1:
+            t.resume(t.testDir+"/"+tests[0])
+        else:
+            messagebox.showinfo("VoRTEx", "Welcome! Let's resume a test or start a new one!")
+            res = Resume()
+            res.temp = True
+            res.exec_()
     splash.load(99)
     time.sleep(0.5)
     # open main window
