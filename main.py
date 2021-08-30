@@ -191,7 +191,7 @@ class MyMain(QMainWindow):
                             t.calibrate_ear()
                             messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
                                                 % t.recorder.correction[t.earChannel])
-                        if not t.isMouthCalibrated
+                        if not t.isMouthCalibrated:
                             messagebox.showinfo("VoRTEx", "Please place the measurement microphone at the MRP and press OK")
                             t.calibrate_mouth()
                             messagebox.showinfo("VoRTEx", "Mouth calibration completed: gain = %0.2f"
