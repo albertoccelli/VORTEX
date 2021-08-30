@@ -147,7 +147,6 @@ class Test:
         self.wPath = "."  # The current working path of the selected test
         self.settingsDir = "settings/"  # the directory for the settings of the program
         self.settingsFile = "settings/settings.vcfg"  # the settings file
-        self.lastTestFile = "settings/last.cfg"  # the testfile of the last executed test
         self.databaseDir = "database/"  # the directory of the testlist databases
         self.logname = ""  # path of the log file
         self.report_file = ""  # path of the csv
@@ -878,7 +877,6 @@ class Test:
             self.status = self.testlist[i]
             log("TEST_STATUS: %03d" % self.status, self.logname)
             self.save()  # save current progress of the test
-            self.save_conf(self.lastTestFile)
             return
 
         except Exception as e:
@@ -892,7 +890,6 @@ class Test:
 
         self._complete()
         self.save_conf()  # save current progress of the test
-        self.save_conf(self.lastTestFile)
         clr_tmp()
         return self.status
 

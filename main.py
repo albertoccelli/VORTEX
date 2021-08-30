@@ -142,6 +142,8 @@ class MyMain(QMainWindow):
             log("REPEATING COMMAND", t.logname)
         self.do_test()
 
+
+
     def measure_noise(self):
         if not t.recorder.calibrated[t.earChannel]:
             messagebox.showerror("VoRTEx", "You first have to calibrate the ear")
@@ -170,8 +172,35 @@ class MyMain(QMainWindow):
         if self.condition == -1:
             # First step
             if t.isLombardEnabled:
-                self.measure_noise()
-                self.measure_noise_radio()
+                if (not t.recorder.calibrated[t.micChannel]) or (not t.recorder.calibrated[t.earChannel]) or (not t.isMouthCalibrated):
+                    wantToCalibrate = messagebox.askyesno("VoRTEx", "You first have to calibrate the microphones and "
+                                                                    "the mouth in order to apply the Lombard effect. "
+                                                                    "Do you want to do it now?")
+                    if not wantToCalibrate:
+                        t.isLombardEnabled = False
+                        self.update()
+                    else:
+                        if not t.recorder.calibrated[t.micChannel]:
+                            messagebox.showinfo("VoRTEx", "Please place the measurement mirophone into the calibrator and "
+                                                          "press OK")
+                            t.calibrate_mic()
+                            messagebox.showinfo("VoRTEx","Mic calibration completed: dBSPL/dBFS = %0.2f"
+                                                % t.recorder.correction[t.mouthChannel])
+                        if not t.recorder.calibrated[t.earChannel]:
+                            messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
+                            t.calibrate_ear()
+                            messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
+                                                % t.recorder.correction[t.earChannel])
+                        if not t.isMouthCalibrated
+                            messagebox.showinfo("VoRTEx", "Please place the measurement microphone at the MRP and press OK")
+                            t.calibrate_mouth()
+                            messagebox.showinfo("VoRTEx", "Mouth calibration completed: gain = %0.2f"
+                                            % t.gain)
+                        self.measure_noise()
+                        self.measure_noise_radio()
+                else:
+                    self.measure_noise()
+                    self.measure_noise_radio()
             if not t.isRunning:
                 # start test from 0
                 log("MAY THE FORCE BE WITH YOU", t.logname)  # the first line of the log file
