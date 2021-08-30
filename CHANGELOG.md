@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.9.3-beta] - 2021-08-30
+### Added
+- Bugfixes
+
+## [0.9-beta] - 2021-08-27
+### Added
+- Introduced a completely new graphical user interface based on QT
+- Added QT among the requirements.
+ 
 ## [0.5.4-alpha] - 2021-08-02
 ### Added
 - [EXPERIMENTAL - USE CAREFULLY!] test sequence can be defined in the main.py file (line 76 - check comments)
