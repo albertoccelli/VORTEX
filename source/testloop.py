@@ -193,7 +193,6 @@ class Test:
         self.earChannel = 1
         print("------------------------------------------------------------------")
 
-
     def load_database(self, database_file=None):
         # select the proper list file with the command lists
         if database_file is None:
@@ -267,7 +266,6 @@ class Test:
             elif gender == 0:
                 langpath = self.lang + "_F"
 
-        print("Test length: %d" % len(self.database[self.lang]))
         if len(self.database[self.lang]) > 157:  # detects if natural language is available
             self.isNluEnabled = True
         else:
@@ -358,8 +356,8 @@ class Test:
             r.write("STARTED=%s\n" % self.isRunning)
             r.write("STATUS=%s\n" % self.status)
             r.write("COMPLETED=%s\n" % self.completed)
-            r.write("ISSUED_WW=%s\n" % self.issued_ww)
-            r.write("RECOGNIZED_WW=%s\n" % self.recognized_ww)
+            r.write("ISSUED_WW=%d\n" % self.issued_ww)
+            r.write("RECOGNIZED_WW=%d\n" % self.recognized_ww)
             r.write("PASSED=%s\n" % self.passes)
             r.write("RESULTS=%s\n" % self.results)
         return

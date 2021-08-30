@@ -95,8 +95,14 @@ class MyMain(QMainWindow):
         self.condition = -1
         self.update_screens()
         self.update()
-        self.update()
         app.processEvents()
+
+    def recap_test(self):
+        messagebox.showinfo("%s" % t.testName, "Test progress: \n"
+                                               "language: %s\n"
+                                               "status: %d/%d\n"
+                                               "results: %d/%d passed" % (langDict[t.lang], t.status, len(t.testlist),
+                                                                          t.passes, len(t.testlist)))
 
     def print_csv(self):
         t.print_report()
@@ -133,16 +139,16 @@ class MyMain(QMainWindow):
                 self.ui.precBox.setText("No preconditions available")
 
     def repeat(self):
+        if self.condition == 1:
+            t.issued_ww += 1
+            print("Wakeword repeated")
         self.condition -= 1
         cid = t.sequence[t.testlist[t.status]][self.condition].split("\t")[0]
-        print("Repeating %s" % cid)
         if cid == "000":
             log("REPEATING WAKEWORD", t.logname)
         else:
             log("REPEATING COMMAND", t.logname)
         self.do_test()
-
-
 
     def measure_noise(self):
         if not t.recorder.calibrated[t.earChannel]:
@@ -170,21 +176,25 @@ class MyMain(QMainWindow):
 
     def do_test(self):
         if self.condition == -1:
+            # Recap test progress
+            self.recap_test()
             # First step
             if t.isLombardEnabled:
-                if (not t.recorder.calibrated[t.micChannel]) or (not t.recorder.calibrated[t.earChannel]) or (not t.isMouthCalibrated):
-                    wantToCalibrate = messagebox.askyesno("VoRTEx", "You first have to calibrate the microphones and "
-                                                                    "the mouth in order to apply the Lombard effect. "
-                                                                    "Do you want to do it now?")
-                    if not wantToCalibrate:
+                if (not t.recorder.calibrated[t.micChannel]) or (not t.recorder.calibrated[t.earChannel]) or (
+                        not t.isMouthCalibrated):
+                    want_to_calibrate = messagebox.askyesno("VoRTEx", "You first have to calibrate the microphones and "
+                                                                      "the mouth in order to apply the Lombard effect. "
+                                                                      "Do you want to do it now?")
+                    if not want_to_calibrate:
                         t.isLombardEnabled = False
                         self.update()
                     else:
                         if not t.recorder.calibrated[t.micChannel]:
-                            messagebox.showinfo("VoRTEx", "Please place the measurement mirophone into the calibrator and "
-                                                          "press OK")
+                            messagebox.showinfo("VoRTEx",
+                                                "Please place the measurement mirophone into the calibrator and "
+                                                "press OK")
                             t.calibrate_mic()
-                            messagebox.showinfo("VoRTEx","Mic calibration completed: dBSPL/dBFS = %0.2f"
+                            messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
                                                 % t.recorder.correction[t.mouthChannel])
                         if not t.recorder.calibrated[t.earChannel]:
                             messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
@@ -192,10 +202,11 @@ class MyMain(QMainWindow):
                             messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
                                                 % t.recorder.correction[t.earChannel])
                         if not t.isMouthCalibrated:
-                            messagebox.showinfo("VoRTEx", "Please place the measurement microphone at the MRP and press OK")
+                            messagebox.showinfo("VoRTEx",
+                                                "Please place the measurement microphone at the MRP and press OK")
                             t.calibrate_mouth()
                             messagebox.showinfo("VoRTEx", "Mouth calibration completed: gain = %0.2f"
-                                            % t.gain)
+                                                % t.gain)
                         self.measure_noise()
                         self.measure_noise_radio()
                 else:
@@ -216,6 +227,12 @@ class MyMain(QMainWindow):
             self.update()
 
         else:
+            if self.condition == 0:
+                t.issued_ww += 1
+                print("WW issued")
+            if self.condition == 1:
+                print("WW recognized")
+                t.recognized_ww += 1
             self.update_screens()
             self.ui.commandsBox.setCurrentRow(self.condition)
             self.ui.expectedBox.setCurrentRow(self.condition)
@@ -228,11 +245,9 @@ class MyMain(QMainWindow):
                         % (t.testlist[t.status] + 1), t.logname)
                 if cid == "000":
                     log("HEY MASERATI", t.logname)
-                    t.issued_ww += 1
                 else:
                     if previous_cid == "000":
                         log("MIC ACTIVATED", t.logname)
-                        t.recognized_ww += 1
                 try:
                     next_command = t.sequence[t.testlist[t.status]][self.condition + 1].split("\t")[1].replace("\n", "")
                     next_cid = t.sequence[t.testlist[t.status]][self.condition + 1].split("\t")[0]
@@ -247,6 +262,7 @@ class MyMain(QMainWindow):
                 filename = t.phrasesPath + "/" + t.lang + "_" + str(next_cid) + ".wav"
                 app.processEvents()
                 self.ui.wavLabel.setText("Wave file: %s" % filename)
+                self.ui.gainLabel.setText("Gain adjust: %0.2fdB" % (t.gain))
                 log("OSCAR: <<%s>> (%s)" % (command, filename), t.logname)
                 t.play_command(cid)
                 # play button text
@@ -273,7 +289,7 @@ class MyMain(QMainWindow):
                         log("END_TEST #%03d: FAILED" % (t.status + 1), t.logname)
                     note = self.note()
                     if len(note) > 0:
-                        log("NOTE #%03d: %s" % ((t.status + 1), note), self.logname)
+                        log("NOTE #%03d: %s" % ((t.status + 1), note), t.logname)
                     result = "%s\t%s\t%s\t" % (r, note, r_time.replace("_", " "))
                     try:
                         t.results[str(t.testlist[t.status] + 1)].append(result)
@@ -304,6 +320,37 @@ class MyMain(QMainWindow):
 
     def lombard_pressed(self):
         t.isLombardEnabled = not t.isLombardEnabled
+        if t.isLombardEnabled:
+            if (not t.recorder.calibrated[t.micChannel]) or (not t.recorder.calibrated[t.earChannel]) or (
+                    not t.isMouthCalibrated):
+                want_to_calibrate = messagebox.askyesno("VoRTEx", "You first have to calibrate the microphones and "
+                                                                  "the mouth in order to apply the Lombard effect. "
+                                                                  "Do you want to do it now?")
+                if not want_to_calibrate:
+                    t.isLombardEnabled = False
+                    self.update()
+                else:
+                    if not t.recorder.calibrated[t.micChannel]:
+                        messagebox.showinfo("VoRTEx", "Please place the measurement mirophone into the calibrator and "
+                                                      "press OK")
+                        t.calibrate_mic()
+                        messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
+                                            % t.recorder.correction[t.mouthChannel])
+                    if not t.recorder.calibrated[t.earChannel]:
+                        messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
+                        t.calibrate_ear()
+                        messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f"
+                                            % t.recorder.correction[t.earChannel])
+                    if not t.isMouthCalibrated:
+                        messagebox.showinfo("VoRTEx", "Please place the measurement microphone at the MRP and press OK")
+                        t.calibrate_mouth()
+                        messagebox.showinfo("VoRTEx", "Mouth calibration completed: gain = %0.2f"
+                                            % t.gain)
+                    self.measure_noise()
+                    self.measure_noise_radio()
+            else:
+                self.measure_noise()
+                self.measure_noise_radio()
         self.update()
 
     @staticmethod
@@ -523,7 +570,7 @@ class Settings(QDialog):
 
     def update_calib(self):
         if t.isMouthCalibrated:
-            self.ui.mouth_gain.setText("Gain = %0.2ddB" % t.gain)
+            self.ui.mouth_gain.setText("Gain = %0.2fdB" % t.gain)
         else:
             self.ui.mouth_gain.setText("calib. needed")
         if t.recorder.calibrated[0]:
@@ -592,8 +639,8 @@ class Resume(QDialog):
         self.update_list()
         self.temp = False
 
-
-    def new_pressed(self):
+    @staticmethod
+    def new_pressed():
         n = NewDialog()
         n.exec_()
 
@@ -629,6 +676,7 @@ class Resume(QDialog):
                 t.save()
         t.resume(t.testDir + self.test_list[self.ui.listWidget.currentRow()])
         t.isFirstStart = False
+        MainWindow.condition = -1
         self.close()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
@@ -708,11 +756,10 @@ class NewDialog(QDialog):
                                  % self.ui.nameEdit.text())
 
     def update(self):
-        t.lang = t.langs[self.ui.langBox.currentIndex()]
-        self.ui.label_5.setText("Number of tests: %d" % len(t.database[t.lang]))
+        self.ui.label_5.setText("Number of tests: %d" % len(t.database[t.langs[self.ui.langBox.currentIndex()]]))
         g = 0
         for i in os.listdir(t.database["AUDIOPATH"]):
-            if t.lang in i:
+            if t.langs[self.ui.langBox.currentIndex()] in i:
                 g += 1
         if g == 2:
             t.isMultigenderEnabled = True
@@ -733,6 +780,7 @@ class NewDialog(QDialog):
     def closeEvent(self, QCloseEvent):
         if self.temp:
             quit()
+
 
 # splash screen
 class SplashScreen(QDialog):
@@ -820,7 +868,7 @@ if __name__ == "__main__":
             new.ui.pushButton_3.clicked.connect(lambda: new.close())
             new.exec_()
         elif len(tests) == 1:
-            t.resume(t.testDir+"/"+tests[0])
+            t.resume(t.testDir + "/" + tests[0])
         else:
             messagebox.showinfo("VoRTEx", "Welcome! Let's resume a test or start a new one!")
             res = Resume()
