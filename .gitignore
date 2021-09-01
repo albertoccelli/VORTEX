@@ -14,8 +14,7 @@ lists/
 source/to_separe.txt
 
 # Tests
-vr_tests/.*
-vr_tests/test*
+vr_tests/*
 !vr_tests/.gitkeep
 *.pk
 
