@@ -82,7 +82,6 @@ class MyMain(QMainWindow):
         self.ui.actionAudio_device.triggered.connect(lambda: self.open_settings())
         self.ui.actionAbout.triggered.connect(lambda: self.about())
         # buttons
-        self.ui.cancel_button.pressed.connect(lambda: self.cancel_pressed())
         self.ui.pushButton.pressed.connect(lambda: self.lombard_pressed())
         self.ui.pushButton_2.pressed.connect(lambda: self.measure_noise())
         self.ui.pushButton_3.pressed.connect(lambda: self.measure_noise_radio())
@@ -96,20 +95,14 @@ class MyMain(QMainWindow):
         self.condition = -1
         self.update_screens()
         self.update()
-        self.ww_waiting = False
         app.processEvents()
 
-    def cancel_pressed(self):
-        self.condition = len(t.sequence[t.current_test])
-        self.do_test()
-
-    @staticmethod
-    def recap_test():
+    def recap_test(self):
         messagebox.showinfo("%s" % t.testName, "Test progress: \n"
                                                "language: %s\n"
                                                "status: %d/%d\n"
-                                               "results: %d/%d passed" %
-                            (langDict[t.lang], t.current_test, len(t.testlist), t.passes, len(t.testlist)))
+                                               "results: %d/%d passed" % (langDict[t.lang], t.current_test, len(t.testlist),
+                                                                          t.passes, len(t.testlist)))
 
     def print_csv(self):
         t.print_report()
@@ -129,6 +122,22 @@ class MyMain(QMainWindow):
         self.condition = self.ui.commandsBox.currentRow()
         self.do_test()
 
+    def update_screens(self):
+        self.ui.commandsBox.clear()
+        if self.condition >= 0:
+            for i in range(len(t.sequence[t.testlist[t.current_test]])):
+                self.ui.commandsBox.addItem(t.sequence[t.current_test][i].replace("\t", "->").replace("\n", ""))
+            self.ui.expectedBox.clear()
+            for i in range(len(t.expected[t.testlist[t.current_test]])):
+                self.ui.expectedBox.addItem(t.expected[t.current_test][i].replace("\t", "->").replace("\n", ""))
+            self.ui.precBox.clear()
+            try:
+                self.ui.precBox.setText(t.preconditions[t.testlist[t.current_test]])
+            except NameError:
+                self.ui.precBox.setText("No preconditions available")
+            except IndexError:
+                self.ui.precBox.setText("No preconditions available")
+
     def repeat(self):
         if self.condition == 1:
             t.issued_ww += 1
@@ -147,6 +156,7 @@ class MyMain(QMainWindow):
             return
         r = RecordDialog()
         r.ui.label.setText("Turn OFF the radio and press OK to measure the background noise")
+        r.resize(r.sizeHint())
         r.ui.pushButton.pressed.disconnect()
         r.ui.pushButton.pressed.connect(lambda: r.measure_noise())
         r.exec_()
@@ -158,13 +168,13 @@ class MyMain(QMainWindow):
             return
         r = RecordDialog()
         r.ui.label.setText("Turn ON the radio and press OK to measure the background noise")
+        r.resize(r.sizeHint())
         r.ui.pushButton.pressed.disconnect()
         r.ui.pushButton.pressed.connect(lambda: r.measure_noise_radio())
         r.exec_()
         self.update()
 
     def do_test(self):
-        print(self.condition)
         if self.condition == -1:
             # Recap test progress
             self.recap_test()
@@ -202,11 +212,11 @@ class MyMain(QMainWindow):
                 else:
                     self.measure_noise()
                     self.measure_noise_radio()
-            if t.status == 0:
+            if not t.status:
                 # start test from 0
                 log("MAY THE FORCE BE WITH YOU", t.logname)  # the first line of the log file
                 t.results = {}
-                t.status = 1
+                t.status = True
             else:
                 # resume the test
                 log("WELCOME BACK", t.logname)
@@ -219,13 +229,10 @@ class MyMain(QMainWindow):
         else:
             if self.condition == 0:
                 t.issued_ww += 1
-                self.ww_waiting = True
                 print("WW issued")
             if self.condition == 1:
-                if self.ww_waiting:
-                    print("WW recognized")
-                    t.recognized_ww += 1
-                    self.ww_waiting = False
+                print("WW recognized")
+                t.recognized_ww += 1
             self.update_screens()
             self.ui.commandsBox.setCurrentRow(self.condition)
             self.ui.expectedBox.setCurrentRow(self.condition)
@@ -242,8 +249,7 @@ class MyMain(QMainWindow):
                     if previous_cid == "000":
                         log("MIC ACTIVATED", t.logname)
                 try:
-                    next_command = t.sequence[t.testlist[t.current_test]][self.condition + 1].split("\t")[1].replace(
-                        "\n", "")
+                    next_command = t.sequence[t.testlist[t.current_test]][self.condition + 1].split("\t")[1].replace("\n", "")
                     next_cid = t.sequence[t.testlist[t.current_test]][self.condition + 1].split("\t")[0]
                 except IndexError:
                     try:
@@ -256,7 +262,7 @@ class MyMain(QMainWindow):
                 filename = t.phrasesPath + "/" + t.lang + "_" + str(next_cid) + ".wav"
                 app.processEvents()
                 self.ui.wavLabel.setText("Wave file: %s" % filename)
-                self.ui.gainLabel.setText("Gain adjust: %0.2fdB" % t.gain)
+                self.ui.gainLabel.setText("Gain adjust: %0.2fdB" % (t.gain))
                 log("OSCAR: <<%s>> (%s)" % (command, filename), t.logname)
                 t.play_command(cid)
                 # play button text
@@ -284,35 +290,27 @@ class MyMain(QMainWindow):
                     note = self.note()
                     if len(note) > 0:
                         log("NOTE #%03d: %s" % ((t.current_test + 1), note), t.logname)
-                    result = "%s\t%s\t%s\t" % (r, note, r_time)
+                    result = "%s\t%s\t%s\t" % (r, note, r_time.replace("_", " "))
                     try:
-                        t.results[str(t.testlist[t.current_test] + 1)] = result
+                        t.results[str(t.testlist[t.current_test] + 1)].append(result)
                     except KeyError:
                         t.results[str(t.testlist[t.current_test] + 1)] = []
-                        t.results[str(t.testlist[t.current_test] + 1)] = result
-                    self.update()
+                        t.results[str(t.testlist[t.current_test] + 1)].append(result)
                 else:
                     print("REPEATING")
                     log("REPEATING TEST", t.logname)
                     t.current_test -= 1
                 self.ui.playButton.setText("PTT")
+                self.update()
                 t.current_test += 1
-                if t.current_test == len(t.testlist):
-                    messagebox.showinfo("VoRTEx", "Congratulations! You just completed another test!\n"
-                                                  "It wasn't easy, you deserve a cup of coffee ;)")
-                    t.status = 2
-
-                self.update_table()
-                self.update_screens()
                 t.isSaved = False
+                self.update_screens()
                 self.condition = 0
 
         if self.condition > 0:
-            self.ui.cancel_button.setEnabled(True)
             self.ui.repeatButton.setEnabled(True)
         else:
             self.ui.repeatButton.setEnabled(False)
-            self.ui.cancel_button.setEnabled(False)
 
             # calibrate
         # elif self.condition == 1:
@@ -375,15 +373,6 @@ class MyMain(QMainWindow):
         pass
 
     @staticmethod
-    def open_log():
-        os.system("notepad %s" % t.logname.replace("/", "\\"))
-
-    def completed(self):
-        self.ui.playButton.disconnect()
-        self.ui.playButton.setText("Quit")
-        self.ui.playButton.pressed.connect(lambda: self.close())
-
-    @staticmethod
     def about():
         a = About()
         a.exec_()
@@ -392,6 +381,15 @@ class MyMain(QMainWindow):
     def open_guide():
         webbrowser.open(guidelink)
 
+    @staticmethod
+    def open_log():
+        os.system("notepad %s" % t.logname.replace("/", "\\"))
+
+    def clear_screens(self):
+        self.ui.commandsBox.clear()
+        self.ui.precBox.clear()
+        self.ui.expectedBox.clear()
+
     def resume_pressed(self):
         if len(tests) == 0:
             messagebox.showinfo("VoRTEx", "No tests found! Better to start a new one")
@@ -399,6 +397,12 @@ class MyMain(QMainWindow):
             resume = Resume()
             resume.exec_()
         self.update()
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        if not t.isSaved:
+            if messagebox.askyesnocancel("VoRTEx", "Any progress will be lost. Do you want to save?"):
+                self.save_pressed()
+        quit()
 
     def save_pressed(self):
         t.save()
@@ -410,102 +414,13 @@ class MyMain(QMainWindow):
         newdialog.exec_()
         self.update()
 
-    def clear_screens(self):
-        self.ui.commandsBox.clear()
-        self.ui.precBox.clear()
-        self.ui.expectedBox.clear()
-
-    def update_screens(self):
-        self.clear_screens()
-        if t.status == 1:
-            if self.condition >= 0:
-                for i in range(len(t.sequence[t.testlist[t.current_test]])):
-                    self.ui.commandsBox.addItem(t.sequence[t.current_test][i].replace("\t", "->").replace("\n", ""))
-                self.ui.expectedBox.clear()
-                for i in range(len(t.expected[t.testlist[t.current_test]])):
-                    self.ui.expectedBox.addItem(t.expected[t.current_test][i].replace("\t", "->").replace("\n", ""))
-                self.ui.precBox.clear()
-                try:
-                    self.ui.precBox.setText(t.preconditions[t.testlist[t.current_test]])
-                except NameError:
-                    self.ui.precBox.setText("No preconditions available")
-                except IndexError:
-                    self.ui.precBox.setText("No preconditions available")
-
-    def review_test(self, n_test):
-        print("Reviewing test %s" % id)
-        t.current_test = n_test-1
-        self.update()
-
-    def update_table(self):
-        self.ui.tableWidget.clear()
-        self.ui.tableWidget.setHorizontalHeaderLabels(["Result", "Timestamp", "Review", "Note"])
-        if t.status !=0:
-            self.ui.tableWidget.setRowCount(len(t.results))
-            for i in range(len(t.results)):
-                btn = QPushButton(self.ui.tableWidget)
-                btn.setText("Go to")
-                btn.clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()+1))
-                result = t.results[str(i+1)].split("\t")[0]
-                note = t.results[str(i+1)].split("\t")[1]
-                timestamp = t.results[str(i+1)].split("\t")[2]
-                self.ui.tableWidget.setCellWidget(i, 2, btn)
-                self.ui.tableWidget.setItem(i, 3, QTableWidgetItem(note))
-                self.ui.tableWidget.setItem(i, 1, QTableWidgetItem(timestamp))
-                if result == '1':
-                    result = "PASS"
-                elif result == '0':
-                    result = "FAIL"
-                self.ui.tableWidget.setItem(i, 0, QTableWidgetItem(result))
-                if result == 'PASS':
-                    for j in range(self.ui.tableWidget.columnCount()):
-                        if j!= 2:
-                            self.ui.tableWidget.item(i, j).setBackground(QtGui.QColor(0, 125, 0))
-                else:
-                    for j in range(self.ui.tableWidget.columnCount()):
-                        if j != 2:
-                            self.ui.tableWidget.item(i, j).setBackground(QtGui.QColor(125, 0, 0))
-            if t.status == 1:
-                row_count = len(t.results)
-                self.ui.tableWidget.insertRow(row_count)
-                self.ui.tableWidget.setItem(row_count, 0, QTableWidgetItem("TO BE COMPLETED"))
-                btn = QPushButton(self.ui.tableWidget)
-                btn.setText("Go to")
-                btn.clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()+1))
-                self.ui.tableWidget.setCellWidget(row_count, 2, btn)
-                #self.ui.tableWidget.item(row_count, 2).setBackground(QtGui.QColor(125, 125, 0))
-            print("Current test: %s" % (t.current_test + 1))
-            self.ui.tableWidget.setItem(t.current_test, 0, QTableWidgetItem("CURRENT"))
-            self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem(""))
-            self.ui.tableWidget.item(t.current_test, 0).setBackground(QtGui.QColor(125, 125, 20))
-            self.ui.tableWidget.item(t.current_test, 1).setBackground(QtGui.QColor(125, 125, 20))
-
-            self.ui.tableWidget.resizeRowsToContents()
-            self.ui.tableWidget.resizeColumnsToContents()
-
-    def update_playbutton(self):
-        pass
-
     def update(self):
-        self.update_table()
-        self.update_screens()
         if self.condition == -1:  # test to be started
-            self.ui.repeatButton.setEnabled(False)
-            self.ui.cancel_button.setEnabled(False)
-            if t.status != 2:
-                self.ui.playButton.disconnect()
-                self.ui.playButton.pressed.connect(lambda: self.do_test())
-                if t.status == 1:
-                    self.ui.playButton.setText("Resume test")
-                    self.ui.statusLabel.setText("Status: RUNNING")
-                elif t.status == 0:
-                    self.ui.playButton.setText("Start test")
-                    self.ui.statusLabel.setText("Status: WAITING")
+            self.update_screens()
+            if t.status:
+                self.ui.playButton.setText("Resume test")
             else:
-                self.completed()
-                self.ui.statusLabel.setText("Status: COMPLETED!")
-                self.ui.playButton.pressed.disconnect()
-                self.ui.playButton.pressed.connect(lambda: self.close())
+                self.ui.playButton.setText("Start test")
         elif self.condition == 0:  # test started, PTT to be enabled
             self.ui.playButton.setEnabled(True)
             self.ui.repeatButton.setEnabled(False)
@@ -514,7 +429,11 @@ class MyMain(QMainWindow):
             self.setWindowTitle("VoRTEx - %s" % t.testName)
         else:
             self.setWindowTitle("VoRTEx - %s*" % t.testName)
-        self.ui.groupBox_2.setTitle("Test %s of %s" % (t.current_test % len(t.testlist) + 1, len(t.testlist)))
+        if t.status:
+            self.ui.statusLabel.setText("Status: RUNNING")
+        else:
+            self.ui.statusLabel.setText("Status: WAITING")
+        self.ui.groupBox_2.setTitle("Test %s of %s" % (t.current_test + 1, len(t.testlist)))
         try:
             progress = round(100 * t.current_test / len(t.testlist))
         except ZeroDivisionError:
@@ -534,8 +453,7 @@ class MyMain(QMainWindow):
         except ZeroDivisionError:
             self.ui.scoreLabel.setText("Score: (not started yet)")
         try:
-            self.ui.wwLabel.setText("WW accuracy: {0:d}/{1:d}({2:.0%})"
-                                    .format(int(t.recognized_ww), int(t.issued_ww), t.recognized_ww / t.issued_ww))
+            self.ui.wwLabel.setText("WW accuracy: {0:.0%}".format(t.recognized_ww / t.issued_ww))
         except ZeroDivisionError:
             self.ui.wwLabel.setText("WW accuracy: (not started yet)")
         self.ui.pushButton_2.setEnabled(t.isLombardEnabled)
@@ -551,12 +469,8 @@ class MyMain(QMainWindow):
         self.ui.noiseLabel.setText("BG noise: %0.2fdBA" % t.noise)
         self.ui.noiseLabel_2.setText("BG noise + radio: %0.2fdBA" % t.noise_radio)
         app.processEvents()
-
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        if not t.isSaved:
-            if messagebox.askyesnocancel("VoRTEx", "Any progress will be lost. Do you want to save?"):
-                self.save_pressed()
-        quit()
+        self.resize(self.sizeHint())
+        app.processEvents()
 
 
 # result dialog
@@ -605,8 +519,8 @@ class Settings(QDialog):
         super(Settings, self).__init__()
         self.ui = Ui_Settings()
         self.ui.setupUi(self)
-        self.setWindowTitle("VoRTEx settings")
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.ui.comboBox.setCurrentIndex(t.recorder.deviceIn)
+        self.ui.comboBox_2.setCurrentIndex(t.recorder.deviceOut - len(t.recorder.devicesIn))
         self.ui.pushButton.pressed.connect(lambda: self.submit())
         self.ui.pushButton_2.pressed.connect(lambda: self.apply())
         self.ui.pushButton_3.pressed.connect(lambda: self.cancel())
@@ -615,10 +529,8 @@ class Settings(QDialog):
         self.ui.mic_button.pressed.connect(lambda: self.calibrate_mic())
         for i in range(len(t.recorder.devicesIn)):
             self.ui.comboBox.addItem(t.recorder.devicesIn[i].get('name'))
-        self.ui.comboBox.setCurrentIndex(t.recorder.deviceIn)
         for i in range(len(t.recorder.devicesOut)):
             self.ui.comboBox_2.addItem(t.recorder.devicesOut[i].get('name'))
-        self.ui.comboBox.setCurrentIndex(t.recorder.deviceOut - len(t.recorder.devicesIn))
         if t.isLombardEnabled:
             self.ui.checkBox.setChecked(True)
         else:
@@ -836,7 +748,7 @@ class NewDialog(QDialog):
             t.isLombardEnabled = self.ui.checkBox.isChecked()
             # setup a new test
             t.new(self.ui.nameEdit.text(), self.ui.langBox.currentIndex(), t.gender)
-            t.save()
+            t.save_settings()
             t.isFirstStart = False
             self.close()
         except TestExistsError:
@@ -934,8 +846,6 @@ if __name__ == "__main__":
     root.withdraw()
     splash.load(60)
     t = GuiTest()  # create new istance of the test
-    print(t.recorder.deviceIn)
-    print(t.recorder.deviceOut)
     tests = show_dirs(t.testDir)
     print(tests)
     splash.load(80)

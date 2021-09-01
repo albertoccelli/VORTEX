@@ -164,9 +164,8 @@ class Test:
         self.recognized_ww = 0  # How many times has the wakeword been recognized
         self.passes = 0  # How many passes are there?
         self.failed = []  # List of failed tests
-        self.isRunning = False  # Is the test running?
-        self.completed = 0  # How many times has the test been completed?
-        self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
+        self.status = 0  # Is the test running? (0: waiting; 1: running; 2: completed)
+        self.current_test = 0  # The test number we should start from. If the test is new, then the status is 0.
         self.results = {}  # A list containing the test results
         self.isMouthCalibrated = False  # Is the mouth calibrated?
         self.gain = 0  # The gain value for the mouth to reach 94dBSPL
@@ -241,10 +240,8 @@ class Test:
         # create the configuration file
         self.logname = "%s/testlog.log" % self.wPath
         self.testfile = "%s/config.cfg" % self.wPath
-        print("Creating test (%s)" % self.wPath)
         # decide the language
         self.lang = self.langs[l_index]
-        print("Language: %s" % self.lang)
         try:  # if available, imports the array for the preconditions and expected behaviour
             self.expected = self.database["expected"]
         except KeyError:
@@ -274,14 +271,17 @@ class Test:
         self.save()  # save the configuration into the cfg file
         # reset status values
         self.testlist = range(len(self.database[self.lang]))
-        self.status = 1
+        self.current_test = 1
         self.issued_ww = 0  # How many times has the wakeword been pronounced
         self.recognized_ww = 0  # How many times has the wakeword been recognized
         self.passes = 0  # How many passes are there?
         self.failed = []  # List of failed tests
-        self.isRunning = False  # Is the test running?
-        self.completed = 0  # How many times has the test been completed?
-        self.status = 0  # The test number we should start from. If the test is new, then the status is 0.
+        self.status = 0  # Is the test running?
+        self.current_test = 0  # The test number we should start from. If the test is new, then the status is 0.
+        print_square("Creating test (%s)\n\n"
+                     ""
+                     "Language: %s\n"
+                     "Status: %s" % (self.wPath, self.lang, self.status))
         self.results = {}  # A list containing the test results
         self.isSaved = True
         return
@@ -313,13 +313,12 @@ class Test:
         while True:
             print_square("LANGUAGE: %s\n"
                          "RUNNING: %s\n"
-                         "STATUS: %s/%s\n"
-                         "COMPLETED: %s" % (self.lang, self.isRunning, self.status,
-                                            len(self.database[self.lang]), self.completed),
+                         "STATUS: %s/%s" % (self.lang, self.status, self.current_test,
+                                            len(self.database[self.lang])),
                          margin=[5, 5, 1, 1],
                          title="TEST STATUS")
             try:
-                if self.isRunning:
+                if self.status:
                     input("Do you want to continue with this test? (ENTER to continue, CTRL+C to cancel and choose "
                           "another one) ")
                 else:
@@ -339,6 +338,7 @@ class Test:
         Writes the test attributes (including the current progress) into the config file, along with information
         regarding the .vrtl file used for the single test. Overwrites the last.vcfg file in the settings folder
         """
+        print_square("SAVING\n\nStatus: %s" % self.status)
         if testfile is None:
             testfile = self.testfile
         with open(testfile, "w", encoding="utf-16") as r:
@@ -353,9 +353,8 @@ class Test:
             r.write("\n")
             # save progress
             r.write("@PROGRESS\n")
-            r.write("STARTED=%s\n" % self.isRunning)
-            r.write("STATUS=%s\n" % self.status)
-            r.write("COMPLETED=%s\n" % self.completed)
+            r.write("STARTED=%s\n" % self.status)
+            r.write("STATUS=%s\n" % self.current_test)
             r.write("ISSUED_WW=%d\n" % self.issued_ww)
             r.write("RECOGNIZED_WW=%d\n" % self.recognized_ww)
             r.write("PASSED=%s\n" % self.passes)
@@ -366,6 +365,7 @@ class Test:
         """
         Reads the configuration file for the selected test
         """
+        print("Loading test...")
         if testfile is None:
             testfile = self.testfile
         with open(testfile, "r", encoding="utf-16") as r:
@@ -379,11 +379,9 @@ class Test:
                 for line in r.readlines():
                     # read configuration
                     if "STARTED" in line:
-                        self.isRunning = eval(line.split("=")[-1])
+                        self.status = eval(line.split("=")[-1])
                     elif "STATUS" in line:
-                        self.status = int(line.split("=")[-1])
-                    elif "COMPLETED" in line:
-                        self.completed = eval(line.split("=")[-1])
+                        self.current_test = int(line.split("=")[-1])
                     elif "RESULTS" in line:
                         self.results = eval(line.split("=")[-1])
                     elif "LISTFILE" in line:
@@ -414,6 +412,7 @@ class Test:
                     self.preconditions = self.database["preconditions"]
                 except KeyError:
                     pass
+                print_square("Status: %s" % self.status)
                 self.sequence = self.database[self.lang]
             else:
                 print_square("!!! CONFIGURATION FILE CORRUPTED", centering="center")
@@ -443,7 +442,6 @@ class Test:
         """
         Load saved settings
         """
-        print("Loading VoRTEx settings: %s" % self.settingsFile)
         try:
             with open(self.settingsFile, "r", encoding="utf-16") as f:
                 for line in f.readlines():
@@ -481,8 +479,8 @@ class Test:
         if len(self.results) == len(self.database[self.lang]):
             self.completed = min(lengths)
             if min(lengths) == max(lengths):
-                self.isRunning = False
-        return self.isRunning, self.completed
+                self.status = False
+        return self.status, self.completed
 
     # playback functions
     def play_command(self, cid):
@@ -497,7 +495,7 @@ class Test:
             while True:
                 # wake word is pronounced with radio on
                 if self.isLombardEnabled:
-                    if int(cid) == 0:
+                    if int(cid) == 0 or int(cid) == 999:
                         total_gain = lombard(self.noise_radio) + self.gain
                     else:
                         total_gain = lombard(self.noise) + self.gain
@@ -716,16 +714,16 @@ class Test:
         # Test begins
         preconditions = []
         expected = []
-        if not self.isRunning:
+        if not self.status:
             # start test from 0
             print_square("Beginning test... Press ENTER when you are ready")
             input("-->")
             log("MAY THE FORCE BE WITH YOU", self.logname)  # the first line of the log file
             self.results = {}
-            self.isRunning = True
+            self.status = True
         else:
             # resume the test
-            print_square("Resuming test from %d... Press ENTER when you are ready" % (self.status + 1))
+            print_square("Resuming test from %d... Press ENTER when you are ready" % (self.current_test + 1))
             input("-->")
             log("WELCOME BACK", self.logname)
 
@@ -742,7 +740,7 @@ class Test:
             input("Press ENTER to continue\n-->")
         i = 0
         try:
-            for i in range(self.status, len(self.testlist)):
+            for i in range(self.current_test, len(self.testlist)):
                 clear_console()
                 print_square("%s: TEST %d OUT OF %d" % (langDict[self.lang], i + 1, len(self.testlist)))
                 try:
@@ -830,7 +828,7 @@ class Test:
                     result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
                     r_time = now()
                     print(result)
-                    self.status += 1  # status updated
+                    self.current_test += 1  # status updated
                     if result != "r":
                         while True:
                             if result == "0":
@@ -865,15 +863,15 @@ class Test:
                     self.results[str(self.testlist[i] + 1)] = []
                     self.results[str(self.testlist[i] + 1)].append(result)
                 self.save()
-                self.isRunning, self.completed = self._check_completed()
-                if self.completed > 0 and not self.isRunning:
+                self.status, self.completed = self._check_completed()
+                if self.completed > 0 and not self.status:
                     self._complete()
         except KeyboardInterrupt:
             print("------------------------------------------------------------------")
             print("Test aborted! Saving...")
             log("TEST_INTERRUPTED", self.logname)
-            self.status = self.testlist[i]
-            log("TEST_STATUS: %03d" % self.status, self.logname)
+            self.current_test = self.testlist[i]
+            log("TEST_STATUS: %03d" % self.current_test, self.logname)
             self.save()  # save current progress of the test
             return
 
@@ -881,22 +879,22 @@ class Test:
             print("------------------------------------------------------------------")
             print("Test aborted due to a error (%s)! Saving..." % e)
             log("ERROR %s" % e, self.logname)
-            self.status = self.testlist[i]
-            log("TEST_STATUS: %03d" % self.status, self.logname)
+            self.current_test = self.testlist[i]
+            log("TEST_STATUS: %03d" % self.current_test, self.logname)
             self.save()  # save current progress of the test
             return
 
         self._complete()
         self.save_conf()  # save current progress of the test
         clr_tmp()
-        return self.status
+        return self.current_test
 
     def _complete(self):
         log("======================================================", self.logname)
         log("TEST_STATUS: COMPLETED! CONGRATULATIONS", self.logname)
         log("======================================================", self.logname)
-        self.isRunning, self.completed = self._check_completed()
-        self.status = 0
+        self.status, self.completed = self._check_completed()
+        self.current_test = 0
         self.save()  # save current progress of the test
         print_square("Test completed!\n\nSaving report as csv file")
         input('-->')
