@@ -286,7 +286,7 @@ class Ui_MainWindow(object):
         self.playButton.setFont(font)
         self.playButton.setToolTip("Play command")
         self.playButton.setToolTipDuration(-1)
-        self.playButton.setShortcut("+")
+        self.playButton.setShortcut("P")
         self.playButton.setObjectName("playButton")
         self.horizontalLayout_7.addWidget(self.playButton)
         self.horizontalLayout_9 = QtWidgets.QHBoxLayout()

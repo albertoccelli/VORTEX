@@ -547,7 +547,7 @@ p, li { white-space: pre-wrap; }
              <string>Play command</string>
             </property>
             <property name="shortcut">
-             <string notr="true">+</string>
+             <string notr="true">P</string>
             </property>
            </widget>
           </item>

@@ -11,38 +11,42 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Note_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(300, 86)
-        Dialog.setMinimumSize(QtCore.QSize(300, 86))
-        Dialog.setMaximumSize(QtCore.QSize(300, 86))
-        self.label = QtWidgets.QLabel(Dialog)
+class Ui_Note_Dialog(object):
+    def setupUi(self, Note_Dialog):
+        Note_Dialog.setObjectName("Note_Dialog")
+        Note_Dialog.resize(300, 114)
+        Note_Dialog.setMinimumSize(QtCore.QSize(300, 114))
+        Note_Dialog.setMaximumSize(QtCore.QSize(300, 114))
+        self.label = QtWidgets.QLabel(Note_Dialog)
         self.label.setGeometry(QtCore.QRect(20, 10, 131, 16))
         self.label.setObjectName("label")
-        self.lineEdit = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit = QtWidgets.QLineEdit(Note_Dialog)
         self.lineEdit.setGeometry(QtCore.QRect(20, 30, 261, 20))
         self.lineEdit.setObjectName("lineEdit")
-        self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setGeometry(QtCore.QRect(110, 57, 75, 23))
+        self.pushButton = QtWidgets.QPushButton(Note_Dialog)
+        self.pushButton.setGeometry(QtCore.QRect(100, 80, 75, 23))
         self.pushButton.setObjectName("pushButton")
+        self.checkBox = QtWidgets.QCheckBox(Note_Dialog)
+        self.checkBox.setGeometry(QtCore.QRect(20, 60, 70, 17))
+        self.checkBox.setObjectName("checkBox")
 
-        self.retranslateUi(Dialog)
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+        self.retranslateUi(Note_Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Note_Dialog)
 
-    def retranslateUi(self, Dialog):
+    def retranslateUi(self, Note_Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.label.setText(_translate("Dialog", "Insert a note (if needed)"))
-        self.pushButton.setText(_translate("Dialog", "Ok"))
-        self.pushButton.setShortcut(_translate("Dialog", "Return"))
+        Note_Dialog.setWindowTitle(_translate("Note_Dialog", "Dialog"))
+        self.label.setText(_translate("Note_Dialog", "Insert a note (if needed)"))
+        self.pushButton.setText(_translate("Note_Dialog", "Ok"))
+        self.pushButton.setShortcut(_translate("Note_Dialog", "Return"))
+        self.checkBox.setText(_translate("Note_Dialog", "Review"))
 
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog)
-    Dialog.show()
+    Note_Dialog = QtWidgets.QDialog()
+    ui = Ui_Note_Dialog()
+    ui.setupUi(Note_Dialog)
+    Note_Dialog.show()
     sys.exit(app.exec_())

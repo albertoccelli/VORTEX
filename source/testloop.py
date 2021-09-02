@@ -173,6 +173,9 @@ class Test:
         self.noise = 0  # RMS value of the background noise
         self.noise_radio = 0  # RMS value of the background noise plus the radio on
         self.testlist = []
+        self.redo = []
+        #self.testlist = [0, 1, 9, 32, 33, 37, 38, 39, 41, 42, 43, 49, 50, 54, 55, 58, 86, 87,
+        #                 91, 92, 94, 103, 104, 128, 129, 131, 134, 136, 138, 139, 146, 152]
         self.database = {}
         self.isFirstStart = False
         self.isSaved = True
@@ -228,7 +231,7 @@ class Test:
         self.langs.sort()
         return
 
-    def new(self, testname=None, l_index=None, gender=0):
+    def new(self, testname=None, l_index=None, gender=0, testlist=None):
         # decide the name of the test
         self.testName = testname
         # create a new folder based on the test
@@ -241,7 +244,8 @@ class Test:
         self.logname = "%s/testlog.log" % self.wPath
         self.testfile = "%s/config.cfg" % self.wPath
         # decide the language
-        self.lang = self.langs[l_index]
+        if l_index is not None:
+            self.lang = self.langs[l_index]
         try:  # if available, imports the array for the preconditions and expected behaviour
             self.expected = self.database["expected"]
         except KeyError:
@@ -270,7 +274,6 @@ class Test:
         self.phrasesPath = self.database["AUDIOPATH"] + langpath  # build the path for the speech files
         self.save()  # save the configuration into the cfg file
         # reset status values
-        self.testlist = range(len(self.database[self.lang]))
         self.current_test = 1
         self.issued_ww = 0  # How many times has the wakeword been pronounced
         self.recognized_ww = 0  # How many times has the wakeword been recognized
@@ -281,9 +284,13 @@ class Test:
         print_square("Creating test (%s)\n\n"
                      ""
                      "Language: %s\n"
-                     "Status: %s" % (self.wPath, self.lang, self.status))
+                     "Testlist: %s\n"
+                     "Status: %s" % (self.wPath, self.lang, self.testlist, self.status))
         self.results = {}  # A list containing the test results
         self.isSaved = True
+        if testlist is None:
+            self.testlist = range(len(self.database[self.lang]))
+        else: self.testlist = testlist
         return
 
     def resume(self, path=None):
@@ -292,7 +299,6 @@ class Test:
         self.testfile = "%s/config.cfg" % self.wPath  # the configuration file's path
         self.load_conf()  # retrieve the paths and test status from the configuration file
         self._configure_list()  # get the test configuration (languages, lists) from the listfile
-        self.testlist = range(len(self.database[self.lang]))
         self.save()
         return
 
@@ -350,9 +356,17 @@ class Test:
             r.write("PHRASESPATH=%s\n" % self.phrasesPath)
             r.write("LANG=%s\n" % self.lang)
             r.write("NLU=%s\n" % self.isNluEnabled)
+            r.write("MOUTH_CALIBRATED=%s\n" % self.isMouthCalibrated)
+            r.write("MOUTH_CORRECTION=%s\n" % self.gain)
+            r.write("MIC_CALIBRATED=%s\n" % self.recorder.calibrated)
+            r.write("MIC_DBFSTODBSPL=%s\n" % self.recorder.correction)
+            r.write("LOMBARD=%s\n" % self.isLombardEnabled)
+            r.write("NOISE_RADIO_OFF=%s\n" % self.noise)
+            r.write("NOISE_RADIO_ON=%s\n" % self.noise_radio)
             r.write("\n")
             # save progress
             r.write("@PROGRESS\n")
+            r.write("TESTLIST=%s\n" % self.testlist)
             r.write("STARTED=%s\n" % self.status)
             r.write("STATUS=%s\n" % self.current_test)
             r.write("ISSUED_WW=%d\n" % self.issued_ww)
@@ -402,6 +416,9 @@ class Test:
                         self.logname = str(line.split("=")[-1].replace("\n", ""))
                     elif "PASSED" in line:
                         self.passes = int(line.split("=")[-1].replace("\n", ""))
+                    elif "TESTLIST" in line:
+                        self.testlist = eval(line.split("=")[-1].replace("\n", ""))
+
                 self.testName = self.wPath.split("/")[-1]
                 self._configure_list()
                 try:  # if available, imports the array for the preconditions and expected behaviour
@@ -912,13 +929,13 @@ class Test:
                 print("\nSaving test results into %s...\n" % report_file)
                 with open(report_file, "w", encoding="utf-16") as r:
                     r.write("LANGUAGE: %s\n" % self.lang)
-                    r.write("WW RATIO:\t %0.2f\n" % (self.recognized_ww / self.issued_ww))
+                    r.write("WW RATIO:\t %0.4f\n" % (self.recognized_ww / self.issued_ww))
                     r.write("TEST N.\tRESULT\tCOMMENT\tTIMESTAMP\n")
                     for i in range(len(self.results)):
                         # write key
                         r.write("%s\t" % list(self.results.keys())[i])
                         for result in self.results[list(self.results.keys())[i]]:
-                            r.write("%s\t" % result)
+                            r.write("%s" % result)
                         r.write("\n")
 
                 log("PRINTED REPORT", self.logname)

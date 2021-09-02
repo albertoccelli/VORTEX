@@ -19,7 +19,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from source.gui.about import Ui_About
 from source.gui.newtest import Ui_Dialog
-from source.gui.note import Note_Dialog
+from source.gui.note import Ui_Note_Dialog
 from source.gui.result import ResultDialog
 from source.gui.resume import Ui_Resume
 from source.gui.settings import Ui_Settings
@@ -73,6 +73,7 @@ class MyMain(QMainWindow):
         self.raise_()
         self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
         self.setStyleSheet(stylesheet)
+        self.autosave = True
         # actions
         self.ui.actionNew.triggered.connect(self.on_newbutton_triggered)
         self.ui.actionSave.triggered.connect(lambda: self.save_pressed())
@@ -100,7 +101,7 @@ class MyMain(QMainWindow):
         app.processEvents()
 
     def cancel_pressed(self):
-        self.condition = len(t.sequence[t.current_test])
+        self.condition = len(t.sequence[t.testlist[t.current_test]])
         self.do_test()
 
     @staticmethod
@@ -130,9 +131,6 @@ class MyMain(QMainWindow):
         self.do_test()
 
     def repeat(self):
-        if self.condition == 1:
-            t.issued_ww += 1
-            print("Wakeword repeated")
         self.condition -= 1
         cid = t.sequence[t.testlist[t.current_test]][self.condition].split("\t")[0]
         if cid == "000":
@@ -162,6 +160,18 @@ class MyMain(QMainWindow):
         r.ui.pushButton.pressed.connect(lambda: r.measure_noise_radio())
         r.exec_()
         self.update()
+
+    def do_review(self):
+        if messagebox.askyesno("VoRTEx", "Do you really want to start a new test with just the errors of this one?"):
+            newname = Note()
+            newname.ui.label.setText("Choose a name for the test")
+            newname.exec_()
+            print("REDOING :")
+            print(t.redo)
+            t.new(testname=newname.text, l_index=None, testlist=t.redo)
+            print("REDOING :")
+            print(t.testlist)
+            self.update()
 
     def do_test(self):
         print(self.condition)
@@ -264,7 +274,7 @@ class MyMain(QMainWindow):
                     self.ui.playButton.setText("PTT")
                 else:
                     self.ui.playButton.setText("Play command: %s" % next_command)
-                if self.condition + 1 == len(t.sequence[t.current_test]):
+                if self.condition + 1 == len(t.sequence[t.testlist[t.current_test]]):
                     self.ui.playButton.setText("End test")
                     pass
                 self.condition += 1
@@ -281,10 +291,18 @@ class MyMain(QMainWindow):
                     elif r == "0":
                         print("FAIL")
                         log("END_TEST #%03d: FAILED" % (t.current_test + 1), t.logname)
-                    note = self.note()
+                    n = Note()
+                    if r == '0':
+                        n.ui.checkBox.setChecked(True)
+                    n.exec_()
+                    note = n.text
                     if len(note) > 0:
                         log("NOTE #%03d: %s" % ((t.current_test + 1), note), t.logname)
                     result = "%s\t%s\t%s\t" % (r, note, r_time)
+                    if n.is_checked:
+                        print("To be reviewed!")
+                        t.redo.append(t.current_test)
+                        print(t.redo)
                     try:
                         t.results[str(t.testlist[t.current_test] + 1)] = result
                     except KeyError:
@@ -301,6 +319,8 @@ class MyMain(QMainWindow):
                     messagebox.showinfo("VoRTEx", "Congratulations! You just completed another test!\n"
                                                   "It wasn't easy, you deserve a cup of coffee ;)")
                     t.status = 2
+                    t.current_test = 0
+                    self.completed()
 
                 self.update_table()
                 self.update_screens()
@@ -363,16 +383,10 @@ class MyMain(QMainWindow):
         return result
 
     @staticmethod
-    def note():
+    def note(review = False):
         n = Note()
         n.exec_()
-        return n.text
-
-    def stop_test(self):
-        self.condition = -1
-        self.update()
-        log("TEST INTERRUPTED", t.logname)
-        pass
+        return n.text, n.is_checked
 
     @staticmethod
     def open_log():
@@ -380,8 +394,8 @@ class MyMain(QMainWindow):
 
     def completed(self):
         self.ui.playButton.disconnect()
-        self.ui.playButton.setText("Quit")
-        self.ui.playButton.pressed.connect(lambda: self.close())
+        self.ui.playButton.setText("Review errors")
+        self.ui.playButton.pressed.connect(lambda: self.do_review())
 
     @staticmethod
     def about():
@@ -420,10 +434,15 @@ class MyMain(QMainWindow):
         if t.status == 1:
             if self.condition >= 0:
                 for i in range(len(t.sequence[t.testlist[t.current_test]])):
-                    self.ui.commandsBox.addItem(t.sequence[t.current_test][i].replace("\t", "->").replace("\n", ""))
+                    self.ui.commandsBox.addItem(t.sequence[t.testlist[t.current_test]][i].replace("\t", "->").
+                                                replace("\n", ""))
                 self.ui.expectedBox.clear()
-                for i in range(len(t.expected[t.testlist[t.current_test]])):
-                    self.ui.expectedBox.addItem(t.expected[t.current_test][i].replace("\t", "->").replace("\n", ""))
+                try:
+                    for i in range(len(t.expected[t.testlist[t.current_test]])):
+                        self.ui.expectedBox.addItem(t.sequence[t.testlist[t.current_test]][i].replace("\t", "->").
+                                                    replace("\n", ""))
+                except IndexError:
+                    pass
                 self.ui.precBox.clear()
                 try:
                     self.ui.precBox.setText(t.preconditions[t.testlist[t.current_test]])
@@ -433,55 +452,54 @@ class MyMain(QMainWindow):
                     self.ui.precBox.setText("No preconditions available")
 
     def review_test(self, n_test):
-        print("Reviewing test %s" % id)
-        t.current_test = n_test-1
+        print("Reviewing test %s" % (n_test + 1))
+        t.current_test = n_test
         self.update()
 
     def update_table(self):
-        self.ui.tableWidget.clear()
-        self.ui.tableWidget.setHorizontalHeaderLabels(["Result", "Timestamp", "Review", "Note"])
-        if t.status !=0:
-            self.ui.tableWidget.setRowCount(len(t.results))
-            for i in range(len(t.results)):
-                btn = QPushButton(self.ui.tableWidget)
-                btn.setText("Go to")
-                btn.clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()+1))
-                result = t.results[str(i+1)].split("\t")[0]
-                note = t.results[str(i+1)].split("\t")[1]
-                timestamp = t.results[str(i+1)].split("\t")[2]
-                self.ui.tableWidget.setCellWidget(i, 2, btn)
-                self.ui.tableWidget.setItem(i, 3, QTableWidgetItem(note))
-                self.ui.tableWidget.setItem(i, 1, QTableWidgetItem(timestamp))
-                if result == '1':
-                    result = "PASS"
-                elif result == '0':
-                    result = "FAIL"
-                self.ui.tableWidget.setItem(i, 0, QTableWidgetItem(result))
-                if result == 'PASS':
-                    for j in range(self.ui.tableWidget.columnCount()):
-                        if j!= 2:
-                            self.ui.tableWidget.item(i, j).setBackground(QtGui.QColor(0, 125, 0))
-                else:
-                    for j in range(self.ui.tableWidget.columnCount()):
-                        if j != 2:
-                            self.ui.tableWidget.item(i, j).setBackground(QtGui.QColor(125, 0, 0))
-            if t.status == 1:
-                row_count = len(t.results)
-                self.ui.tableWidget.insertRow(row_count)
-                self.ui.tableWidget.setItem(row_count, 0, QTableWidgetItem("TO BE COMPLETED"))
-                btn = QPushButton(self.ui.tableWidget)
-                btn.setText("Go to")
-                btn.clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()+1))
-                self.ui.tableWidget.setCellWidget(row_count, 2, btn)
-                #self.ui.tableWidget.item(row_count, 2).setBackground(QtGui.QColor(125, 125, 0))
-            print("Current test: %s" % (t.current_test + 1))
-            self.ui.tableWidget.setItem(t.current_test, 0, QTableWidgetItem("CURRENT"))
-            self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem(""))
-            self.ui.tableWidget.item(t.current_test, 0).setBackground(QtGui.QColor(125, 125, 20))
-            self.ui.tableWidget.item(t.current_test, 1).setBackground(QtGui.QColor(125, 125, 20))
+        horizontal_labels = ["ID", "Result", "Timestamp", "Review", "Note"]
+        self.ui.tableWidget.setRowCount(len(t.testlist))
+        self.ui.tableWidget.setColumnCount(len(horizontal_labels))
+        self.ui.tableWidget.setHorizontalHeaderLabels(horizontal_labels)
+        print(list(t.results.keys()))
+        btns = []
+        for i in range(len(t.testlist)):
+            result = 'TO BE DONE'
+            note = ""
+            timestamp = ""
+            btns.append(QPushButton(self.ui.tableWidget))
+            btns[i].clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()))
+            btns[i].setText("Go to...")
+            self.ui.tableWidget.setCellWidget(i, 3, btns[i])
+            self.ui.tableWidget.setItem(i, 0, QTableWidgetItem(str(t.testlist[i] + 1)))
+            self.ui.tableWidget.setItem(i, 1, QTableWidgetItem(result))
+            self.ui.tableWidget.setItem(i, 2, QTableWidgetItem(timestamp))
+            self.ui.tableWidget.setItem(i, 4, QTableWidgetItem(note))
+        for i in range(len(t.results)):
+            split_res = t.results[list(t.results.keys())[i]].split("\t")
+            if split_res[0] == '1':
+                result = 'PASS'
+            else:
+                result = 'FAIL'
+            note = split_res[1]
+            timestamp = split_res[2]
+            print(int(list(t.results.keys())[i]))
+            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 1, QTableWidgetItem(result))
+            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 2, QTableWidgetItem(timestamp))
+            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 4, QTableWidgetItem(note))
+            for j in range(self.ui.tableWidget.columnCount()):
+                if j!= 3:
+                    if result == 'PASS':
+                        self.ui.tableWidget.item(int(list(t.results.keys())[i])-1, j).setBackground(QtGui.QColor(0, 255, 0))
+                    elif result == 'FAIL':
+                        self.ui.tableWidget.item(int(list(t.results.keys())[i])-1, j).setBackground(QtGui.QColor(255, 0, 0))
+        self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem("CURRENT"))
+        for j in range(self.ui.tableWidget.columnCount()):
+            if j!= 3:
+                self.ui.tableWidget.item(t.current_test, j).setBackground(QtGui.QColor(255, 255, 0))
 
-            self.ui.tableWidget.resizeRowsToContents()
-            self.ui.tableWidget.resizeColumnsToContents()
+        self.ui.tableWidget.resizeColumnsToContents()
+        self.ui.tableWidget.resizeRowsToContents()
 
     def update_playbutton(self):
         pass
@@ -504,8 +522,6 @@ class MyMain(QMainWindow):
             else:
                 self.completed()
                 self.ui.statusLabel.setText("Status: COMPLETED!")
-                self.ui.playButton.pressed.disconnect()
-                self.ui.playButton.pressed.connect(lambda: self.close())
         elif self.condition == 0:  # test started, PTT to be enabled
             self.ui.playButton.setEnabled(True)
             self.ui.repeatButton.setEnabled(False)
@@ -516,7 +532,7 @@ class MyMain(QMainWindow):
             self.setWindowTitle("VoRTEx - %s*" % t.testName)
         self.ui.groupBox_2.setTitle("Test %s of %s" % (t.current_test % len(t.testlist) + 1, len(t.testlist)))
         try:
-            progress = round(100 * t.current_test / len(t.testlist))
+            progress = round(100 * len(t.results) / len(t.testlist))
         except ZeroDivisionError:
             progress = 0
         self.ui.progressBar.setProperty("value", progress)
@@ -528,13 +544,14 @@ class MyMain(QMainWindow):
         else:
             self.ui.langLabel.setText("Language: %s" % langDict[t.lang])
         self.ui.completedLabel.setText("Completed: %d test(s)" % t.current_test)
-        self.ui.lengthLabel.setText("Test length: %d" % len((t.database[t.lang])))
+        self.ui.lengthLabel.setText("Test length: %d" % len(t.testlist))
         try:
-            self.ui.scoreLabel.setText("Score: {0:.0%}".format(t.passes / t.current_test))
+            self.ui.scoreLabel.setText("Score: {0:d}/{1:d}({2:.1%})"
+                                       .format(t.passes, len(t.results), t.passes / len(t.results)))
         except ZeroDivisionError:
             self.ui.scoreLabel.setText("Score: (not started yet)")
         try:
-            self.ui.wwLabel.setText("WW accuracy: {0:d}/{1:d}({2:.0%})"
+            self.ui.wwLabel.setText("WW accuracy: {0:d}/{1:d}({2:.1%})"
                                     .format(int(t.recognized_ww), int(t.issued_ww), t.recognized_ww / t.issued_ww))
         except ZeroDivisionError:
             self.ui.wwLabel.setText("WW accuracy: (not started yet)")
@@ -550,6 +567,7 @@ class MyMain(QMainWindow):
             self.ui.pushButton.setText("Enable")
         self.ui.noiseLabel.setText("BG noise: %0.2fdBA" % t.noise)
         self.ui.noiseLabel_2.setText("BG noise + radio: %0.2fdBA" % t.noise_radio)
+        t.save()
         app.processEvents()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
@@ -588,15 +606,19 @@ class Note(QDialog):
     def __init__(self):
         super(Note, self).__init__()
         self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
-        self.ui = Note_Dialog()
+        self.ui = Ui_Note_Dialog()
         self.ui.setupUi(self)
         self.ui.label.setStyleSheet("color: black")
+        self.ui.checkBox.setChecked(False)
+        self.is_checked = self.ui.checkBox.isChecked()
         self.text = ""
         self.ui.pushButton.pressed.connect(lambda: self.on_clicked())
 
     def on_clicked(self):
         self.text = self.ui.lineEdit.text()
+        self.is_checked = self.ui.checkBox.isChecked()
         self.close()
+
 
 
 # settings window
@@ -798,6 +820,12 @@ class NewDialog(QDialog):
         self.fill_lang_combo()
         self.ui.checkBox.setChecked(t.isLombardEnabled)
         self.temp = False
+        self.testlist = None
+        self.testlist = [5, 10, 38, 53, 54, 62, 64, 86, 88, 94, 97, 102, 106, 109, 110, 111, 121, 122, 133, 134, 137, 139, 140, 142, 148]
+        for i in range(len(self.testlist)):
+            self.testlist[i] = self.testlist[i]-1
+        print("Testlist: ")
+        print(self.testlist)
 
     def update_ok(self):
         if self.ui.nameEdit.text().replace(" ", "") == "":
@@ -807,12 +835,17 @@ class NewDialog(QDialog):
         return
 
     def browse_pressed(self):
-        t.testlist = self.ui.databaseLabel.text()
+        t.listfile = self.ui.databaseLabel.text()
         t.load_database()
         self.ui.databaseLabel.setText(t.listfile)
         self.fill_lang_combo()
 
     def submit_pressed(self):
+        try:
+            res.temp = False
+            res.close()
+        except NameError:
+            pass
         t.temp = False
         if not t.isSaved:
             if messagebox.askyesno("VoRTEx",
@@ -835,7 +868,7 @@ class NewDialog(QDialog):
             # set lombard
             t.isLombardEnabled = self.ui.checkBox.isChecked()
             # setup a new test
-            t.new(self.ui.nameEdit.text(), self.ui.langBox.currentIndex(), t.gender)
+            t.new(self.ui.nameEdit.text(), self.ui.langBox.currentIndex(), t.gender, self.testlist)
             t.save()
             t.isFirstStart = False
             self.close()
