@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>881</width>
-    <height>541</height>
+    <height>623</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -438,8 +438,8 @@
                     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:9.75pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8.25pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
@@ -760,7 +760,14 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionNew"/>
+    <widget class="QMenu" name="menuNew">
+     <property name="title">
+      <string>New</string>
+     </property>
+     <addaction name="actionNew_2"/>
+     <addaction name="actionWake_word_rate_test"/>
+    </widget>
+    <addaction name="menuNew"/>
     <addaction name="actionResume"/>
     <addaction name="actionSave"/>
     <addaction name="actionView_testlog"/>
@@ -775,21 +782,17 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionOnline_guide"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionResults_graph"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuView"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actionNew">
-   <property name="text">
-    <string>New</string>
-   </property>
-   <property name="statusTip">
-    <string>Start a new test</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
-   </property>
-  </action>
   <action name="actionOnline_guide">
    <property name="text">
     <string>Manual</string>
@@ -844,6 +847,24 @@ p, li { white-space: pre-wrap; }
   <action name="actionView_testlog">
    <property name="text">
     <string>Consult testlog</string>
+   </property>
+  </action>
+  <action name="actionNew_2">
+   <property name="text">
+    <string>Voice recognition test</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionWake_word_rate_test">
+   <property name="text">
+    <string>Wake-word rate test</string>
+   </property>
+  </action>
+  <action name="actionResults_graph">
+   <property name="text">
+    <string>Results graph</string>
    </property>
   </action>
  </widget>

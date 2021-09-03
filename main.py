@@ -75,7 +75,7 @@ class MyMain(QMainWindow):
         self.setStyleSheet(stylesheet)
         self.autosave = True
         # actions
-        self.ui.actionNew.triggered.connect(self.on_newbutton_triggered)
+        self.ui.actionNew_2.triggered.connect(self.on_newbutton_triggered)
         self.ui.actionSave.triggered.connect(lambda: self.save_pressed())
         self.ui.actionResume.triggered.connect(lambda: self.resume_pressed())
         self.ui.actionQuit.triggered.connect(lambda: self.close())
@@ -98,6 +98,7 @@ class MyMain(QMainWindow):
         self.update_screens()
         self.update()
         self.ww_waiting = False
+        print("Current test: %s" % t.current_test)
         app.processEvents()
 
     def cancel_pressed(self):
@@ -302,6 +303,7 @@ class MyMain(QMainWindow):
                     if n.is_checked:
                         print("To be reviewed!")
                         t.redo.append(t.current_test)
+                        print("REDO's list: ")
                         print(t.redo)
                     try:
                         t.results[str(t.testlist[t.current_test] + 1)] = result
@@ -315,16 +317,16 @@ class MyMain(QMainWindow):
                     t.current_test -= 1
                 self.ui.playButton.setText("PTT")
                 t.current_test += 1
+                print("Current test: %s" % t.current_test)
                 if t.current_test == len(t.testlist):
                     messagebox.showinfo("VoRTEx", "Congratulations! You just completed another test!\n"
                                                   "It wasn't easy, you deserve a cup of coffee ;)")
                     t.status = 2
                     t.current_test = 0
                     self.completed()
-
+                t.isSaved = False
                 self.update_table()
                 self.update_screens()
-                t.isSaved = False
                 self.condition = 0
 
         if self.condition > 0:
@@ -461,7 +463,6 @@ class MyMain(QMainWindow):
         self.ui.tableWidget.setRowCount(len(t.testlist))
         self.ui.tableWidget.setColumnCount(len(horizontal_labels))
         self.ui.tableWidget.setHorizontalHeaderLabels(horizontal_labels)
-        print(list(t.results.keys()))
         btns = []
         for i in range(len(t.testlist)):
             result = 'TO BE DONE'
@@ -483,16 +484,17 @@ class MyMain(QMainWindow):
                 result = 'FAIL'
             note = split_res[1]
             timestamp = split_res[2]
-            print(int(list(t.results.keys())[i]))
-            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 1, QTableWidgetItem(result))
-            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 2, QTableWidgetItem(timestamp))
-            self.ui.tableWidget.setItem(int(list(t.results.keys())[i])-1, 4, QTableWidgetItem(note))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 1, QTableWidgetItem(result))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 2, QTableWidgetItem(timestamp))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 4, QTableWidgetItem(note))
             for j in range(self.ui.tableWidget.columnCount()):
                 if j!= 3:
                     if result == 'PASS':
-                        self.ui.tableWidget.item(int(list(t.results.keys())[i])-1, j).setBackground(QtGui.QColor(0, 255, 0))
+                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i])-1), j)\
+                            .setBackground(QtGui.QColor(0, 255, 0))
                     elif result == 'FAIL':
-                        self.ui.tableWidget.item(int(list(t.results.keys())[i])-1, j).setBackground(QtGui.QColor(255, 0, 0))
+                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i])-1), j)\
+                            .setBackground(QtGui.QColor(255, 0, 0))
         self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem("CURRENT"))
         for j in range(self.ui.tableWidget.columnCount()):
             if j!= 3:
@@ -824,8 +826,6 @@ class NewDialog(QDialog):
         self.testlist = [5, 10, 38, 53, 54, 62, 64, 86, 88, 94, 97, 102, 106, 109, 110, 111, 121, 122, 133, 134, 137, 139, 140, 142, 148]
         for i in range(len(self.testlist)):
             self.testlist[i] = self.testlist[i]-1
-        print("Testlist: ")
-        print(self.testlist)
 
     def update_ok(self):
         if self.ui.nameEdit.text().replace(" ", "") == "":
@@ -967,10 +967,7 @@ if __name__ == "__main__":
     root.withdraw()
     splash.load(60)
     t = GuiTest()  # create new istance of the test
-    print(t.recorder.deviceIn)
-    print(t.recorder.deviceOut)
     tests = show_dirs(t.testDir)
-    print(tests)
     splash.load(80)
     # load settings
     try:
