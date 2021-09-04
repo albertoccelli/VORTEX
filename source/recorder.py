@@ -68,6 +68,8 @@ class Recorder:
         self.fs = 44100
         self.available_inputs = devinfo.get("inputs")
         self.available_outputs = devinfo.get("outputs")
+        self.soglia = 0
+        self.rms = -960
 
     def set_device(self, io, index):
         if io == "input":
@@ -393,7 +395,9 @@ class Recorder:
             print("\nNo data to play! Record something first")
         return
 
-    def record(self, seconds, channel=0, threshold=None):
+    def record(self, seconds, channel=0, threshold=None, monitor = False):
+        soglia = self.soglia
+        p_pow = -960
         if threshold is None:
             pass
         # instantiate stream
@@ -449,12 +453,22 @@ class Recorder:
 
                 if started:
                     for i in range(len(rms)):
-                        if self.calibrated[i]:
-                            pass
-                            # print("%0.2f dBSPL\t"%(rms[i]+self.correction[i]), end = ' ')
-                        else:
-                            pass
-                            # print("%0.2f dBFS\t"%(rms[i]), end = ' ')
+                        if monitor:
+                            if self.calibrated[i]:
+                                pass
+                                #print("%0.2f dBSPL - %s\t"%(rms[i]+self.correction[i], soglia))
+                            else:
+                                pass
+                                #print("%0.2f dBFS - %s\t"%(rms[i], soglia))
+                    rms_tot = rms[channel]
+                    self.rms = rms_tot
+                    if monitor:
+                        print(rms[channel])
+                    if rms_tot > soglia and p_pow < soglia:
+                        self.on_positive_edge()
+                    elif rms_tot < soglia and p_pow > soglia:
+                        self.on_negative_edge()
+                    p_pow = rms_tot
                     # print("\n")
                     frames.append(audio_data)
                 if current >= end:
@@ -489,6 +503,12 @@ class Recorder:
             print("No audio recorded!")
             return 0
 
+
+    def on_positive_edge(self):
+        pass
+
+    def on_negative_edge(self):
+        pass
 
 if __name__ == "__main__":
     from play import play_data
