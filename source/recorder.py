@@ -91,6 +91,8 @@ class Recorder:
         >>> default_device_index = info.get("default_input").get("index")
         """
         # stored data into the recorder
+        self.devicesIn = []
+        self.devicesOut = []
         self.data = []
         # open the stream
         p = pyaudio.PyAudio()
