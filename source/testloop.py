@@ -174,7 +174,7 @@ class Test:
         self.noise_radio = 0  # RMS value of the background noise plus the radio on
         self.testlist = []
         self.redo = []
-        #self.testlist = [0, 1, 9, 32, 33, 37, 38, 39, 41, 42, 43, 49, 50, 54, 55, 58, 86, 87,
+        # self.testlist = [0, 1, 9, 32, 33, 37, 38, 39, 41, 42, 43, 49, 50, 54, 55, 58, 86, 87,
         #                 91, 92, 94, 103, 104, 128, 129, 131, 134, 136, 138, 139, 146, 152]
         self.database = {}
         self.isFirstStart = False
@@ -929,7 +929,7 @@ class Test:
                 print("\nSaving test results into %s...\n" % report_file)
                 with open(report_file, "w", encoding="utf-16") as r:
                     r.write("LANGUAGE: %s\n" % self.lang)
-                    r.write("WW RATIO:\t %0.4f\n" % (self.recognized_ww / self.issued_ww))
+                    r.write("WW RATIO:\t %0.5f\n" % (self.recognized_ww / self.issued_ww))
                     r.write("TEST N.\tRESULT\tCOMMENT\tTIMESTAMP\n")
                     for i in range(len(self.results)):
                         # write key

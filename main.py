@@ -385,7 +385,7 @@ class MyMain(QMainWindow):
         return result
 
     @staticmethod
-    def note(review = False):
+    def note():
         n = Note()
         n.exec_()
         return n.text, n.is_checked
@@ -484,20 +484,22 @@ class MyMain(QMainWindow):
                 result = 'FAIL'
             note = split_res[1]
             timestamp = split_res[2]
-            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 1, QTableWidgetItem(result))
-            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 2, QTableWidgetItem(timestamp))
-            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i])-1), 4, QTableWidgetItem(note))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 1,
+                                        QTableWidgetItem(result))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 2,
+                                        QTableWidgetItem(timestamp))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 4, QTableWidgetItem(note))
             for j in range(self.ui.tableWidget.columnCount()):
-                if j!= 3:
+                if j != 3:
                     if result == 'PASS':
-                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i])-1), j)\
+                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i]) - 1), j) \
                             .setBackground(QtGui.QColor(0, 255, 0))
                     elif result == 'FAIL':
-                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i])-1), j)\
+                        self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i]) - 1), j) \
                             .setBackground(QtGui.QColor(255, 0, 0))
         self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem("CURRENT"))
         for j in range(self.ui.tableWidget.columnCount()):
-            if j!= 3:
+            if j != 3:
                 self.ui.tableWidget.item(t.current_test, j).setBackground(QtGui.QColor(255, 255, 0))
 
         self.ui.tableWidget.resizeColumnsToContents()
@@ -620,7 +622,6 @@ class Note(QDialog):
         self.text = self.ui.lineEdit.text()
         self.is_checked = self.ui.checkBox.isChecked()
         self.close()
-
 
 
 # settings window
@@ -823,9 +824,10 @@ class NewDialog(QDialog):
         self.ui.checkBox.setChecked(t.isLombardEnabled)
         self.temp = False
         self.testlist = None
-        self.testlist = [5, 10, 38, 53, 54, 62, 64, 86, 88, 94, 97, 102, 106, 109, 110, 111, 121, 122, 133, 134, 137, 139, 140, 142, 148]
+        self.testlist = [5, 10, 38, 53, 54, 62, 64, 86, 88, 94, 97, 102, 106, 109, 110, 111, 121, 122, 133, 134, 137,
+                         139, 140, 142, 148]
         for i in range(len(self.testlist)):
-            self.testlist[i] = self.testlist[i]-1
+            self.testlist[i] = self.testlist[i] - 1
 
     def update_ok(self):
         if self.ui.nameEdit.text().replace(" ", "") == "":

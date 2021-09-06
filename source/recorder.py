@@ -93,6 +93,7 @@ class Recorder:
         # stored data into the recorder
         self.devicesIn = []
         self.devicesOut = []
+
         self.data = []
         # open the stream
         p = pyaudio.PyAudio()
