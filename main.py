@@ -5,10 +5,10 @@ import sys
 import time
 import webbrowser
 from random import randint
-from source import metadata
-from source.testloop import Test
-from source.testloop import langDict, show_dirs, log, now, nonsense
-from source.testloop import TestExistsError, CorruptedTestError
+from libs import metadata
+from libs.testloop import Test
+from libs.testloop import langDict, show_dirs, log, now, nonsense
+from libs.testloop import TestExistsError, CorruptedTestError
 
 # gui utilities
 import tkinter as tk
@@ -17,16 +17,16 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from source.gui.about import Ui_About
-from source.gui.newtest import Ui_Dialog
-from source.gui.note import Ui_Note_Dialog
-from source.gui.result import ResultDialog
-from source.gui.resume import Ui_Resume
-from source.gui.settings import Ui_Settings
-from source.gui.splash import Ui_Splash
-from source.gui.window import Ui_MainWindow
-from source.gui.record import Ui_Record
-from source.gui.testlist import Ui_Testlist_DIalog
+from libs.gui.about import Ui_About
+from libs.gui.newtest import Ui_Dialog
+from libs.gui.note import Ui_Note_Dialog
+from libs.gui.result import ResultDialog
+from libs.gui.resume import Ui_Resume
+from libs.gui.settings import Ui_Settings
+from libs.gui.splash import Ui_Splash
+from libs.gui.window import Ui_MainWindow
+from libs.gui.record import Ui_Record
+from libs.gui.testlist import Ui_Testlist_DIalog
 
 
 class GuiTest(Test):
@@ -39,7 +39,7 @@ class RecordDialog(QDialog):
         self.ui = Ui_Record()
         self.ui.setupUi(self)
         self.ui.pushButton.pressed.connect(lambda: self.measure_noise())
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.setWindowTitle("VoRTEx")
 
     def measure_noise(self):
@@ -72,7 +72,7 @@ class MyMain(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.raise_()
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.setStyleSheet(stylesheet)
         self.autosave = True
         # actions
@@ -588,7 +588,7 @@ class TestResultDialog(QDialog):
         super(TestResultDialog, self).__init__()
         self.ui = ResultDialog()
         self.ui.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui.label.setStyleSheet("color: black")
         self.ui.pushButton.pressed.connect(lambda: self.on_clicked("1"))
         self.ui.pushButton_2.pressed.connect(lambda: self.on_clicked("0"))
@@ -610,7 +610,7 @@ class TestResultDialog(QDialog):
 class Note(QDialog):
     def __init__(self):
         super(Note, self).__init__()
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui = Ui_Note_Dialog()
         self.ui.setupUi(self)
         self.ui.label.setStyleSheet("color: black")
@@ -632,7 +632,7 @@ class Settings(QDialog):
         self.ui = Ui_Settings()
         self.ui.setupUi(self)
         self.setWindowTitle("VoRTEx settings")
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui.pushButton.pressed.connect(lambda: self.submit())
         self.ui.pushButton_2.pressed.connect(lambda: self.apply())
         self.ui.pushButton_3.pressed.connect(lambda: self.cancel())
@@ -720,7 +720,7 @@ class Settings(QDialog):
 class About(QDialog):
     def __init__(self):
         super(About, self).__init__()
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui = Ui_About()
         self.ui.setupUi(self)
         self.ui.label_2.setText("VoRTEx v%s - Voice Recognition Test Execution" % metadata["version"])
@@ -741,7 +741,7 @@ class Resume(QDialog):
         super(Resume, self).__init__()
         self.ui = Ui_Resume()
         self.ui.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui.listWidget.doubleClicked.connect(lambda: self.on_resume_pressed())
         self.ui.resumeButton.pressed.connect(lambda: self.on_resume_pressed())
         self.ui.cancelButton.pressed.connect(lambda: self.close())
@@ -804,7 +804,7 @@ class NewDialog(QDialog):
         super(NewDialog, self).__init__()
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon('source/gui/ico.ico'))
+        self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.setWindowTitle("Start new test")
         default_database = "/database/r1h.vrtl"
         self.ui.databaseLabel.setText(default_database)
@@ -952,7 +952,7 @@ class SplashScreen(QDialog):
         self.ui.label_8.setStyleSheet("color: grey")
         self.ui.label_8.setText(metadata["url"])
         self.setWindowFlag(Qt.FramelessWindowHint)
-        self.ui.label.setPixmap(QtGui.QPixmap("source/gui/vortex_splash.png"))
+        self.ui.label.setPixmap(QtGui.QPixmap("libs/gui/vortex_splash.png"))
         self.ui.progressBar.setValue(0)
         self.progress = 0
 
@@ -965,7 +965,7 @@ class SplashScreen(QDialog):
 
 stylesheet = """
     MyMain {
-        border-image: url("source/gui/vortex_bg.jpg"); 
+        border-image: url("libs/gui/vortex_bg.jpg"); 
     }
     QLabel {
         color: white;
@@ -986,10 +986,10 @@ if __name__ == "__main__":
     app.processEvents()
     splash.load(20)
     guidelink = "https://github.com/albertoccelli/VoRTEx/blob/main/README.md"
-    iconfile = "source/gui/ico.ico"
+    iconfile = "libs/gui/ico.ico"
     splash.load(40)
     root = tk.Tk()
-    root.iconbitmap('source/gui/ico.ico')
+    root.iconbitmap('libs/gui/ico.ico')
     root.title('VoRTEx')
     root.withdraw()
     splash.load(60)

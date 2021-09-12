@@ -11,7 +11,7 @@ venv/
 
 # Useless lists
 lists/
-source/to_separe.txt
+libs/to_separe.txt
 
 # Tests
 vr_tests/*
@@ -29,3 +29,6 @@ vr_tests/*
 
 # local computer settings
 settings/*
+
+# Development packages
+libs/alb_pack

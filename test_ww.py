@@ -1,9 +1,9 @@
-from source.play import play_wav, play_data
-from source.recorder import Recorder
+from libs.play import play_wav, play_data
+from libs.recorder import Recorder
 from time import sleep
-from source.dsp import get_rms, add_gain
+from libs.dsp import get_rms, add_gain
 from scipy.io.wavfile import read
-from source.testloop import lombard
+from libs.testloop import lombard
 import requests
 import time
 from datetime import datetime
