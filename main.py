@@ -26,6 +26,7 @@ from source.gui.settings import Ui_Settings
 from source.gui.splash import Ui_Splash
 from source.gui.window import Ui_MainWindow
 from source.gui.record import Ui_Record
+from source.gui.testlist import Ui_Testlist_DIalog
 
 
 class GuiTest(Test):
@@ -815,6 +816,7 @@ class NewDialog(QDialog):
         self.ui.langBox.currentIndexChanged.connect(lambda: self.update())
         self.ui.radioButton.setChecked(True)
         self.ui.submitButton.setEnabled(False)
+        self.ui.pushButton_2.pressed.connect(lambda: self.change_testlist())
         if t.mic_mode == 1:
             self.ui.radioButton_5.setChecked(True)
         else:
@@ -824,10 +826,15 @@ class NewDialog(QDialog):
         self.ui.checkBox.setChecked(t.isLombardEnabled)
         self.temp = False
         self.testlist = None
-        self.testlist = [5, 10, 38, 53, 54, 62, 64, 86, 88, 94, 97, 102, 106, 109, 110, 111, 121, 122, 133, 134, 137,
-                         139, 140, 142, 148]
-        for i in range(len(self.testlist)):
-            self.testlist[i] = self.testlist[i] - 1
+        # self.testlist = [36, 37, 38, 42, 50, 61, 88, 104, 111, 117, 132, 139, 145, 146, 155]
+        # for i in range(len(self.testlist)):
+        #    self.testlist[i] = self.testlist[i] - 1
+
+    def change_testlist(self):
+        messagebox.showinfo("VoRTEx", "Coming soon!")
+        # tdialog = Testlist(l_index = self.ui.langBox.currentIndex())
+        # tdialog.exec_()
+        pass
 
     def update_ok(self):
         if self.ui.nameEdit.text().replace(" ", "") == "":
@@ -904,6 +911,24 @@ class NewDialog(QDialog):
         if self.temp:
             quit()
 
+
+class Testlist(QDialog):
+    def __init__(self, l_index):
+        super(Testlist, self).__init__()
+        self.ui = Ui_Testlist_DIalog()
+        self.ui.setupUi(self)
+        self.raise_()
+        self.ui.pushButton_3.pressed.connect(lambda: self.close())
+        self.ui.tableWidget.setColumnCount(2)
+        self.ui.tableWidget.setRowCount(len(t.database[t.langs[l_index]]))
+        print(t.langs[l_index])
+        for i in range(len(t.database[t.langs[l_index]])):
+            item = QtGui.QStandardItem("Click me")
+            item.setCheckable(True)
+            self.ui.tableWidget.appendRow(item)
+
+    def set_testlist(self):
+        pass
 
 # splash screen
 class SplashScreen(QDialog):
