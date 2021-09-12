@@ -8,7 +8,8 @@ import wave  # write to wav
 import numpy as np
 import pyaudio  # record
 from scipy.io.wavfile import read, write
-from .cli_tools import print_square
+if __name__ != "__main__":
+    from .cli_tools import print_square
 
 if __name__ != "__main__":
     from .dsp import get_rms
@@ -23,6 +24,7 @@ def clear_console():
 
 class Recorder:
     def __init__(self):
+        self.timeout = 5
         self.threshold = -960
         self.chunk = 1024
         self.bits = 16
@@ -68,6 +70,8 @@ class Recorder:
         self.fs = 44100
         self.available_inputs = devinfo.get("inputs")
         self.available_outputs = devinfo.get("outputs")
+        self.lowtreshold = -960
+        self.hightreshold = 0
         self.soglia = 0
         self.rms = -960
 
@@ -398,10 +402,11 @@ class Recorder:
             print("\nNo data to play! Record something first")
         return
 
-    def record(self, seconds, channel=0, threshold=None, monitor = False):
-        soglia = self.soglia
+    def record(self, seconds, channel=0, l_threshold=None, h_treshold = None, monitor = False):
         p_pow = -960
-        if threshold is None:
+        if l_threshold is None and h_treshold is None:
+            l_threshold = -960
+            h_treshold = -960            
             pass
         # instantiate stream
         p = pyaudio.PyAudio()  # create an interface to PortAudio API
@@ -417,7 +422,7 @@ class Recorder:
         started = False
         # print("Waiting for speech over the threshold...")
         current = time.time()
-        timeout = 5
+        timeout = self.timeout
         end = time.time() + timeout
         maxtime = time.time() + seconds
         while current <= maxtime:
@@ -446,14 +451,14 @@ class Recorder:
                               2))
 
                 # detects sounds over the threshold
-                if rms[channel] > self.threshold:
+                if rms[channel] > l_threshold:
                     end = time.time() + timeout
                     if not started:
                         started = True
                         maxtime = time.time() + seconds
                         print("\nRecording...")
                 current = time.time()
-
+                    
                 if started:
                     for i in range(len(rms)):
                         if monitor:
@@ -467,16 +472,15 @@ class Recorder:
                     self.rms = rms_tot
                     if monitor:
                         print(rms[channel])
-                    if rms_tot > soglia and p_pow < soglia:
+                    if rms_tot > self.hightreshold and p_pow < self.hightreshold:
                         self.on_positive_edge()
-                    elif rms_tot < soglia and p_pow > soglia:
+                    elif rms_tot < self.lowtreshold and p_pow > self.lowtreshold:
                         self.on_negative_edge()
                     p_pow = rms_tot
                     # print("\n")
                     frames.append(audio_data)
                 if current >= end:
-                    print("Silence TIMEOUT")
-                    break
+                    self.on_timeout()
 
             except KeyboardInterrupt:
                 print("\nRecording stopped")
@@ -506,6 +510,9 @@ class Recorder:
             print("No audio recorded!")
             return 0
 
+    def on_timeout(self):
+        print("TIMEOUT")
+        pass
 
     def on_positive_edge(self):
         pass
@@ -516,9 +523,8 @@ class Recorder:
 if __name__ == "__main__":
     from play import play_data
     from dsp import get_rms
+    from cli_tools import print_square
 
     r = Recorder()
-    fs, data = read("../utilities/calibration/FRF.wav")
-    r.play_and_record(data, fs)
-    r.save()
-    input("Done. Press ENTER to exit.")
+    r.timeout = 5
+    r.record(30, l_threshold = -30, monitor = True)
