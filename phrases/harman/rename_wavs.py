@@ -1,7 +1,7 @@
 import os
 
 cPath = os.getcwd()
-lang = "PTP"
+lang = "PLP"
 
 
 wavs = []
