@@ -7,27 +7,27 @@ The project is originally born around the database of vocal commands provided by
 
 The test includes several voice commands recorded by native speakers, based on the Harman list. For other commands, a TTS system based on Google Translate engine will be included.
 Currently on database:
-1. French (France) - female
-6. German - female
-10. Italian - male and female
-8. Portuguese (Portugal)
-9. Russian - female
-10. Spanish (Spain) - female
+1. Dutch
+2. French (France) - female
+3. German - female
+4. Italian - male and female
+5. Polish
+6. Portuguese (Portugal)
+7. Russian - female
+8. Spanish (Spain) - female
 
 To be added:
-1. English (India)  
-4. Polish
-1. English (Australia)
-2. English (UK)
-3. English (USA)
-4. Arabic
-5. French (Canada)
-7. Dutch
-9. Portuguese (Brazil)
-11. Japanese
-12. Korean
-13. Chinese
-14. Spanish (Mexico)
+3. English (UK)
+4. 1. English (India)
+5. English (Australia)
+7. Portuguese (Brazil)
+7. Arabic
+8. Japanese
+9. Korean
+10. Chinese
+11. French (Canada)
+12. English (USA)
+13. Spanish (Mexico)
 
 ### Coming soon features
 New features are being implemented in the software as you read this. Among those, the most important are:

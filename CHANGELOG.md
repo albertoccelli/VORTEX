@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [0.9.3-beta] - 2021-08-30
 ### Added
+- Dutch test added
+- Automatic wakeword test added [EXPERIMENTAL]
 - Bugfixes
 
 ## [0.9-beta] - 2021-08-27
