@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.9.4-beta] - 2021-08-30
+### Added
+- Polish test added
+- Bugfixes
+
 ## [0.9.3-beta] - 2021-08-30
 ### Added
 - Dutch test added
