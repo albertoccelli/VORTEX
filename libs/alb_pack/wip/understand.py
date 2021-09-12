@@ -7,7 +7,7 @@ filepath_dict = {'yelp':   'data/sentiment_analysis/yelp_labelled.txt',
 df_list = []
 for source, filepath in filepath_dict.items():
     df = pd.read_csv(filepath, names=['sentence', 'label'], sep='\t')
-    df['source'] = source  # Add another column filled with the source name
+    df['libs'] = source  # Add another column filled with the libs name
     df_list.append(df)
 
 df = pd.concat(df_list)
