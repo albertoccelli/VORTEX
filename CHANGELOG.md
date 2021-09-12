@@ -1,12 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.9.4-beta] - 2021-08-30
+## [0.9.4-beta] - 2021-09-10
 ### Added
 - Polish test added
 - Bugfixes
 
-## [0.9.3-beta] - 2021-08-30
+## [0.9.3-beta] - 2021-09-09
 ### Added
 - Dutch test added
 - Automatic wakeword test added [EXPERIMENTAL]
