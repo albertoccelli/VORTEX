@@ -94,4 +94,4 @@ Choose whether to apply or not the Lombard effect: if enabled, the software will
 
 Press OK to create the new test.
 
-![alt text](https://github.com/albertoccelli/VoRTEx/blob/main/docs/main_screenshot.PNG?raw=true)
+![alt text](https://github.com/albertoccelli/VoRTEx/blob/main/docs/main_window_screenshot.PNG?raw=true)
