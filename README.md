@@ -103,4 +103,4 @@ If the calibrator is available, choose "yes" when asked to calibrate the microph
 Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly. This is repeated until the desired level is measured (or if the maximum number of attempts is reached).
 
 
-.. |screenshot-start| image:: https://github.com/albertoccelli/VoRTEx/blob/main/docs/new_dialog.PNG?raw=true
+![alt text]https://github.com/albertoccelli/VoRTEx/blob/main/docs/new_dialog.PNG?raw=true
