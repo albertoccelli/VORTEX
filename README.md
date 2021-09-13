@@ -78,10 +78,14 @@ The wiring should be organized as follows:
 
 ## 3. Test Execution
 
+
+
 ### New test
 Double click on the main.py file or run `python main.py`. A dialog box will appear.
 Choose wether to start a new test or resume one (1 or 2 and then ENTER. The third option has not been implemented yet...). 
 Since this is our first test, we will select the first option.
+
+|screenshot-start|
 
 #### 1. Naming
 Choose a name for the test. You'd better avoid spaces and use underscores instead (anyway, space are eventually replaced by underscores). 
@@ -97,3 +101,6 @@ If the calibrator is available, choose "yes" when asked to calibrate the microph
 
 #### 5. Calibrate the mouth
 Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly. This is repeated until the desired level is measured (or if the maximum number of attempts is reached).
+
+
+..|screenshot-start| image:: https://raw.github.com/home-assistant/home-assistant/master/docs/screenshots.png
