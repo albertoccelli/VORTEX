@@ -104,3 +104,4 @@ Once the calibration for microphone and artificial ear(s) has been completed, it
 
 
 .. |screenshot-start| image:: https://raw.github.com/home-assistant/home-assistant/master/docs/screenshots.png
+   :target: https://home-assistant.io/demo/
