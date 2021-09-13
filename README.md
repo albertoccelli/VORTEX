@@ -17,17 +17,17 @@ Currently on database:
 8. Spanish (Spain) - female
 
 To be added:
-3. English (UK)
-4. 1. English (India)
-5. English (Australia)
-7. Portuguese (Brazil)
-7. Arabic
-8. Japanese
-9. Korean
-10. Chinese
-11. French (Canada)
-12. English (USA)
-13. Spanish (Mexico)
+1. English (UK)
+2. English (India)
+3. English (Australia)
+4. Portuguese (Brazil)
+5. Arabic
+6. Japanese
+7. Korean
+8. Chinese
+9. French (Canada)
+10. English (USA)
+11. Spanish (Mexico)
 
 ### Coming soon features
 New features are being implemented in the software as you read this. Among those, the most important are:
