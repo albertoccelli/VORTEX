@@ -18,7 +18,7 @@ Currently on database:
 
 To be added:
 3. English (UK)
-4. 1. English (India)
+4. English (India)
 5. English (Australia)
 7. Portuguese (Brazil)
 7. Arabic
