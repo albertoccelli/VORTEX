@@ -12,6 +12,35 @@ import telegram
 import logging
 
 
+# bot commands
+
+TOKEN = "1981836907:AAGVyV9wHZZ_b887BuhA2-iIo99UtXFUQdg"
+updater = Updater(token=TOKEN, use_context=True)
+dispatcher = updater.dispatcher
+
+def start(update, context):
+    text = "Ok! I will now start giving you updates about the test!"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+    if update.effective_chat.id in chat_ids:
+        pass
+    else:
+        chat_ids.append(update.effective_chat.id)
+
+def stop(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Ok!I won't bother you anymore....")
+    if update.effective_chat.id in chat_ids:
+        pass
+    else:
+        chat_ids.append(update.effective_chat.id)
+
+def situation(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_text)
+
+def abort(update, context):
+    text = "ABORTED"
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+# test commands
 
 class MyRec(Recorder):
     def __init__(self):
@@ -83,12 +112,28 @@ def print_ww_report(filename):
         for i in range(len(time_response)):
             f.write("%0.5f\t%0.5f\n" % (time_wakeup[i], time_response[i]))
 
-def telegram_bot_sendtext(bot_message):    
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + bot_message
+def telegram_bot_sendtext(bot_message, chat_id):    
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + chat_id + '&parse_mode=Markdown&text=' + bot_message
     response = requests.get(send_text)
     return response.json()
 
 if __name__ == "__main__":
+    
+    bot_text = "Not started yet"
+
+    # da telegram bot
+    bot_chatID = '72912246'
+    chat_ids = []
+    bot_token = '1981836907:AAGVyV9wHZZ_b887BuhA2-iIo99UtXFUQdg'
+    
+    start_handler = CommandHandler('start', start)
+    dispatcher.add_handler(start_handler)
+    situation_handler = CommandHandler('situation', situation)
+    dispatcher.add_handler(situation_handler)
+    abort_handler = CommandHandler('abort', abort)
+    dispatcher.add_handler(abort_handler)
+
+    updater.start_polling()
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                          level=logging.INFO)
@@ -99,8 +144,7 @@ if __name__ == "__main__":
     else:
         telegram_logging = False
 
-    bot_chatID = '72912246'
-    bot_token = '1981836907:AAGVyV9wHZZ_b887BuhA2-iIo99UtXFUQdg'
+    telegram_bot_sendtext("Test started!", bot_chatID)
         
     lang = "PLP"
     ww = "phrases/harman/%s/%s_000.wav" % (lang, lang)
@@ -130,6 +174,7 @@ if __name__ == "__main__":
     
     try:
         for i in range(n_tests):
+            bot_text = "++ Test '%s' (%s of %s) ++\n" % ((i+1), n_tests)
             start_time = time.time()
             print("Test number %s" %(i+1))
             while True:
@@ -169,8 +214,8 @@ if __name__ == "__main__":
                                     ETA_hours = ETA/3600
                                     ETA_minutes = (ETA%3600)/60
                                     ETA_seconds = ETA%60
-                                    msg = "++ Test '%s' (%s of %s) ++n\WW_accuracy: %s/%s\nWakeup time: %0.2fs\nRecognition time: %0.2fs\nETA: %02d:%02d:%02ds" % (name.replace("_"," ").upper(), (i+1), n_tests, recognized_ww, issued_ww, wt, rt, ETA_hours, ETA_minutes, ETA_seconds)
-                                    telegram_bot_sendtext(msg)
+                                    bot_text.append("nWW_accuracy: %s/%s\nWakeup time: %0.2fs\nRecognition time: %0.2fs\nETA: %02d:%02d:%02ds" % (name.replace("_"," ").upper(), (i+1), n_tests, recognized_ww, issued_ww, wt, rt, ETA_hours, ETA_minutes, ETA_seconds))
+                                    telegram_bot_sendtext(bot_text, bot_chatID)
                                 except Exception as e:
                                     print("Error! (%s)" % e)
                             print_ww_report(report_name)
