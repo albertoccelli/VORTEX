@@ -111,3 +111,9 @@ vr_tests/spe_female_ac_medium/noise_radio_on.wav
 vr_tests/spe_female_ac_medium/report.csv
 vr_tests/spe_female_ac_medium/testlog.log
 vr_tests/french_female_ac_medium/config.cfg
+vr_tests/french_female_ac_medium/testlog.log
+vr_tests/french_female_ac_medium/report.csv
+vr_tests/french_female_ac_medium/noise_radio_on.wav
+vr_tests/french_female_ac_medium/noise_radio_off.wav
+vr_tests/french_female_ac_medium/mouth_calibration.wav
+vr_tests/french_female_ac_medium/config.cfg
