@@ -78,22 +78,20 @@ The wiring should be organized as follows:
 
 ## 3. Test Execution
 
+
+
 ### New test
-Double click on the main.py file or run `python main.py`. A dialog box will appear.
-Choose wether to start a new test or resume one (1 or 2 and then ENTER. The third option has not been implemented yet...). 
-Since this is our first test, we will select the first option.
+Double click on the main.py file or run `python main.py`. 
+Since this is our first test, a dialog box will appear (as shown in figure).
 
-#### 1. Naming
-Choose a name for the test. You'd better avoid spaces and use underscores instead (anyway, space are eventually replaced by underscores). 
+![alt text](https://github.com/albertoccelli/VoRTEx/blob/main/docs/new_dialog.PNG?raw=true)
 
-#### 2. Test structure
-From the prompt that opens, select the proper VRTL file. The VRTL contains all the information about the test, including the test steps, commands, preconditions and expected behavior. So far only the test regardin Harman radio has got a VRTL file, so select that one.
+Choose a name for the test. Select the test file (.vrtl). Currently only the test for Harman radios (R1H, R1L, etc...) is available, so leave that. If both female and male voices are available, choose one, then select the desired microphone activation mode:
+1. Manual: the microphone will be activated by pressing the PTT button on the steering wheel or on the radio touchscreen by the tester;
+2. Wake-word: use the wakeword (i. e. "Hey Maserati", "Hey Uconnect",...) to activate the microphone. This is done automatically by the software (if the wakeword recorded file is available) in order to speed up the test execution.
 
-#### 3. Choose language and gender
-From the language lists choose one and select it by writing the coresponding number into the command line input. If both female and male voices are available, choose between them with the character 'm' or 'f'.
+Choose whether to apply or not the Lombard effect: if enabled, the software will measure the ambiance noise before the test execution. The noise is passed through a A-weighted filter and the gain value to apply to the voice is calculated based on the noise intensity. Check [here](https://en.wikipedia.org/wiki/Lombard_effect) for more information.
 
-#### 4. Calibrate microphones
-If the calibrator is available, choose "yes" when asked to calibrate the microphone. The calibration is strongly advised, since without it won't be possible to calibrate the mouth at the nominal level of 94dBSPL or to record the background noise. To calibrate each microphone, simply follows the instructions: first, place the measurement microphone into the 1kHz calibrator and hit ENTER. The calibration will last around 10 seconds. Similarly, place the calibrator to the artificial ear, press ENTER and wait another 10 seconds. 
+Press OK to create the new test.
 
-#### 5. Calibrate the mouth
-Once the calibration for microphone and artificial ear(s) has been completed, it's time to calibrate the mouth level. This is done automatically: simply place the measurement microphone at the MRP and press ENTER. The software will randomly take several commands (in order to have 30s of continuous speech) and reproduce them through the artificial mouth. The level is measured and, if needed, the gain applied to each command is adjusted accordingly. This is repeated until the desired level is measured (or if the maximum number of attempts is reached).
+![alt text](https://github.com/albertoccelli/VoRTEx/blob/main/docs/main_screenshot.PNG?raw=true)
