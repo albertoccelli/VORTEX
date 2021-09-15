@@ -92,6 +92,7 @@ Choose a name for the test. Select the test file (.vrtl). Currently only the tes
 
 Choose whether to apply or not the Lombard effect: if enabled, the software will measure the ambiance noise before the test execution. The noise is passed through a A-weighted filter and the gain value to apply to the voice is calculated based on the noise intensity. Check [here](https://en.wikipedia.org/wiki/Lombard_effect) for more information.
 
-Press OK to create the new test.
+Press OK to create the new test. This is how will appear the main window:
 
 ![alt text](https://github.com/albertoccelli/VoRTEx/blob/main/docs/main_window_screenshot.PNG?raw=true)
+
