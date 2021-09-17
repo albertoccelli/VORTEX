@@ -1,6 +1,6 @@
 import logging
 import time
-
+from threading import Thread
 import requests
 from scipy.io.wavfile import read
 
@@ -22,14 +22,14 @@ class MyRec(Recorder):
         self.timeout = 1
 
     def calculate_tresholds(self):
-        input("Turn off radio and press ENTER")
-        self.record(5, channel=1, monitor=True)
-        noise_off = get_rms(self.data)[1]
-        print("RMS: %sdBSPL\n" % (noise_off + self.correction[0]))
         input("Turn on radio and press ENTER")
         self.record(5, channel=1, monitor=True)
         noise_on = get_rms(self.data)[1]
         print("RMS: %sdBSPL\n" % (noise_on + self.correction[0]))
+        input("Turn off radio and press ENTER")
+        self.record(5, channel=1, monitor=True)
+        noise_off = get_rms(self.data)[1]
+        print("RMS: %sdBSPL\n" % (noise_off + self.correction[0]))
         print("\nLombard effect: %0.2fdB" % (lombard(noise_on)))
         return noise_on, noise_off
 
@@ -94,17 +94,24 @@ def telegram_bot_sendtext(bot_message, chat_id):
 
 if __name__ == "__main__":
 
-    lang = "PLP"
+    lang = "RUR"
 
-    oscar = Telebot(bot_token)
-    oscar.main()
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                        level=logging.INFO)
+    # create a thread to record all the process
+    main_recorder = Recorder()
+    t = Thread(target=main_recorder.record, args=(None, 0, None, None, False))
+    t.start()
+    time.sleep(2)
 
     name = input("Insert the name for the WW test:\n-->")
     t_logging = (input("Activate telegram logging? (y/n)")).lower()
+
     if t_logging == "y":
         telegram_logging = True
+        oscar = Telebot(bot_token)
+        oscar.main()
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                            level=logging.INFO)
+
         oscar.send_message("Test started!")
     else:
         telegram_logging = False
@@ -120,48 +127,80 @@ if __name__ == "__main__":
     load_settings()
     if telegram_logging:
         oscar.send_message("Calculating treshold...")
-    # calculate treshold based on the difference between radio on and radio off noise
-    noise_radio_on, noise_radio_off = r.calculate_tresholds()
 
-    ww_data = add_gain(ww_data, lombard(noise_radio_on + r.correction[0]))
-    mean_noise = ((noise_radio_on + noise_radio_off) / 2)
+    # Automatically calculate treshold. Just turn on the radio
+    input("Turn on radio and press ENTER")
+    r.record(5, channel=1, monitor=True)  # record noise with radio on
+    noise_on = get_rms(r.data)[1]  # measure noise
+    print("RMS: %sdBSPL\n" % (noise_on + r.correction[0]))
+    play_data(ww_data, fs)  # Wakeword to stop music
+    r.lowtreshold = noise_on - 3  # set default treshold value
+    r.waiting_for_mic = True  # recording will stop at negative edge (to detect when music stops)
+    r.record(5, channel=1, monitor=True)  # detect when the music actually stops to measure noise without radio
+    r.hightreshold = r.lowtreshold - 3  # set default treshold value
+    r.waiting_for_cancel = True  # now recording will stop on positive edge
+    r.record(5, channel=1, monitor=True)  # record silence until positive edge
+    play_data(cancel_data, fs)  # Cancel command
+    r.waiting_for_music = True  # now recording will stop if timeout (noise level under treshold) longer than 1 second
+    r.record(5, channel=1, monitor=True)  # ensure that the "cancel" command has been understood (if music resumes)
+    noise_off = get_rms(r.data)[1]  # value of noise without radio
 
-    r.hightreshold = (noise_radio_on + mean_noise) / 2
-    r.lowtreshold = (noise_radio_off + mean_noise) / 2
+    # Calculate treshold values (negative and positive)
+    print("RMS: %sdBSPL\n" % (noise_off + r.correction[0]))
+    print("\nLombard effect: %0.2fdB" % (lombard(noise_on + r.correction[0])))
+    ww_data = add_gain(ww_data, lombard(noise_on + r.correction[0]))  # adjust gain based on Lombard effect
+    mean_noise = ((noise_on + noise_off) / 2)
+
+    r.hightreshold = (noise_on + mean_noise) / 2
+    r.lowtreshold = (noise_off + mean_noise) / 2
 
     txt = "High treshold = %sdB\nLow treshold = %sdB" % (r.hightreshold, r.lowtreshold)
     print(txt)
+    time.sleep(2)
     if telegram_logging:
-        oscar.send_message("Done! \n" + txt)
-
+        try:
+            oscar.send_message("Done! \n" + txt)
+        except Exception as e:
+            print("Something went wrong... :(\n(%s)" % e)
     n_tests = 200
-    time_wakeup = []
-    time_response = []
-    issued_ww = 0
-    recognized_ww = 0
-
+    time_wakeup = []  # array of wakeup times
+    time_response = []  # array of response times
+    issued_ww = 0  # number of issued wakewords
+    recognized_ww = 0  # number of times the wakeword is recognized
+    r.waiting_for_cancel = False
+    r.waiting_for_mic = True
     try:
         for i in range(n_tests):
-            oscar.bot_text = "++ Test '%s' (%s of %s) ++\n" % (name.replace("_", " ").upper(), (i + 1), n_tests)
+            if telegram_logging:
+                oscar.bot_text = "Test '%s' (%s of %s)\n" % (name.replace("_", " ").upper(), (i + 1), n_tests)
+                try:
+                    oscar.send_message(oscar.bot_text + "...")
+                except Exception as e:
+                    print("Something went wrong... :(\n(%s)" % e)
+
             start_time = time.time()
             print("Test number %s" % (i + 1))
+            cancel_repetitions = 0
             while True:
                 play_data(ww_data, fs)
+                t1 = time.time()
                 issued_ww += 1
                 r.waiting_for_mic = True
                 r.record(10, channel=1, monitor=True)
                 if r.activated:
                     r.waiting_for_mic = False
-                    print("Time: %0.2fs" % (len(r.data) / r.fs))
+                    wt = time.time() - t1
+                    print("Time: %0.2fs" % (wt))
                     recognized_ww += 1
-                    wt = len(r.data) / r.fs
                     time_wakeup.append(wt)
                     print("Waiting for cancel")
                     while True:
                         r.waiting_for_cancel = True
                         play_data(cancel_data, fs)
+                        cancel_repetitions += 1
+                        t2 = time.time()
                         r.record(20, channel=1, monitor=False)
-                        rt = len(r.data) / r.fs
+                        rt = time.time() - t2
                         print("Time: %0.2fs" % rt)
                         # record. If timeout after response is bigger than 3 seconds, assumes the radio is not back
                         # to music
@@ -172,6 +211,7 @@ if __name__ == "__main__":
                         r.record(10, channel=1, l_threshold=r.lowtreshold, monitor=True)
                         if not r.waiting_for_cancel:
                             print("No timeout: music resumed")
+                            time_response.append(rt)
                             r.waiting_for_music = False
                             # cancel has been correctly understood
                             print(telegram_logging)
@@ -183,18 +223,23 @@ if __name__ == "__main__":
                                     ETA_hours = ETA / 3600
                                     ETA_minutes = (ETA % 3600) / 60
                                     ETA_seconds = ETA % 60
-                                    oscar.bot_text += (
-                                            "WW_accuracy: %s/%s\nWakeup time: %0.2fs\nRecognition time: %0.2fs\nETA: "
-                                            "%02d:%02d:%02ds" % (
-                                                recognized_ww, issued_ww, wt, rt, ETA_hours, ETA_minutes,
-                                                ETA_seconds))
-                                    oscar.send_message(oscar.bot_text)
+                                    txt = "WW_accuracy: %s of %s" % (recognized_ww, issued_ww)
+                                    oscar.bot_text += txt
+                                    mean_wt = sum(time_wakeup) / len(time_wakeup)
+                                    mean_rt = sum(time_response) / len(time_response)
+                                    print("Logging to telegram: %s" % oscar.bot_text)
+                                    oscar.send_message("Done! \n"
+                                                       "Rate: %s of %s\n"
+                                                       "Wakeup time: %0.2fs (mean: %0.2fs)\n"
+                                                       "Recognition time: %0.2fs (mean: %0.2fs)\n"
+                                                       ""
+                                                       % (recognized_ww, issued_ww, wt, mean_wt, rt, mean_rt))
+                                    print("DONE")
                                 except Exception as e:
                                     print("Error! (%s)" % e)
                             print_ww_report(report_name)
                             print("Cancel\nResult: %s/%s" % (recognized_ww, issued_ww))
                             print("Proceeding to next test")
-                            time_response.append(rt)
                             r.activated = False
                             break
                     break
@@ -204,5 +249,14 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Test interrupted")
 
+    if telegram_logging:
+        oscar.bot_text = "Test completed!"
+        oscar.send_message("Test completed!")
+
     print("Saving report...")
     print_ww_report(report_name)
+
+    # stopping main recording
+    main_recorder.terminate()
+    print(main_recorder.data)
+    main_recorder.save("ww_tests/%s_FULL_RECORDING.wav" % name)
