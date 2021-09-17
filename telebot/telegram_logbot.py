@@ -17,13 +17,14 @@ class Telebot:
         chat_ids = []
         with open("telebot/users.txt", "r") as f:
             for line in f.readlines():
-                chat_ids.append(line)
+                if line not in chat_ids:
+                    chat_ids.append(line)
         return chat_ids
 
     def save_chat_ids(self):
         with open("telebot/users.txt", "w") as f:
             for c_id in self.chat_ids:
-                f.write(str(c_id))
+                f.write(str(c_id)+"\n")
 
     def main(self):
         updater = Updater(token=self.token, use_context=True)
@@ -32,8 +33,8 @@ class Telebot:
         dispatcher.add_handler(start_handler)
         situation_handler = CommandHandler('situation', self.situation)
         dispatcher.add_handler(situation_handler)
-        abort_handler = CommandHandler('abort', self.abort)
-        dispatcher.add_handler(abort_handler)
+        stop_handler = CommandHandler('stop', self.stop)
+        dispatcher.add_handler(stop_handler)
         updater.start_polling()
 
     def start(self, update, context):
@@ -56,11 +57,6 @@ class Telebot:
     def situation(self, update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text=self.bot_text)
 
-    @staticmethod
-    def abort(update, context):
-        text = "ABORTED"
-        context.bot.send_message(chat_id=update.effective_chat.id, text=text)
-
     def send_message(self, bot_message):
         response = ""
         for cid in self.chat_ids:
@@ -68,6 +64,7 @@ class Telebot:
                                                                                                       '=Markdown&text' \
                                                                                                       '=' + bot_message
             response = requests.get(send_text)
+            print(send_text)
         return response
 
 
@@ -75,3 +72,4 @@ if __name__ == "__main__":
     from credentials import bot_token
     t = Telebot(bot_token)
     t.main()
+    t.send_message("HELLO")
