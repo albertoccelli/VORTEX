@@ -16,7 +16,8 @@ libs/to_separe.txt
 # Tests
 vr_tests/*
 !vr_tests/.gitkeep
-*.pk
+ww/tests/*
+!ww_tests/.gitkeep
 
 # PyCharm utilities
 .idea/
