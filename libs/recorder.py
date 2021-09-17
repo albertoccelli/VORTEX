@@ -8,6 +8,7 @@ import wave  # write to wav
 import numpy as np
 import pyaudio  # record
 from scipy.io.wavfile import read, write
+
 if __name__ != "__main__":
     from .cli_tools import print_square
 
@@ -20,6 +21,10 @@ def clear_console():
     if os.name in ('nt', 'dos'):  # If Machine is running on Windows, use cls
         command = 'cls'
     os.system(command)
+
+
+class RecordingInterrupt(Exception):
+    pass
 
 
 class Recorder:
@@ -74,6 +79,8 @@ class Recorder:
         self.hightreshold = 0
         self.soglia = 0
         self.rms = -960
+        self._running = False
+        self._is_saved = False
 
     def set_device(self, io, index):
         if io == "input":
@@ -402,11 +409,11 @@ class Recorder:
             print("\nNo data to play! Record something first")
         return
 
-    def record(self, seconds, channel=0, l_threshold=None, h_treshold = None, monitor = False):
+    def record(self, seconds=None, channel=0, l_threshold=None, h_treshold=None, monitor=False):
         p_pow = -960
         if l_threshold is None and h_treshold is None:
             l_threshold = -960
-            h_treshold = -960            
+            h_treshold = -960
             pass
         # instantiate stream
         p = pyaudio.PyAudio()  # create an interface to PortAudio API
@@ -424,8 +431,12 @@ class Recorder:
         current = time.time()
         timeout = self.timeout
         end = time.time() + timeout
+        if seconds is None:
+            seconds = 10000
         maxtime = time.time() + seconds
-        while current <= maxtime:
+        self._running = True
+        self._is_saved = False
+        while current <= maxtime and self._running:
             try:
                 audio_data = stream.read(self.chunk)
                 count = len(audio_data) / 2
@@ -458,16 +469,16 @@ class Recorder:
                         maxtime = time.time() + seconds
                         print("\nRecording...")
                 current = time.time()
-                    
+
                 if started:
                     for i in range(len(rms)):
                         if monitor:
                             if self.calibrated[i]:
                                 pass
-                                #print("%0.2f dBSPL - %s\t"%(rms[i]+self.correction[i], soglia))
+                                # print("%0.2f dBSPL - %s\t"%(rms[i]+self.correction[i], soglia))
                             else:
                                 pass
-                                #print("%0.2f dBFS - %s\t"%(rms[i], soglia))
+                                # print("%0.2f dBFS - %s\t"%(rms[i], soglia))
                     rms_tot = rms[channel]
                     self.rms = rms_tot
                     if monitor:
@@ -482,10 +493,12 @@ class Recorder:
                 if current >= end:
                     self.on_timeout()
 
+
             except KeyboardInterrupt:
                 print("\nRecording stopped")
                 break
 
+        print("RECORD ENDED")
         # Stop and close the stream
         stream.stop_stream()
         stream.close()
@@ -493,6 +506,8 @@ class Recorder:
         p.terminate()
 
         # write recorded data into an array
+        print("SAVING INTO RECORDER DATA")
+        print(len(frames))
         if len(frames) > 0:
             wf = wave.open(".temp.wav", 'wb')
             wf.setnchannels(self.channels)
@@ -504,6 +519,7 @@ class Recorder:
             _, self.data = read(".temp.wav")
             os.remove(".temp.wav")
             # self.data = self.data[:,0]
+            self._is_saved = True
             return self.data
 
         else:
@@ -520,6 +536,14 @@ class Recorder:
     def on_negative_edge(self):
         pass
 
+    def terminate(self):
+        self._running = False
+        print("Saving...")
+        while not self._is_saved:
+            pass
+        print("Done!")
+
+
 if __name__ == "__main__":
     from play import play_data
     from dsp import get_rms
@@ -527,4 +551,5 @@ if __name__ == "__main__":
 
     r = Recorder()
     r.timeout = 5
-    r.record(30, l_threshold = -30, monitor = True)
+    r.record(30, l_threshold=-30, monitor=True)
+    r.save("PROVA.wav")
