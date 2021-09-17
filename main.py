@@ -17,6 +17,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+
 from libs.gui.about import Ui_About
 from libs.gui.newtest import Ui_Dialog
 from libs.gui.note import Ui_Note_Dialog
