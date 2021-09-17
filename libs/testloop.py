@@ -64,6 +64,17 @@ class TestExistsError(Exception):
     pass
 
 
+def sort_dict(dictionary):
+    keys = []
+    for i in list(dictionary.keys()):
+        keys.append(int(i))
+    keys.sort()
+    new_dict = {}
+    for i in keys:
+        new_dict[str(i)] = dictionary[str(i)]
+    return new_dict
+
+
 def _abs_to_rel(path):
     """
     Convert path from absolute to relative
@@ -290,7 +301,8 @@ class Test:
         self.isSaved = True
         if testlist is None:
             self.testlist = range(len(self.database[self.lang]))
-        else: self.testlist = testlist
+        else:
+            self.testlist = testlist
         return
 
     def resume(self, path=None):
@@ -924,6 +936,8 @@ class Test:
         """
         report_file = "%s/report.csv" % self.wPath
         self.report_file = report_file
+        # sort results
+        self.results = sort_dict(self.results)
         while True:
             try:
                 print("\nSaving test results into %s...\n" % report_file)
