@@ -179,13 +179,13 @@ if __name__ == "__main__":
     test = load_list()
 
     # select new language to add
-    lang = "ENG"
+    lang = "DUN"
     test[lang] = []  # resets command list to avoid conflicts
     commands, cid = make_commands(lang, "to_separe.txt", transliteration=False)
     test[lang] = commands
+    write_to_files(test[lang], lang)
     '''
     read_preconditions()
-    # write_to_files(test[lang], lang)
     print(test["preconditions"])
     input("Press ENTER to save preconditions")
     '''  

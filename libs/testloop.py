@@ -20,6 +20,7 @@ from .play import play_data
 from .recorder import Recorder
 from .cli_tools import print_square, clear_console, show_image
 from . import metadata
+from threading import Thread
 
 root = tk.Tk()
 root.wm_attributes("-topmost", 1)
@@ -543,7 +544,9 @@ class Test:
                     else:
                         break
         print("Playing %s" % filename)
-        play_data(data, fs)
+        play_thread = Thread(target=play_data, args=(data, fs))
+        play_thread.start()
+        # play_data(data, fs)
         return
 
     def activate_mic(self, mode=1):

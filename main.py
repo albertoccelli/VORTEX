@@ -290,7 +290,6 @@ class MyMain(QMainWindow):
                     if r == "1":
                         print("PASS")
                         log("END_TEST #%03d: PASS" % (t.current_test + 1), t.logname)
-                        t.passes += 1
                     elif r == "0":
                         print("FAIL")
                         log("END_TEST #%03d: FAILED" % (t.current_test + 1), t.logname)
@@ -433,8 +432,17 @@ class MyMain(QMainWindow):
         self.ui.precBox.clear()
         self.ui.expectedBox.clear()
 
+    def update_score(self):
+        passed = 0
+        for i in list(t.results.keys()):
+            if (t.results[i].split("\t")[0]) == "1":
+                passed += 1
+        t.passes = passed
+
     def update_screens(self):
         self.clear_screens()
+        self.ui.completedLabel.setText("Completed: %d test(s)" % t.current_test)
+        self.ui.groupBox_2.setTitle("Test %s of %s" % (t.current_test % len(t.testlist) + 1, len(t.testlist)))
         if t.status == 1:
             if self.condition >= 0:
                 for i in range(len(t.sequence[t.testlist[t.current_test]])):
@@ -511,6 +519,7 @@ class MyMain(QMainWindow):
         pass
 
     def update(self):
+        self.update_score()
         self.update_table()
         self.update_screens()
         if self.condition == -1:  # test to be started
@@ -536,7 +545,6 @@ class MyMain(QMainWindow):
             self.setWindowTitle("VoRTEx - %s" % t.testName)
         else:
             self.setWindowTitle("VoRTEx - %s*" % t.testName)
-        self.ui.groupBox_2.setTitle("Test %s of %s" % (t.current_test % len(t.testlist) + 1, len(t.testlist)))
         try:
             progress = round(100 * len(t.results) / len(t.testlist))
         except ZeroDivisionError:
@@ -549,7 +557,6 @@ class MyMain(QMainWindow):
                 self.ui.langLabel.setText("Language: %s (M)" % langDict[t.lang])
         else:
             self.ui.langLabel.setText("Language: %s" % langDict[t.lang])
-        self.ui.completedLabel.setText("Completed: %d test(s)" % t.current_test)
         self.ui.lengthLabel.setText("Test length: %d" % len(t.testlist))
         try:
             self.ui.scoreLabel.setText("Score: {0:d}/{1:d}({2:.1%})"
