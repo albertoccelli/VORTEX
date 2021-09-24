@@ -1,6 +1,6 @@
 metadata = {
     "name": "VoRTEx",
-    "version": "0.9.4-beta",
+    "version": "0.9.5-beta",
     "os": "Windows",
     "author": "Alberto Occelli",
     "copyright": "(c) Jul. 2021 - Alberto Occelli",
