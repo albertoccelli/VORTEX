@@ -9,10 +9,11 @@ from libs import metadata
 from libs.testloop import Test
 from libs.testloop import langDict, show_dirs, log, now, nonsense
 from libs.testloop import TestExistsError, CorruptedTestError
+from libs.Server.server import open_connection, send_message
 
 # gui utilities
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from PyQt5 import QtGui
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -39,7 +40,7 @@ class RecordDialog(QDialog):
         super(RecordDialog, self).__init__()
         self.ui = Ui_Record()
         self.ui.setupUi(self)
-        self.ui.pushButton.pressed.connect(lambda: self.measure_noise())
+        self.ui.pushButton.clicked.connect(lambda: self.measure_noise())
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.setWindowTitle("VoRTEx")
 
@@ -51,8 +52,8 @@ class RecordDialog(QDialog):
         self.ui.label.setText("Done! Background noise: %0.2fdBA" % t.noise)
         self.ui.pushButton.setEnabled(True)
         self.ui.pushButton.setText("OK")
-        self.ui.pushButton.pressed.disconnect()
-        self.ui.pushButton.pressed.connect(lambda: self.close())
+        self.ui.pushButton.clicked.disconnect()
+        self.ui.pushButton.clicked.connect(lambda: self.close())
 
     def measure_noise_radio(self):
         self.ui.pushButton.setEnabled(False)
@@ -62,8 +63,8 @@ class RecordDialog(QDialog):
         self.ui.label.setText("Done! Background noise + radio: %0.2fdBA" % t.noise_radio)
         self.ui.pushButton.setEnabled(True)
         self.ui.pushButton.setText("OK")
-        self.ui.pushButton.pressed.disconnect()
-        self.ui.pushButton.pressed.connect(lambda: self.close())
+        self.ui.pushButton.clicked.disconnect()
+        self.ui.pushButton.clicked.connect(lambda: self.close())
 
 
 # main window
@@ -76,6 +77,11 @@ class MyMain(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.setStyleSheet(stylesheet)
         self.autosave = True
+        # status bar
+        self.ui.statusbar.setStyleSheet("color: grey")
+        self.ui.statusbar.showMessage("Ready")
+        self.ui.status_lab = QLabel("Address: %s:%s" % (t.ip, t.port))
+        self.ui.statusbar.addPermanentWidget(self.ui.status_lab)
         # actions
         self.ui.actionNew_2.triggered.connect(self.on_newbutton_triggered)
         self.ui.actionSave.triggered.connect(lambda: self.save_pressed())
@@ -84,17 +90,22 @@ class MyMain(QMainWindow):
         self.ui.actionOnline_guide.triggered.connect(lambda: self.open_guide())
         self.ui.actionAudio_device.triggered.connect(lambda: self.open_settings())
         self.ui.actionAbout.triggered.connect(lambda: self.about())
+        self.ui.actionCancel.triggered.connect(lambda: self.cancel_pressed())
+        self.ui.actionPrev_test.triggered.connect(lambda: self.back_clicked())
+        self.ui.actionNext_test.triggered.connect(lambda: self.forward_clicked())
+        self.ui.actionPlay_command.triggered.connect(lambda: self.do_test())
+        self.ui.actionPrint_CSV_report.triggered.connect(lambda: self.print_csv())
         # buttons
-        self.ui.cancel_button.pressed.connect(lambda: self.cancel_pressed())
-        self.ui.pushButton.pressed.connect(lambda: self.lombard_pressed())
-        self.ui.pushButton_2.pressed.connect(lambda: self.measure_noise())
-        self.ui.pushButton_3.pressed.connect(lambda: self.measure_noise_radio())
-        self.ui.playButton.pressed.connect(lambda: self.do_test())
-        self.ui.playButton.pressed.connect(lambda: self.update())
-        self.ui.playButton.pressed.connect(lambda: self.update_screens())
-        self.ui.repeatButton.pressed.connect(lambda: self.repeat())
-        self.ui.printButton.setText("Export csv")
-        self.ui.printButton.clicked.connect(lambda: self.print_csv())
+        self.ui.cancel_button.clicked.connect(lambda: self.cancel_pressed())
+        self.ui.pushButton.clicked.connect(lambda: self.lombard_pressed())
+        self.ui.pushButton_2.clicked.connect(lambda: self.measure_noise())
+        self.ui.pushButton_3.clicked.connect(lambda: self.measure_noise_radio())
+        self.ui.playButton.clicked.connect(lambda: self.do_test())
+        self.ui.playButton.clicked.connect(lambda: self.update())
+        self.ui.playButton.clicked.connect(lambda: self.update_screens())
+        self.ui.repeatButton.clicked.connect(lambda: self.repeat())
+        self.ui.back.clicked.connect(lambda: self.back_clicked())
+        self.ui.forward.clicked.connect(lambda: self.forward_clicked())
         self.ui.commandsBox.doubleClicked.connect(lambda: self.double_clicked_command())
         self.condition = -1
         self.update_screens()
@@ -102,6 +113,24 @@ class MyMain(QMainWindow):
         self.ww_waiting = False
         print("Current test: %s" % t.current_test)
         app.processEvents()
+
+        self.results_matrix = []
+
+    def back_clicked(self):
+        self.condition = 0
+        if t.current_test > 0:
+            t.current_test -= 1
+        else:
+            t.current_test = len(t.testlist) - 1
+        self.update()
+
+    def forward_clicked(self):
+        self.condition = 0
+        if t.current_test < len(t.testlist) - 1:
+            t.current_test += 1
+        else:
+            t.current_test = 0
+        self.update()
 
     def cancel_pressed(self):
         self.condition = len(t.sequence[t.testlist[t.current_test]])
@@ -148,8 +177,8 @@ class MyMain(QMainWindow):
             return
         r = RecordDialog()
         r.ui.label.setText("Turn OFF the radio and press OK to measure the background noise")
-        r.ui.pushButton.pressed.disconnect()
-        r.ui.pushButton.pressed.connect(lambda: r.measure_noise())
+        r.ui.pushButton.clicked.disconnect()
+        r.ui.pushButton.clicked.connect(lambda: r.measure_noise())
         r.exec_()
         self.update()
 
@@ -159,22 +188,10 @@ class MyMain(QMainWindow):
             return
         r = RecordDialog()
         r.ui.label.setText("Turn ON the radio and press OK to measure the background noise")
-        r.ui.pushButton.pressed.disconnect()
-        r.ui.pushButton.pressed.connect(lambda: r.measure_noise_radio())
+        r.ui.pushButton.clicked.disconnect()
+        r.ui.pushButton.clicked.connect(lambda: r.measure_noise_radio())
         r.exec_()
         self.update()
-
-    def do_review(self):
-        if messagebox.askyesno("VoRTEx", "Do you really want to start a new test with just the errors of this one?"):
-            newname = Note()
-            newname.ui.label.setText("Choose a name for the test")
-            newname.exec_()
-            print("REDOING :")
-            print(t.redo)
-            t.new(testname=newname.text, l_index=None, testlist=t.redo)
-            print("REDOING :")
-            print(t.testlist)
-            self.update()
 
     def do_test(self):
         print(self.condition)
@@ -213,8 +230,7 @@ class MyMain(QMainWindow):
                         self.measure_noise()
                         self.measure_noise_radio()
                 else:
-                    self.measure_noise()
-                    self.measure_noise_radio()
+                    pass
             if t.status == 0:
                 # start test from 0
                 log("MAY THE FORCE BE WITH YOU", t.logname)  # the first line of the log file
@@ -231,9 +247,12 @@ class MyMain(QMainWindow):
 
         else:
             if self.condition == 0:
-                t.issued_ww += 1
-                self.ww_waiting = True
-                print("WW issued")
+                if t.mic_mode == 1:
+                    self.condition += 1
+                else:
+                    t.issued_ww += 1
+                    self.ww_waiting = True
+                    print("WW issued")
             if self.condition == 1:
                 if self.ww_waiting:
                     print("WW recognized")
@@ -271,6 +290,7 @@ class MyMain(QMainWindow):
                 self.ui.wavLabel.setText("Wave file: %s" % filename)
                 self.ui.gainLabel.setText("Gain adjust: %0.2fdB" % t.gain)
                 log("OSCAR: <<%s>> (%s)" % (command, filename), t.logname)
+                print("Microphone mode: %s" %t.mic_mode)
                 t.play_command(cid)
                 # play button text
                 if next_cid == "000":
@@ -317,14 +337,14 @@ class MyMain(QMainWindow):
                     log("REPEATING TEST", t.logname)
                     t.current_test -= 1
                 self.ui.playButton.setText("PTT")
-                t.current_test += 1
+                if t.current_test < len(t.sequence) - 1:
+                    t.current_test += 1
                 print("Current test: %s" % t.current_test)
-                if t.current_test == len(t.testlist):
+                if len(t.results) == len(t.testlist):
                     messagebox.showinfo("VoRTEx", "Congratulations! You just completed another test!\n"
                                                   "It wasn't easy, you deserve a cup of coffee ;)")
                     t.status = 2
                     t.current_test = 0
-                    self.completed()
                 t.isSaved = False
                 self.update_table()
                 self.update_screens()
@@ -395,11 +415,6 @@ class MyMain(QMainWindow):
     def open_log():
         os.system("notepad %s" % t.logname.replace("/", "\\"))
 
-    def completed(self):
-        self.ui.playButton.disconnect()
-        self.ui.playButton.setText("Review errors")
-        self.ui.playButton.pressed.connect(lambda: self.do_review())
-
     @staticmethod
     def about():
         a = About()
@@ -432,7 +447,8 @@ class MyMain(QMainWindow):
         self.ui.precBox.clear()
         self.ui.expectedBox.clear()
 
-    def update_score(self):
+    @staticmethod
+    def update_score():
         passed = 0
         for i in list(t.results.keys()):
             if (t.results[i].split("\t")[0]) == "1":
@@ -451,7 +467,7 @@ class MyMain(QMainWindow):
                 self.ui.expectedBox.clear()
                 try:
                     for i in range(len(t.expected[t.testlist[t.current_test]])):
-                        self.ui.expectedBox.addItem(t.sequence[t.testlist[t.current_test]][i].replace("\t", "->").
+                        self.ui.expectedBox.addItem(t.expected[t.testlist[t.current_test]][i].replace("\t", "->").
                                                     replace("\n", ""))
                 except IndexError:
                     pass
@@ -466,26 +482,27 @@ class MyMain(QMainWindow):
     def review_test(self, n_test):
         print("Reviewing test %s" % (n_test + 1))
         t.current_test = n_test
+        self.condition = 0
         self.update()
 
     def update_table(self):
-        horizontal_labels = ["ID", "Result", "Timestamp", "Review", "Note"]
+        horizontal_labels = ["ID", "Result", "Timestamp", "Note"]
         self.ui.tableWidget.setRowCount(len(t.testlist))
         self.ui.tableWidget.setColumnCount(len(horizontal_labels))
         self.ui.tableWidget.setHorizontalHeaderLabels(horizontal_labels)
         btns = []
+        btns_position = 0
         for i in range(len(t.testlist)):
             result = 'TO BE DONE'
             note = ""
             timestamp = ""
             btns.append(QPushButton(self.ui.tableWidget))
             btns[i].clicked.connect(lambda: self.review_test(self.ui.tableWidget.currentRow()))
-            btns[i].setText("Go to...")
-            self.ui.tableWidget.setCellWidget(i, 3, btns[i])
-            self.ui.tableWidget.setItem(i, 0, QTableWidgetItem(str(t.testlist[i] + 1)))
+            btns[i].setText(str(t.testlist[i] + 1))
+            self.ui.tableWidget.setCellWidget(i, btns_position, btns[i])
             self.ui.tableWidget.setItem(i, 1, QTableWidgetItem(result))
             self.ui.tableWidget.setItem(i, 2, QTableWidgetItem(timestamp))
-            self.ui.tableWidget.setItem(i, 4, QTableWidgetItem(note))
+            self.ui.tableWidget.setItem(i, 3, QTableWidgetItem(note))
         for i in range(len(t.results)):
             split_res = t.results[list(t.results.keys())[i]].split("\t")
             if split_res[0] == '1':
@@ -498,9 +515,9 @@ class MyMain(QMainWindow):
                                         QTableWidgetItem(result))
             self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 2,
                                         QTableWidgetItem(timestamp))
-            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 4, QTableWidgetItem(note))
+            self.ui.tableWidget.setItem(t.testlist.index(int(list(t.results.keys())[i]) - 1), 3, QTableWidgetItem(note))
             for j in range(self.ui.tableWidget.columnCount()):
-                if j != 3:
+                if j != btns_position:
                     if result == 'PASS':
                         self.ui.tableWidget.item(t.testlist.index(int(list(t.results.keys())[i]) - 1), j) \
                             .setBackground(QtGui.QColor(0, 255, 0))
@@ -509,9 +526,9 @@ class MyMain(QMainWindow):
                             .setBackground(QtGui.QColor(255, 0, 0))
         self.ui.tableWidget.setItem(t.current_test, 1, QTableWidgetItem("CURRENT"))
         for j in range(self.ui.tableWidget.columnCount()):
-            if j != 3:
+            if j != btns_position:
                 self.ui.tableWidget.item(t.current_test, j).setBackground(QtGui.QColor(255, 255, 0))
-
+        self.ui.tableWidget.selectRow(t.current_test)
         self.ui.tableWidget.resizeColumnsToContents()
         self.ui.tableWidget.resizeRowsToContents()
 
@@ -527,7 +544,7 @@ class MyMain(QMainWindow):
             self.ui.cancel_button.setEnabled(False)
             if t.status != 2:
                 self.ui.playButton.disconnect()
-                self.ui.playButton.pressed.connect(lambda: self.do_test())
+                self.ui.playButton.clicked.connect(lambda: self.do_test())
                 if t.status == 1:
                     self.ui.playButton.setText("Resume test")
                     self.ui.statusLabel.setText("Status: RUNNING")
@@ -535,7 +552,6 @@ class MyMain(QMainWindow):
                     self.ui.playButton.setText("Start test")
                     self.ui.statusLabel.setText("Status: WAITING")
             else:
-                self.completed()
                 self.ui.statusLabel.setText("Status: COMPLETED!")
         elif self.condition == 0:  # test started, PTT to be enabled
             self.ui.playButton.setEnabled(True)
@@ -587,6 +603,7 @@ class MyMain(QMainWindow):
         if not t.isSaved:
             if messagebox.askyesnocancel("VoRTEx", "Any progress will be lost. Do you want to save?"):
                 self.save_pressed()
+        t.log("Quitting...", t.logname)
         quit()
 
 
@@ -594,13 +611,14 @@ class MyMain(QMainWindow):
 class TestResultDialog(QDialog):
     def __init__(self):
         super(TestResultDialog, self).__init__()
+        self.setWindowTitle("VoRTEx - Test result")
         self.ui = ResultDialog()
         self.ui.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui.label.setStyleSheet("color: black")
-        self.ui.pushButton.pressed.connect(lambda: self.on_clicked("1"))
-        self.ui.pushButton_2.pressed.connect(lambda: self.on_clicked("0"))
-        self.ui.pushButton_3.pressed.connect(lambda: self.on_clicked("r"))
+        self.ui.pushButton.clicked.connect(lambda: self.on_clicked("1"))
+        self.ui.pushButton_2.clicked.connect(lambda: self.on_clicked("0"))
+        self.ui.pushButton_3.clicked.connect(lambda: self.on_clicked("r"))
         self.value = 1
 
     def on_clicked(self, value):
@@ -618,6 +636,7 @@ class TestResultDialog(QDialog):
 class Note(QDialog):
     def __init__(self):
         super(Note, self).__init__()
+        self.setWindowTitle("VoRTEx - Test note")
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui = Ui_Note_Dialog()
         self.ui.setupUi(self)
@@ -625,7 +644,7 @@ class Note(QDialog):
         self.ui.checkBox.setChecked(False)
         self.is_checked = self.ui.checkBox.isChecked()
         self.text = ""
-        self.ui.pushButton.pressed.connect(lambda: self.on_clicked())
+        self.ui.pushButton.clicked.connect(lambda: self.on_clicked())
 
     def on_clicked(self):
         self.text = self.ui.lineEdit.text()
@@ -641,18 +660,22 @@ class Settings(QDialog):
         self.ui.setupUi(self)
         self.setWindowTitle("VoRTEx settings")
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
-        self.ui.pushButton.pressed.connect(lambda: self.submit())
-        self.ui.pushButton_2.pressed.connect(lambda: self.apply())
-        self.ui.pushButton_3.pressed.connect(lambda: self.cancel())
-        self.ui.mouth_button.pressed.connect(lambda: self.calibrate_mouth())
-        self.ui.ear_button.pressed.connect(lambda: self.calibrate_ear())
-        self.ui.mic_button.pressed.connect(lambda: self.calibrate_mic())
+        self.ui.pushButton.clicked.connect(lambda: self.submit())
+        self.ui.pushButton_2.clicked.connect(lambda: self.apply())
+        self.ui.pushButton_3.clicked.connect(lambda: self.cancel())
+        self.ui.label_6.setText("IP address: %s" % t.ip)
+        self.ui.label_7.setText("Port: %s" % t.port)
+        self.ui.mouth_button.clicked.connect(lambda: self.calibrate_mouth())
+        self.ui.doubleSpinBox.valueChanged.connect(lambda: self.set_mic_calibration())
+        self.ui.ear_button.clicked.connect(lambda: self.calibrate_ear())
+        self.ui.mic_button.clicked.connect(lambda: self.calibrate_mic())
         for i in range(len(t.recorder.devicesIn)):
             self.ui.comboBox.addItem(t.recorder.devicesIn[i].get('name'))
         self.ui.comboBox.setCurrentIndex(t.recorder.deviceIn)
         for i in range(len(t.recorder.devicesOut)):
             self.ui.comboBox_2.addItem(t.recorder.devicesOut[i].get('name'))
-        self.ui.comboBox.setCurrentIndex(t.recorder.deviceOut - len(t.recorder.devicesIn))
+        print(len(t.recorder.devicesIn))
+        self.ui.comboBox_2.setCurrentIndex(t.recorder.deviceOut - len(t.recorder.devicesIn))
         if t.isLombardEnabled:
             self.ui.checkBox.setChecked(True)
         else:
@@ -663,9 +686,11 @@ class Settings(QDialog):
             self.ui.radioButton_2.setChecked(True)
         self.update_calib()
 
+    def set_mic_calibration(self):
+        print(self.ui.doubleSpinBox.value())
+
     def calibrate_mic(self):
         messagebox.showinfo("VoRTEx", "Please place the measurement microphone into the calibrator and press OK")
-        self.ui.mic_calibration.setText("calibrating...")
         t.calibrate_mic()
         messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f" % t.recorder.correction[0])
         self.update_calib()
@@ -673,7 +698,6 @@ class Settings(QDialog):
 
     def calibrate_ear(self):
         messagebox.showinfo("VoRTEx", "Please place the calibrator into the ear and press OK")
-        self.ui.ear_calibration.setText("calibrating...")
         t.calibrate_ear()
         messagebox.showinfo("VoRTEx", "Mic calibration completed: dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
         self.update_calib()
@@ -684,25 +708,25 @@ class Settings(QDialog):
             messagebox.showerror("VoRTEx", "You need to calibrate the measurement microphone first")
             return
         messagebox.showinfo("VoRTEx", "Please place the measurement microphone at the MRP and press OK to continue")
-        self.ui.mouth_gain.setText("calibrating...")
         t.calibrate_mouth()
         messagebox.showinfo("VoRTEx", "Mouth calibration completed")
         self.update_calib()
         return
 
     def update_calib(self):
+        print(t.gain)
         if t.isMouthCalibrated:
-            self.ui.mouth_gain.setText("Gain = %0.2fdB" % t.gain)
+            self.ui.doubleSpinBox_3.setProperty("value", "%0.2f" % - t.gain)
         else:
-            self.ui.mouth_gain.setText("calib. needed")
+            self.ui.doubleSpinBox_3.setProperty("value", "999.99")
         if t.recorder.calibrated[0]:
-            self.ui.mic_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[0])
+            self.ui.doubleSpinBox.setProperty("value", "%0.2f" % t.recorder.correction[0])
         else:
-            self.ui.mic_calibration.setText("calib. needed")
+            self.ui.doubleSpinBox.setProperty("value", "999.99")
         if t.recorder.calibrated[1]:
-            self.ui.ear_calibration.setText("dBSPL/dBFS = %0.2f" % t.recorder.correction[1])
+            self.ui.doubleSpinBox_2.setProperty("value", "%0.2f" % t.recorder.correction[1])
         else:
-            self.ui.ear_calibration.setText("calib. needed")
+            self.ui.doubleSpinBox_2.setProperty("value", "999.99")
 
     def submit(self):
         self.apply()
@@ -738,6 +762,7 @@ class About(QDialog):
         self.ui.label_5.setText(metadata["copyright"])
         self.ui.label_6.setText(metadata["email"])
         self.ui.label_7.setText(metadata["url"])
+        self.setWindowTitle("VoRTEx - About")
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.close()
@@ -751,10 +776,10 @@ class Resume(QDialog):
         self.ui.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('libs/gui/ico.ico'))
         self.ui.listWidget.doubleClicked.connect(lambda: self.on_resume_pressed())
-        self.ui.resumeButton.pressed.connect(lambda: self.on_resume_pressed())
-        self.ui.cancelButton.pressed.connect(lambda: self.close())
-        self.ui.cancelButton_2.pressed.connect(lambda: self.delete_test())
-        self.ui.newButton.pressed.connect(lambda: self.new_pressed())
+        self.ui.resumeButton.clicked.connect(lambda: self.on_resume_pressed())
+        self.ui.cancelButton.clicked.connect(lambda: self.close())
+        self.ui.cancelButton_2.clicked.connect(lambda: self.delete_test())
+        self.ui.newButton.clicked.connect(lambda: self.new_pressed())
         self.ui.listWidget.itemClicked.connect(lambda: self.update_info())
         self.test_list = []
         self.setWindowTitle("Resume test")
@@ -824,7 +849,7 @@ class NewDialog(QDialog):
         self.ui.langBox.currentIndexChanged.connect(lambda: self.update())
         self.ui.radioButton.setChecked(True)
         self.ui.submitButton.setEnabled(False)
-        self.ui.pushButton_2.pressed.connect(lambda: self.change_testlist())
+        self.ui.pushButton_2.clicked.connect(lambda: self.change_testlist())
         if t.mic_mode == 1:
             self.ui.radioButton_5.setChecked(True)
         else:
@@ -834,14 +859,35 @@ class NewDialog(QDialog):
         self.ui.checkBox.setChecked(t.isLombardEnabled)
         self.temp = False
         self.testlist = None
-        # self.testlist = [36, 37, 38, 42, 50, 61, 88, 104, 111, 117, 132, 139, 145, 146, 155]
-        # for i in range(len(self.testlist)):
-        #    self.testlist[i] = self.testlist[i] - 1
+        self.read_testlist_file("settings/testlist.txt")
+
+    def read_testlist_file(self, filename):
+        custom_testlist = []
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                answer = messagebox.askyesno("VoRTEx",
+                                             "Testlist file found. Do you want to use that for your next test?")
+                if answer:
+                    for l in f.readlines():
+                        print(l.replace("\n", ""))
+                        custom_testlist.append(int(l) - 1)
+                    self.testlist = custom_testlist
+                else:
+                    self.testlist = None
+            print("Testlist: ")
+            print(self.testlist)
+        except Exception as e:
+            print(e)
+        '''
+        self.testlist = [7, 11, 19, 20, 21, 29, 31, 34, 38, 52, 53, 54, 60, 61, 62, 63, 64, 68,
+                         78, 81, 84, 87, 107, 108, 109, 110, 111, 112, 114, 121, 122, 123, 124]
+        for i in range(len(self.testlist)):
+            self.testlist[i] = self.testlist[i] - 1
+        '''
 
     def change_testlist(self):
-        messagebox.showinfo("VoRTEx", "Coming soon!")
-        # tdialog = Testlist(l_index = self.ui.langBox.currentIndex())
-        # tdialog.exec_()
+        file = filedialog.askopenfilename(initialdir="settings/", filetypes=[("Text files", "*.txt")])
+        self.read_testlist_file(file)
         pass
 
     def update_ok(self):
@@ -908,6 +954,7 @@ class NewDialog(QDialog):
         self.ui.radioButton_2.setEnabled(t.isMultigenderEnabled)
 
     def fill_lang_combo(self):
+        print(t.langs)
         self.ui.langBox.clear()
         try:
             for i in range(len(t.langs)):
@@ -926,7 +973,7 @@ class Testlist(QDialog):
         self.ui = Ui_Testlist_DIalog()
         self.ui.setupUi(self)
         self.raise_()
-        self.ui.pushButton_3.pressed.connect(lambda: self.close())
+        self.ui.pushButton_3.clicked.connect(lambda: self.close())
         self.ui.tableWidget.setColumnCount(2)
         self.ui.tableWidget.setRowCount(len(t.database[t.langs[l_index]]))
         print(t.langs[l_index])
@@ -937,6 +984,7 @@ class Testlist(QDialog):
 
     def set_testlist(self):
         pass
+
 
 # splash screen
 class SplashScreen(QDialog):

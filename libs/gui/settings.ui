@@ -110,45 +110,10 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Microphone: </string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="mic_calibration">
-         <property name="text">
-          <string>CALIB. NEEDED</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="mic_button">
-         <property name="text">
-          <string>Calibrate</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>Ear: </string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="ear_calibration">
-         <property name="text">
-          <string>CALIB. NEEDED</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="ear_button">
-         <property name="text">
-          <string>Calibrate</string>
          </property>
         </widget>
        </item>
@@ -159,10 +124,24 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="mouth_gain">
+       <item row="0" column="2">
+        <widget class="QPushButton" name="mic_button">
          <property name="text">
-          <string>CALIB. NEEDED</string>
+          <string>Calibrate</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="ear_button">
+         <property name="text">
+          <string>Calibrate</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Microphone: </string>
          </property>
         </widget>
        </item>
@@ -170,6 +149,48 @@
         <widget class="QPushButton" name="mouth_button">
          <property name="text">
           <string>Calibrate</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox">
+         <property name="suffix">
+          <string> dBSPL/dBFS</string>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>0.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+         <property name="suffix">
+          <string> dBSPL/dBFS</string>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="stepType">
+          <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+         <property name="prefix">
+          <string>-</string>
+         </property>
+         <property name="suffix">
+          <string> dB</string>
+         </property>
+         <property name="maximum">
+          <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -374,6 +395,42 @@
        <string>Enable</string>
       </property>
      </widget>
+    </widget>
+    <widget class="QGroupBox" name="groupBox_8">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>110</y>
+       <width>331</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="title">
+      <string>VoRTEx Server</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="5,1,2">
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>IP address: 0.0.0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Port: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="lineEdit"/>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </widget>
    </widget>
   </widget>

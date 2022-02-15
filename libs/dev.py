@@ -164,6 +164,24 @@ def cut_pauses(audio_file, treshold = 100, out_file = None):
     write(out_file, fs, audio_data.astype(np.int16))
     return
 
+def create_actions(test, lang):
+    actions = []
+    for i in range(len(test["expected"])):
+        print("%s - %s - %s" % (i+1, len(test[lang][i]), len(test["expected"][i])))
+        a = []
+        for j in range(len(test[lang][i])):
+            text = "%d. %s => %s" %(j+1, test[lang][i][j].replace("000\tPTT", "Press PTT or say 'Hey Maserati'").replace("\t", "\tSay: ").split("\t")[-1], test["expected"][i][j])
+            a.append(text.replace("\n",""))
+        actions.append(a)
+    act = []
+    for i in range(len(actions)):
+        text = ""
+        for j in range(len(actions[i])):
+            text = text + actions[i][j] + "\n"
+        act.append(text)
+    
+    return act
+
 if __name__ == "__main__":
     from configure import load_list, save_list
     '''
@@ -177,17 +195,35 @@ if __name__ == "__main__":
     # load test file
     print("Loading configuration file\n")
     test = load_list()
-
     # select new language to add
-    lang = "DUN"
+    x = read_preconditions()
+    for i in range(len(x)):
+        x[i] = x[i].split("\n")
+        x[i].remove("")
+    test["expected"] = x
+    langs = []
+    for i in list(test.keys()):
+        if len(i) == 3:
+            langs.append(i)
+    '''          
+    l = "GED"
+    print(l)
+    actions = create_actions(test, l)
+    with open("%s_actions.txt" % l, "w", encoding = "utf-16") as f:
+        for a in actions:
+            f.write('"')
+            f.write(a)
+            f.write('"\n')
+    '''
+    lang = "KRK"
     test[lang] = []  # resets command list to avoid conflicts
     commands, cid = make_commands(lang, "to_separe.txt", transliteration=False)
     test[lang] = commands
     write_to_files(test[lang], lang)
-    '''
-    read_preconditions()
-    print(test["preconditions"])
-    input("Press ENTER to save preconditions")
-    '''  
+    #read_preconditions()
+    #print(test["preconditions"])
+    #input("Press ENTER to save preconditions")
+
     save_list(test)
     save_list(test, exp = False)
+    input("Press ENTER to quit")

@@ -7,6 +7,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import filedialog
 from msvcrt import getch
+from .Server.server import send_message
 
 import random
 import numpy as np
@@ -21,6 +22,7 @@ from .recorder import Recorder
 from .cli_tools import print_square, clear_console, show_image
 from . import metadata
 from threading import Thread
+from .Server.server import open_connection, send_message
 
 root = tk.Tk()
 root.wm_attributes("-topmost", 1)
@@ -125,6 +127,7 @@ def log(event, log_name="test_status.log", log_time=None):
     with open(log_name, "a", encoding="utf-16") as r:
         r.write(log_time + "\t")
         r.write(event + "\n")
+    #send_message(log_time + "\t" + event)
     return
 
 
@@ -205,7 +208,38 @@ class Test:
         # input
         self.micChannel = 0
         self.earChannel = 1
+        #self.is_online = False
+        #try:
+        #    open_connection("10.38.103.82", 42424)
+        #    self.is_online = True
+        #except ConnectionRefusedError:
+        #    print("Connection refused by target machine. Continuing offline...")
+        #except Exception as e:
+        #    print("Error %s;\n Continuing offline..." % e)
+        #  Internet connection
+        self.ip, self.port = open_connection(42886)
+
         print("------------------------------------------------------------------")
+
+    def log(self, event, log_name="test_status.log", log_time=None):
+        """
+        Log every test event with a timestamp.
+        """
+        print("Logging into %s" % log_name)
+        if log_time is None:
+            log_time = now()
+        with open(log_name, "a", encoding="utf-16") as r:
+            r.write(log_time + "\t")
+            r.write(event + "\n")
+        #send_message(log_time + "\t" + event + "\n")
+        #if self.is_online:
+            #try:
+            #    send_message(log_time + "\t" + event)
+            #except Exception as e:
+            #    print("Error %e. Now offline!" % e)
+            #    self.is_online = False
+        return
+
 
     def load_database(self, database_file=None):
         # select the proper list file with the command lists
@@ -223,6 +257,7 @@ class Test:
             print("No file chosen!")
         return
 
+
     def _configure_list(self):
         """
         Detects the available language and the number of tests for language
@@ -238,7 +273,7 @@ class Test:
             os.getcwd().replace("\\", "/") + self.listfile)  # create the test sequence dictionary from the vrtl file
         self.langs = []  # list of the currently supported languages
         for k in self.database.keys():
-            if k != "preconditions" and k != "expected" and k != "AUDIOPATH":
+            if k != "preconditions" and k != "expected" and k != "AUDIOPATH" and "WEIGHTS" not in k:
                 self.langs.append(k)
         self.langs.sort()
         return
@@ -313,6 +348,7 @@ class Test:
         self.load_conf()  # retrieve the paths and test status from the configuration file
         self._configure_list()  # get the test configuration (languages, lists) from the listfile
         self.save()
+        self.log("Hi there! Resuming test...", self.logname)
         return
 
     def detectgenders(self, lang):
@@ -357,7 +393,7 @@ class Test:
         Writes the test attributes (including the current progress) into the config file, along with information
         regarding the .vrtl file used for the single test. Overwrites the last.vcfg file in the settings folder
         """
-        print_square("SAVING\n\nStatus: %s" % self.status)
+        #print_square("SAVING\n\nStatus: %s" % self.status)
         if testfile is None:
             testfile = self.testfile
         with open(testfile, "w", encoding="utf-16") as r:
@@ -750,14 +786,14 @@ class Test:
             # start test from 0
             print_square("Beginning test... Press ENTER when you are ready")
             input("-->")
-            log("MAY THE FORCE BE WITH YOU", self.logname)  # the first line of the log file
+            self.log("MAY THE FORCE BE WITH YOU", self.logname)  # the first line of the log file
             self.results = {}
             self.status = True
         else:
             # resume the test
             print_square("Resuming test from %d... Press ENTER when you are ready" % (self.current_test + 1))
             input("-->")
-            log("WELCOME BACK", self.logname)
+            self.log("WELCOME BACK", self.logname)
 
         # takes just the commands for the chosen language
         test = self.database[self.lang]
@@ -766,7 +802,7 @@ class Test:
             expected = self.database["expected"]
         except KeyError:
             pass
-        log("SELECTED LANGUAGE: %s - %s" % (self.lang, langDict[self.lang]), self.logname)
+        self.log("SELECTED LANGUAGE: %s - %s" % (self.lang, langDict[self.lang]), self.logname)
         if self.recorder.calibrated[self.earChannel]:
             self.listen_noise()
             input("Press ENTER to continue\n-->")
@@ -782,7 +818,7 @@ class Test:
                     pass
                 except IndexError:
                     print("No preconditions for NLU commands!")
-                log("=========================== TEST #%03d ==========================="
+                self.log("=========================== TEST #%03d ==========================="
                     % (self.testlist[i] + 1), self.logname)
                 while True:
                     for test_index in range(len(test[self.testlist[i]])):
@@ -809,16 +845,16 @@ class Test:
                                     if attempt == max_attempts:
                                         print("\nWake word not recognized for %d times. Manually activate the MIC and"
                                               "press ENTER to continue...\n-->" % max_attempts)
-                                        log("WAKE WORD NOT RECOGNIZED. SWITCHING TO MANUAL MODE", self.logname)
+                                        self.log("WAKE WORD NOT RECOGNIZED. SWITCHING TO MANUAL MODE", self.logname)
                                         break
-                                    log("HEY MASERATI", self.logname)
+                                    self.log("HEY MASERATI", self.logname)
                                     self.issued_ww += 1
                                 print("Press ENTER to continue ('r' to repeat)\n-->", end="")
                                 if getch().decode("utf-8") == 'r':
                                     print("\nRepeating...")
-                                    log("REPEATING WAKEWORD", self.logname)
+                                    self.log("REPEATING WAKEWORD", self.logname)
                                 else:
-                                    log("MIC_ACTIVATED", self.logname)
+                                    self.log("MIC_ACTIVATED", self.logname)
                                     self.recognized_ww += 1
                                     break
                         else:
@@ -830,7 +866,7 @@ class Test:
                                         self.play_command(cid)
                                     except Exception as e:
                                         print("ERROR: %s" % e)
-                                    log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
+                                    self.log("OSCAR: <<%s>> (%s_%s.wav)" % (command, self.lang, cid), self.logname)
                                     try:
                                         print("Expected behaviour --> %s\n" % exp)
                                     except NameError:
@@ -839,22 +875,22 @@ class Test:
                                     response = "[Answer]"
                                     if translate:
                                         translation = "Translation"
-                                        log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
+                                        self.log("RADIO: <<%s>> - <<%s>>" % (response, translation), self.logname)
                                     else:
-                                        log("RADIO: <<%s>>" % response, self.logname)
+                                        self.log("RADIO: <<%s>>" % response, self.logname)
                                     if len(test[self.testlist[i]]) > 1:
                                         print("Press ENTER to proceed with next step (%s) or 'r' to repeat\n-->"
                                               % next_command)
                                         q = getch()
                                         if q.decode("utf-8") == "r":
                                             print("\n\nRepeating step...", end="")
-                                            log("REPEATING STEP", self.logname)
+                                            self.log("REPEATING STEP", self.logname)
                                         else:
                                             break
                                     else:
                                         break
                             except KeyboardInterrupt:
-                                log("CANCEL", self.logname)
+                                self.log("CANCEL", self.logname)
                                 break
                     self.cancel(1)
                     result = str(input("\nResult: 1(passed), 0(failed), r(repeat all)\n-->"))
@@ -864,20 +900,20 @@ class Test:
                     if result != "r":
                         while True:
                             if result == "0":
-                                log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
+                                self.log("END_TEST #%03d: FAILED" % (i + 1), self.logname)
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
-                                    log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                    self.log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                                 result = "%s\t%s\t%s\t" % (result, note, r_time.replace("_", " "))
                                 self.failed.append(i + 1)
                                 input("(ENTER)-->")
                                 break
                             elif result == "1":
-                                log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
+                                self.log("END_TEST #%03d: PASSED" % (i + 1), self.logname)
                                 self.passes += 1
                                 note = input("Write notes if needed: ")
                                 if len(note) > 0:
-                                    log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
+                                    self.log("NOTE #%03d: %s" % ((i + 1), note), self.logname)
                                 result = "%s\t%s\t%s\t" % (result, note, r_time.replace("_", " "))
                                 break
                             else:
@@ -885,7 +921,7 @@ class Test:
                                 result = str(input("INVALID INPUT: 1(passed), 0(failed), r(repeat all)\n-->"))
                         break
                     else:  # repeats test
-                        log("REPEATING", self.logname)
+                        self.log("REPEATING", self.logname)
                     # cancels prompt
                     input("Press ENTER -->")
                 try:
@@ -901,18 +937,18 @@ class Test:
         except KeyboardInterrupt:
             print("------------------------------------------------------------------")
             print("Test aborted! Saving...")
-            log("TEST_INTERRUPTED", self.logname)
+            self.log("TEST_INTERRUPTED", self.logname)
             self.current_test = self.testlist[i]
-            log("TEST_STATUS: %03d" % self.current_test, self.logname)
+            self.log("TEST_STATUS: %03d" % self.current_test, self.logname)
             self.save()  # save current progress of the test
             return
 
         except Exception as e:
             print("------------------------------------------------------------------")
             print("Test aborted due to a error (%s)! Saving..." % e)
-            log("ERROR %s" % e, self.logname)
+            self.log("ERROR %s" % e, self.logname)
             self.current_test = self.testlist[i]
-            log("TEST_STATUS: %03d" % self.current_test, self.logname)
+            self.log("TEST_STATUS: %03d" % self.current_test, self.logname)
             self.save()  # save current progress of the test
             return
 
@@ -922,9 +958,9 @@ class Test:
         return self.current_test
 
     def _complete(self):
-        log("======================================================", self.logname)
-        log("TEST_STATUS: COMPLETED! CONGRATULATIONS", self.logname)
-        log("======================================================", self.logname)
+        self.log("======================================================", self.logname)
+        self.log("TEST_STATUS: COMPLETED! CONGRATULATIONS", self.logname)
+        self.log("======================================================", self.logname)
         self.status, self.completed = self._check_completed()
         self.current_test = 0
         self.save()  # save current progress of the test
@@ -933,29 +969,37 @@ class Test:
         self.print_report()
         return
 
-    def print_report(self):
+    def print_report(self, filename = None):
         """
         Print the results in a csv file suitable for the analysis with Excel.
         """
-        report_file = "%s/report.csv" % self.wPath
-        self.report_file = report_file
+        if filename is None:
+            self.report_file = "%s/%s_report.csv" % (self.wPath, self.testName)
+        else:
+            self.report_file = filename
         # sort results
         self.results = sort_dict(self.results)
         while True:
             try:
-                print("\nSaving test results into %s...\n" % report_file)
-                with open(report_file, "w", encoding="utf-16") as r:
+                print("\nSaving test results into %s...\n" % self.report_file)
+                with open(self.report_file, "w", encoding="utf-16") as r:
                     r.write("LANGUAGE: %s\n" % self.lang)
                     r.write("WW RATIO:\t %0.5f\n" % (self.recognized_ww / self.issued_ww))
                     r.write("TEST N.\tRESULT\tCOMMENT\tTIMESTAMP\n")
-                    for i in range(len(self.results)):
+                    for i in range(227):
+                    # for i in range(len(self.testlist)):
                         # write key
-                        r.write("%s\t" % list(self.results.keys())[i])
-                        for result in self.results[list(self.results.keys())[i]]:
-                            r.write("%s" % result)
+                        if str(i+1) in list(self.results.keys()):
+                            print("Writing %s" % (i+1))
+                            r.write("%s\t" % (i+1))
+                            for result in self.results[str(i+1)]:
+                                r.write("%s" % result)
+                        else:
+                            print("Creating %s" % (i+1))
+                            r.write("%s\tNT" % (i+1))
                         r.write("\n")
 
-                log("PRINTED REPORT", self.logname)
+                self.log("PRINTED REPORT", self.logname)
                 break
             except PermissionError:
                 input("Can't access to file! Make sure it's not open and press ENTER to continue\n-->")

@@ -295,4 +295,6 @@ if __name__ == "__main__":
     from scipy.io.wavfile import read
     from matplotlib import pyplot as plt
 
-    fs, noise = read("alb_pack/test_sounds/white.wav")
+    fs, noise = read("alb_pack/test_sounds/bgn_noise.wav")
+    X, F = fft(noise, fftsize=8192, window = "hanning", scaling = "13octave")
+    

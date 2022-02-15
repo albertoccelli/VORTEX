@@ -1,0 +1,26 @@
+https://drive.google.com/drive/folders/1tW7G6wxjQmABYls3iB-c9fBFGBFCDUl4
+
+VP 441 (02/09/2021 h9.02)
+R1H 17.73 PROD
+
+Log https://drive.google.com/drive/folders/1K-pkp0wmDY2c766c3Rz3kFkPDRQfa52a
+
+50671 km
+
+Phone: Samsung Galaxy A3 (Android 10)
+
+Preconditions:
+vehicle in idle state, engine on, aircon at minimum towards windscreen, phone paired  via bluetooth; network available, system language set in German
+
+Action:
+1. Press PTT or say 'Hey Maserati' => 1. Beep sound is heard
+2. Say: => Phone => 2. Guided dialog for call contact
+
+Issue:
+System shifts to phone page but does not ask for a contact to call; session is closed and media audio is resumed
+
+Occurrence:
+Systematic
+
+Restore:
+None
